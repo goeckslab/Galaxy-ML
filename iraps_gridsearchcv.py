@@ -27,6 +27,8 @@ from traceback import format_exception_only
 from utils import SafeEval
 
 
+VERSION = '0.1.1'
+
 memory = joblib.Memory('./memory_cache')
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 
@@ -39,37 +41,52 @@ class MemoryFit(object):
 
 
 class IRAPSCore(object):
-    def __init__(self, n_iter=1000, responsive_thres=-1, resistant_thres=0):
+    def __init__(self, n_iter=1000, responsive_thres=-1,
+                resistant_thres=0, verbose=0, random_state=None):
         self.n_iter = n_iter
         self.responsive_thres = responsive_thres
         self.resistant_thres = resistant_thres
+        self.verbose = verbose
+        self.random_state = random_state
 
     def fit(self, X, y):
         """
         X: array-like (n_samples x n_features)
         y: 1-d array-like (n_samples)
         """
-        #randomly selection of half samples
-        SAMPLE_SIZE = 0.5
+        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=True)
+        #each iteration select a random number of random subset of training samples
+        # this is somewhat different from the original IRAPS method, but effect is almost the same.
+        SAMPLE_SIZE = [0.25, 0.75]
         n_samples = X.shape[0]
         pvalues = None
         fold_changes = None
+        base_values = None
 
-        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=True)
-
-        for seed in np.arange(self.n_iter):
-            n_select = int(n_samples * SAMPLE_SIZE)
-            index = random.Random(seed).sample(list(range(n_samples)), n_select)
+        i = 0
+        while i < self.n_iter:
+            ## TODO: support more random_state/seed
+            if self.random_state is None:
+                n_select = random.randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
+                index = random.sample(list(range(n_samples)), n_select)
+            else:
+                n_select = random.Random(i).randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
+                index = random.Random(i).sample(list(range(n_samples)), n_select)
             X_selected, y_selected = X[index], y[index]
             
-            # Standardize (z-score) response.
+            # Spliting by z_scores.
             y_selected = (y_selected - y_selected.mean())/y_selected.std()
-            
-            responsive_index = np.arange(n_select)[y_selected <= self.responsive_thres]
-            X_selected_responsive = X_selected[responsive_index]
+            X_selected_responsive = X_selected[y_selected <= self.responsive_thres]
+            X_selected_resistant = X_selected[y_selected > self.resistant_thres]
 
-            resistant_index = np.arange(n_select)[y_selected > self.resistant_thres]
-            X_selected_resistant = X_selected[resistant_index]
+            # For every iteration, at least 5 responders are selected
+            if X_selected_responsive.shape[0] < 5:
+                continue
+
+            if self.verbose:
+                print("Working on iteration %d/%d, %s/%d samples were responder/selected."\
+                        %(i+1, self.n_iter, X_selected_responsive.shape[0], n_select))
+            i += 1
 
             # p_values
             _, p = ttest_ind(X_selected_responsive, X_selected_resistant, axis=0, equal_var=False)
@@ -82,16 +99,24 @@ class IRAPSCore(object):
             # TODO implement other normalization method
             responsive_mean = X_selected_responsive.mean(axis=0)
             resistant_mean = X_selected_resistant.mean(axis=0)
-            # mean_change = X_selected_responsive.mean(axis=0) - X_selected_resistant.mean(axis=0)
-            mean_change = np.select([responsive_mean >= resistant_mean, responsive_mean < resistant_mean],
-                                    [responsive_mean / resistant_mean, -resistant_mean / responsive_mean])
+            mean_change = responsive_mean - resistant_mean
+            #mean_change = np.select([responsive_mean >= resistant_mean, responsive_mean < resistant_mean],
+            #                        [responsive_mean / resistant_mean, -resistant_mean / responsive_mean])
+            # mean_change could be adjusted by power of 2
+            # mean_change = 2**mean_change if mean_change>0 else -2**abs(mean_change)
             if fold_changes is None:
                 fold_changes = mean_change
             else:
                 fold_changes = np.vstack((fold_changes, mean_change))
 
+            if base_values is None:
+                base_values = resistant_mean
+            else:
+                base_values = np.vstack((base_values, resistant_mean))
+
         self.fold_changes_ = np.asarray(fold_changes)
         self.pvalues_ = np.asarray(pvalues)
+        self.base_values_ = np.asarray(base_values)
 
         return self
 
@@ -102,47 +127,47 @@ class CachedIRAPSCore(MemoryFit, IRAPSCore):
 
 class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, ClassifierMixin)):
     """
-    Grid search cross-validation using IRAPS method
+    Extend the bases of both sklearn feature_selector and classifier.
+    From sklearn base:
+        get_params()
+        set_params()
+    From sklearn feature_selector:
+        get_support()
+        fit_transform(X)
+        transform(X)
+    From sklearn classifier:
+        predict(X)
+        predict_proba(X)
+    New:
+        get_signature()
+    Properties:
+        discretize_value
+
     """
-    def __init__(self, p_thres=1e-4, fc_thres=0.1,
-                 occurance=0.8, n_iter=1000,
-                 responsive_thres=-1, resistant_thres=0,
-                 clf_thres=0.4):
+    def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1, occurance=0.8, discretize='z_score'):
+        self.iraps_core = iraps_core
         self.p_thres = p_thres
         self.fc_thres = fc_thres
         self.occurance = occurance
-        self.n_iter = n_iter
-        self.responsive_thres = responsive_thres
-        self.resistant_thres = resistant_thres
-        self.clf_thres = clf_thres
+        self.discretize = discretize
 
     def fit(self, X, y):
-        iraps_handler = IRAPSCore(n_iter=self.n_iter,
-                                responsive_thres=self.responsive_thres,
-                                resistant_thres=self.resistant_thres)
-        iraps_handler.fit(X, y)
+        # allow pre-fitted iraps_core here
+        if not hasattr(self.iraps_core, 'pvalues_'):
+            self.iraps_core.fit(X, y)
 
-        self.fold_changes_ = iraps_handler.fold_changes_
-        self.pvalues_ = iraps_handler.pvalues_
+        pvalues = as_float_array(self.iraps_core.pvalues_, copy=True)
+        ## why np.nan is here?
+        pvalues[np.isnan(pvalues)] = np.finfo(pvalues.dtype).max
 
-        return self
+        fold_changes = as_float_array(self.iraps_core.fold_changes_, copy=True)
+        fold_changes[np.isnan(fold_changes)] = 0.0
 
-    def _get_support_mask(self):
-        """
-        return mask of feature selection indices
-        """
-        check_is_fitted(self, 'pvalues_')
+        base_values = as_float_array(self.iraps_core.base_values_, copy=True)
 
         p_thres = self.p_thres
         fc_thres = self.fc_thres
         occurance = self.occurance
-
-        pvalues = as_float_array(self.pvalues_, copy=True)
-        ## why np.nan is here?
-        pvalues[np.isnan(pvalues)] = np.finfo(pvalues.dtype).max
-
-        fold_changes = as_float_array(self.fold_changes_, copy=True)
-        fold_changes[np.isnan(fold_changes)] = 0.0
 
         mask_0 = np.zeros(pvalues.shape, dtype=np.int32)
         # mark p_values less than the threashold
@@ -152,42 +177,60 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
 
         # count the occurance and mask greater than the threshold
         counts = mask_0.sum(axis=0)
-        occurance_thres = int(occurance * self.n_iter)
+        occurance_thres = int(occurance * self.iraps_core.n_iter)
         mask = np.zeros(counts.shape, dtype=bool)
         mask[counts >= occurance_thres] = 1
 
         # generate signature
         fold_changes[mask_0 == 0] = 0.0
         signature = fold_changes[:, mask].sum(axis=0) / counts[mask]
+        signature = np.vstack((signature, base_values[:, mask].mean(axis=0)))
 
         self.signature_ = np.asarray(signature)
+        self.mask_ = mask
+        self.discretize_value = y.mean() - y.std()
 
-        return mask
+        return self
 
-    def get_signature(self):
-        if not hasattr(self, 'signature_'):
-            self._get_support_mask()
 
-        return self.signature_
-
-    def predict(self, X):
+    def _get_support_mask(self):
         """
-        compute the correlation coefficient with irpas signature and then convert to the bool classes
-         True: >=  correlation coefficient threshold
-         False: <  correlation coefficient threshold
+        return mask of feature selection indices
         """
-        predicted = np.zeros(X.shape[0], dtype=bool)
+        check_is_fitted(self, 'mask_')
+
+        return self.mask_
+
+    def get_signature(self, min_size=1):
+        """
+        return signature
+        """
+        #TODO: implement minimum size of signature
+        # It's not clearn whether min_size could impact prediction performance
+        check_is_fitted(self, 'signature_')
+
+        if self.signature_.shape[1] >= min_size:
+            return self.signature_
+        else:
+            return None
+
+    def predict_proba(self, X):
+        """
+        compute the correlation coefficient with irpas signature
+        """
         signature = self.get_signature()
-        if signature.size == 0:
-            return predicted
-        X_transformed = self.transform(X)
-        corrcoef = np.array([np.corrcoef(signature, e)[0][1] for e in X_transformed])
-        corrcoef[np.isnan(corrcoef)] = np.finfo(np.float32).min
-        predicted[corrcoef >= self.clf_thres] = 1
-        return predicted
+        if signature is None:
+            print('The classifier got None signature or the number of sinature feature is less than minimum!')
+            return
 
-    def decision_function(self, X):
-        return self.predict(X)
+        X_transformed = self.transform(X) - signature[1]
+        corrcoef = np.array([np.corrcoef(signature[0], e)[0][1] for e in X_transformed])
+        corrcoef[np.isnan(corrcoef)] = np.finfo(np.float32).min
+
+        return corrcoef
+
+    def predict(self, X, clf_threshold=0.4):
+        return self.predict_proba(X) > clf_threshold
 
 
 def _iraps_fit_and_score(estimator, X, y, scorer, train, test, verbose,
