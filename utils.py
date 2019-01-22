@@ -17,12 +17,9 @@ from sklearn import (cluster, compose, decomposition, ensemble, feature_extracti
                     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
                     svm, linear_model, tree, discriminant_analysis)
 
-from sklearn.base import MetaEstimatorMixin
-from sklearn.base import clone
-from sklearn.base import is_classifier
+from sklearn.base import MetaEstimatorMixin, clone, is_classifier
 from sklearn.feature_selection.rfe import _rfe_single_fit, RFE, RFECV
 from sklearn.model_selection import check_cv
-from sklearn.model_selection._validation import _score
 from sklearn.metrics.scorer import check_scoring
 from sklearn.utils import check_X_y, safe_sqr
 from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
@@ -32,8 +29,13 @@ try:
 except ModuleNotFoundError:
     pass
 
-
-N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
+try:
+    IRAPSClassifier
+except NameError:
+    try:
+        from iraps_classifier import IRAPSCore, IRAPSClassifier, iraps_auc_scorer
+    except ModuleNotFoundError:
+        pass
 
 try:
     sk_whitelist
@@ -44,6 +46,9 @@ try:
     imbPipeline
 except NameError:
     imbPipeline = None
+
+
+N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 
 
 class MyPipeline(pipeline.Pipeline):
@@ -631,6 +636,24 @@ def get_estimator(estimator_json):
         with open(c_estimator, 'rb') as model_handler:
             new_model = load_model(model_handler)
         return new_model
+
+    if estimator_module == 'IRAPS':
+        iraps_core = IRAPSCore()
+        core_params = estimator_json['text_params'].strip()
+        if core_params != '':
+            try:
+                params = safe_eval('dict(' + core_params + ')')
+            except ValueError:
+                sys.exit("Unsupported parameter input: `%s`" % core_params)
+            iraps_core.set_params(**params)
+        p_thres = estimator_json['p_thres']
+        fc_thres = estimator_json['fc_thres']
+        occurance = estimator_json['occurance']
+        discretize = estimator_json['discretize']
+        if discretize == '':
+            discretize = 'z_score'
+        return IRAPSClassifier(iraps_core, p_thres=p_thres, fc_thres=fc_thres,
+                                occurance=occurance, discretize=discretize)
 
     estimator_cls = estimator_json['selected_estimator']
 
