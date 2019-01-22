@@ -6,32 +6,26 @@ iraps_auc_scorer
 """
 
 import numpy as np
-import numbers
-import os
-import pandas as pd
 import random
-import time
-import warnings
 
 from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib, six
-from sklearn.feature_selection.base import SelectorMixin
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics.scorer import _BaseScorer
-from sklearn.model_selection import GridSearchCV
 from sklearn.utils import as_float_array, check_X_y
 from sklearn.utils.validation import check_is_fitted
-from utils import SafeEval
 
 
 VERSION = '0.1.1'
 
 
 class IRAPSCore(object):
+    """
+    Base class of IRAPSClassifier
+    """
     def __init__(self, n_iter=1000, responsive_thres=-1,
                 resistant_thres=0, verbose=0, random_state=None):
         self.n_iter = n_iter
@@ -187,6 +181,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
 
         self.signature_ = np.asarray(signature)
         self.mask_ = mask
+        ## TODO: support other discretize method: fixed value, upper third quater, etc.
         self.discretize_value = y.mean() - y.std()
 
         return self
