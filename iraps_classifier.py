@@ -23,9 +23,12 @@ from sklearn.utils.validation import check_is_fitted
 VERSION = '0.1.1'
 
 
-class IRAPSCore(object):
+class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
     """
     Base class of IRAPSClassifier
+    From sklearn BaseEstimator:
+        get_params()
+        set_params()
     """
     def __init__(self, n_iter=1000, responsive_thres=-1,
                 resistant_thres=0, verbose=0, random_state=None):
@@ -122,10 +125,10 @@ class CachedIRAPSCore(MemoryFit, IRAPSCore):
 class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, ClassifierMixin)):
     """
     Extend the bases of both sklearn feature_selector and classifier.
-    From sklearn base:
+    From sklearn BaseEstimator:
         get_params()
         set_params()
-    From sklearn feature_selector:
+    From sklearn _BaseFilter:
         get_support()
         fit_transform(X)
         transform(X)
