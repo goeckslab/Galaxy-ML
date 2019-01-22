@@ -15,6 +15,7 @@ from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics.scorer import _BaseScorer
+from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_X_y
 from sklearn.utils.validation import check_is_fitted
 
@@ -232,7 +233,12 @@ class IRAPSScorer(_BaseScorer):
     base class to make IRAPS specific scorer
     """
     def __call__(self, clf, X, y, sample_weight=None):
-        y_true = y < clf.discretize_value
+        # support pipeline object
+        if isinstance(clf, Pipeline):
+            discretize_value = clf.steps[-1][-1].discretize_value
+        else:
+            discretize_value = clf.discretize_value
+        y_true = y < discretize_value
         y_pred = clf.predict_proba(X)
         if sample_weight is not None:
             return self._sign * self._score_func(y_true, y_pred,
