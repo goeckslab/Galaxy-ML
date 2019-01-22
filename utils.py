@@ -375,6 +375,11 @@ class SafePickler(pickle.Unpickler):
     """
     def find_class(self, module, name):
 
+        if module == '__main__':
+            if name == 'IRAPSCore':
+                return IRAPSCore
+            if name == "IRAPSClassifier":
+                return IRAPSClassifier
         # sk_whitelist could be read from tool
         global sk_whitelist
         if not sk_whitelist:
@@ -749,6 +754,9 @@ def get_scoring(scoring_json):
 
     if scoring_json['primary_scoring'] == 'default':
         return None
+
+    if scoring_json['primary_scoring'] == 'iraps_auc_scorer':
+        return iraps_auc_scorer
 
     my_scorers = metrics.SCORERS
     if 'balanced_accuracy' not in my_scorers:
