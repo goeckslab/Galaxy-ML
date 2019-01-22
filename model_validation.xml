@@ -1,0 +1,299 @@
+<tool id="sklearn_model_validation" name="Model Validation" version="@VERSION@">
+    <description>evaluates estimator performance by cross-validation</description>
+    <macros>
+        <import>main_macros.xml</import>
+    </macros>
+    <expand macro="python_requirements">
+        <requirement type="package" version="0.6">skrebate</requirement>
+        <requirement type="package" version="0.4.2">imbalanced-learn</requirement>
+    </expand>
+    <expand macro="macro_stdio"/>
+    <version_command>echo "@VERSION@"</version_command>
+    <command>
+        <![CDATA[
+        python "$sklearn_model_validation_script" '$inputs'
+        ]]>
+    </command>
+    <configfiles>
+        <inputs name="inputs" />
+        <configfile name="sklearn_model_validation_script">
+            <![CDATA[
+import sys
+import os
+import json
+import pandas as pd
+import numpy as np
+
+from imblearn.pipeline import Pipeline as imbPipeline
+from sklearn.pipeline import Pipeline
+
+with open('$__tool_directory__/sk_whitelist.json', 'r') as f:
+    sk_whitelist = json.load(f)
+exec(open('$__tool_directory__/utils.py').read(), globals())
+
+warnings.filterwarnings('ignore')
+
+safe_eval = SafeEval()
+
+input_json_path = sys.argv[1]
+with open(input_json_path, 'r') as param_handler:
+    params = json.load(param_handler)
+
+#if $model_validation_functions.options.cv_selector.selected_cv\
+        in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']:
+params['model_validation_functions']['options']['cv_selector']['groups_selector']['infile_g'] =\
+        '$model_validation_functions.options.cv_selector.groups_selector.infile_g'
+#end if
+
+input_type = params['input_options']['selected_input']
+if input_type == 'tabular':
+    header = 'infer' if params['input_options']['header1'] else None
+    column_option = params['input_options']['column_selector_options_1']['selected_column_selector_option']
+    if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_name', 'all_but_by_header_name']:
+        c = params['input_options']['column_selector_options_1']['col1']
+    else:
+        c = None
+    X = read_columns(
+            '$input_options.infile1',
+            c = c,
+            c_option = column_option,
+            sep='\t',
+            header=header,
+            parse_dates=True).astype(float)
+else:
+    X = mmread('$input_options.infile1')
+
+header = 'infer' if params['input_options']['header2'] else None
+column_option = params['input_options']['column_selector_options_2']['selected_column_selector_option2']
+if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_name', 'all_but_by_header_name']:
+    c = params['input_options']['column_selector_options_2']['col2']
+else:
+    c = None
+y = read_columns(
+        '$input_options.infile2',
+        c = c,
+        c_option = column_option,
+        sep='\t',
+        header=header,
+        parse_dates=True)
+y = y.ravel()
+
+## handle options
+options = params['model_validation_functions']['options']
+splitter, groups = get_cv( options.pop('cv_selector') )
+options['cv'] = splitter
+options['groups'] = groups
+options['n_jobs'] = N_JOBS
+if 'scoring' in options:
+    primary_scoring = options['scoring']['primary_scoring']
+    options['scoring'] = get_scoring(options['scoring'])
+if 'pre_dispatch' in options and options['pre_dispatch'] == '':
+    options['pre_dispatch'] = None
+
+## load pipeline
+with open('$infile_pipeline', 'rb') as pipeline_handler:
+    pipeline = load_model(pipeline_handler)
+
+## Set up validator, run pipeline through validator and return results.
+
+validator = params['model_validation_functions']['selected_function']
+validator = getattr(model_selection, validator)
+
+selected_function = params['model_validation_functions']['selected_function']
+
+if selected_function == 'cross_validate':
+    res = validator(pipeline, X, y, **options)
+    rval = pd.DataFrame(res)
+    col_rename = {}
+    for col in rval.columns:
+        if col.endswith('_primary'):
+            col_rename[col] = col[:-7] + primary_scoring
+    rval.rename(inplace=True, columns=col_rename)
+elif selected_function == 'cross_val_predict':
+    predicted = validator(pipeline, X, y, **options)
+    if len(predicted.shape) == 1:
+        rval = pd.DataFrame(predicted, columns=['Predicted'])
+    else:
+        rval = pd.DataFrame(predicted)
+elif selected_function == 'learning_curve':
+    try:
+        train_sizes = safe_eval(options['train_sizes'])
+    except:
+        sys.exit("Unsupported train_sizes input! Supports int/float in tuple and array-like structure.")
+    if type(train_sizes) is tuple:
+        train_sizes = np.linspace(*train_sizes)
+    options['train_sizes'] = train_sizes
+    train_sizes_abs, train_scores, test_scores = validator(pipeline, X, y, **options)
+    rval = pd.DataFrame(dict(
+                train_sizes_abs = train_sizes_abs,
+                mean_train_scores = np.mean(train_scores, axis=1),
+                std_train_scores = np.std(train_scores, axis=1),
+                mean_test_scores = np.mean(test_scores, axis=1),
+                std_test_scores = np.std(test_scores, axis=1)))
+    rval = rval[['train_sizes_abs', 'mean_train_scores', 'std_train_scores',
+                'mean_test_scores', 'std_test_scores']]
+elif selected_function == 'permutation_test_score':
+    score, permutation_scores, pvalue = validator(pipeline, X, y, **options)
+    permutation_scores_df = pd.DataFrame(dict(
+            permutation_scores = permutation_scores))
+    score_df = pd.DataFrame(dict(
+            score = [score],
+            pvalue = [pvalue]))
+    rval = pd.concat([score_df[['score', 'pvalue']], permutation_scores_df], axis=1)
+
+rval.to_csv(path_or_buf='$outfile', sep='\t', header=True, index=False)
+
+            ]]>
+        </configfile>
+    </configfiles>
+    <inputs>
+        <param name="infile_pipeline" type="data" format="zip" label="Choose the dataset containing model/pipeline object"/>
+        <conditional name="model_validation_functions">
+            <param name="selected_function" type="select" label="Select a model validation function">
+                <option value="cross_validate">cross_validate - Evaluate metric(s) by cross-validation and also record fit/score times</option>
+                <option value="cross_val_predict">cross_val_predict - Generate cross-validated estimates for each input data point</option>
+                <option value="learning_curve">learning_curve - Learning curve</option>
+                <option value="permutation_test_score">permutation_test_score - Evaluate the significance of a cross-validated score with permutations</option>
+                <option value="validation_curve">validation_curve - Use grid search with one parameter instead</option>
+            </param>
+            <when value="cross_validate">
+                <section name="options" title="Other Options" expanded="false">
+                    <expand macro="scoring_selection"/>
+                    <expand macro="model_validation_common_options"/>
+                    <!--param argument="return_train_score" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="true" help="Whether to include train scores."/> -->
+                    <!--param argument="return_estimator" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Whether to return the estimators fitted on each split."/> -->
+                    <!--param argument="error_score" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Raise fit error:" help="If false, the metric score is assigned to NaN if an error occurs in estimator fitting and FitFailedWarning is raised."/> -->
+                    <!--fit_params-->
+                    <expand macro="pre_dispatch"/>
+                </section>
+            </when>
+            <when value="cross_val_predict">
+                <section name="options" title="Other Options" expanded="false">
+                    <expand macro="model_validation_common_options" />
+                    <!--fit_params-->
+                    <expand macro="pre_dispatch" value="2*n_jobs’" help="Controls the number of jobs that get dispatched during parallel execution"/>
+                    <param argument="method" type="select" label="Invokes the passed method name of the passed estimator">
+                        <option value="predict" selected="true">predict</option>
+                        <option value="predict_proba">predict_proba</option>
+                    </param>
+                </section>
+            </when>
+            <when value="learning_curve">
+                <section name="options" title="Other Options" expanded="false">
+                    <expand macro="scoring_selection"/>
+                    <expand macro="model_validation_common_options"/>
+                    <param argument="train_sizes" type="text" value="(0.1, 1.0, 5)" label="train_sizes"
+                            help="Relative or absolute numbers of training examples that will be used to generate the learning curve. Supports 1) tuple, to be evaled by np.linspace, e.g. (0.1, 1.0, 5); 2) array-like, e.g. [0.1  , 0.325, 0.55 , 0.775, 1.]">
+                        <sanitizer>
+                            <valid initial="default">
+                                <add value="["/>
+                                <add value="]"/>
+                            </valid>
+                        </sanitizer>
+                    </param>
+                    <param argument="exploit_incremental_learning" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Whether to apply incremental learning to speed up fitting of the estimator if supported"/>
+                    <expand macro="pre_dispatch"/>
+                    <expand macro="shuffle" checked="false" label="shuffle" help="Whether to shuffle training data before taking prefixes"/>
+                    <expand macro="random_state" help_text="If int, the seed used by the random number generator. Used when `shuffle` is True"/>
+                </section>
+            </when>
+            <when value="permutation_test_score">
+                <section name="options" title="Other Options" expanded="false">
+                    <expand macro="scoring_selection"/>
+                    <expand macro="model_validation_common_options"/>
+                    <param name="n_permutations" type="integer" value="100" optional="true" label="n_permutations" help="Number of times to permute y"/>
+                    <expand macro="random_state"/>
+                </section>
+            </when>
+            <when value="validation_curve"/>
+        </conditional>
+        <expand macro="sl_mixed_input"/>
+    </inputs>
+    <outputs>
+        <data format="tabular" name="outfile"/>
+    </outputs>
+    <tests>
+        <test>
+            <param name="infile_pipeline" value="pipeline02"/>
+            <param name="selected_function" value="cross_validate"/>
+            <param name="infile1" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col1" value="1,2,3,4,5"/>
+            <param name="infile2" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col2" value="6"/>
+            <output name="outfile">
+                <assert_contents>
+                    <has_n_columns n="4"/>
+                    <has_text text="0.9999961390418067"/>
+                    <has_text text="0.9944541531269271"/>
+                    <has_text text="0.9999193322454393"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test>
+            <param name="infile_pipeline" value="pipeline02"/>
+            <param name="selected_function" value="cross_val_predict"/>
+            <param name="infile1" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col1" value="1,2,3,4,5"/>
+            <param name="infile2" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col2" value="6"/>
+            <output name="outfile" file="mv_result02.tabular" lines_diff="4"/>
+        </test>
+        <test>
+            <param name="infile_pipeline" value="pipeline05"/>
+            <param name="selected_function" value="learning_curve"/>
+            <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
+            <param name="header1" value="true" />
+            <param name="col1" value="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17"/>
+            <param name="infile2" value="regression_y.tabular" ftype="tabular"/>
+            <param name="header2" value="true" />
+            <param name="col2" value="1"/>
+            <output name="outfile" file="mv_result03.tabular"/>
+        </test>
+        <test>
+            <param name="infile_pipeline" value="pipeline05"/>
+            <param name="selected_function" value="permutation_test_score"/>
+            <param name="infile1" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col1" value="1,2,3,4,5"/>
+            <param name="infile2" value="regression_train.tabular" ftype="tabular"/>
+            <param name="col2" value="6"/>
+            <output name="outfile">
+                <assert_contents>
+                    <has_n_columns n="3"/>
+                    <has_text text="0.25697059258228816"/>
+                </assert_contents>
+            </output>
+        </test>
+        <test>
+            <param name="infile_pipeline" value="pipeline05"/>
+            <param name="selected_function" value="cross_val_predict"/>
+            <section name="groups_selector">
+                <param name="infile_groups" value="regression_y.tabular" ftype="tabular"/>
+                <param name="header_g" value="true"/>
+                <param name="selected_column_selector_option_g" value="by_index_number"/>
+                <param name="col_g" value="1"/>
+            </section>
+            <param name="selected_cv" value="GroupKFold"/>
+            <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
+            <param name="header1" value="true"/>
+            <param name="col1" value="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17"/>
+            <param name="infile2" value="regression_y.tabular" ftype="tabular"/>
+            <param name="header2" value="true"/>
+            <param name="col2" value="1"/>
+            <output name="outfile" file="mv_result05.tabular"/>
+        </test>
+    </tests>
+    <help>
+        <![CDATA[
+**What it does**
+This tool includes model validation functions to evaluate estimator performance in the cross-validation approach. This tool is based on
+sklearn.model_selection package.
+For information about model validation functions and their parameter settings please refer to `Scikit-learn model_selection`_.
+
+.. _`Scikit-learn model_selection`: http://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection
+        ]]>
+    </help>
+    <expand macro="sklearn_citation">
+        <expand macro="skrebate_citation"/>
+        <expand macro="xgboost_citation"/>
+    </expand>
+</tool>
