@@ -10,7 +10,7 @@ import random
 
 from abc import ABCMeta
 from scipy.stats import ttest_ind
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics import roc_auc_score
@@ -30,11 +30,21 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         get_params()
         set_params()
     """
-    def __init__(self, n_iter=1000, responsive_thres=-1,
-                resistant_thres=0, verbose=0, random_state=None):
+    def __init__(self, n_iter=1000, positive_thres=-1,
+                negative_thres=0, verbose=0, random_state=None):
+        """
+        IRAPS turns towwards general Anomaly Detection
+        It comapares positive_thres with negative_thres,
+        and decide which portion is the positive target.
+        e.g.:
+        (positive_thres=-1, negative_thres=0) => positive = Z_score of target < -1
+        (positive_thres=1, negative_thres=0) => positive = Z_score of target > 1
+
+        Note: The positive targets here is always the abnormal minority group.
+        """
         self.n_iter = n_iter
-        self.responsive_thres = responsive_thres
-        self.resistant_thres = resistant_thres
+        self.positive_thres = positive_thres
+        self.negative_thres = negative_thres
         self.verbose = verbose
         self.random_state = random_state
 
@@ -65,20 +75,26 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
             # Spliting by z_scores.
             y_selected = (y_selected - y_selected.mean())/y_selected.std()
-            X_selected_responsive = X_selected[y_selected <= self.responsive_thres]
-            X_selected_resistant = X_selected[y_selected > self.resistant_thres]
+            if self.positive_thres < self.negative_thres:
+                X_selected_positive = X_selected[y_selected < self.positive_thres]
+                X_selected_negative = X_selected[y_selected > self.negative_thres]
+            else:
+                X_selected_positive = X_selected[y_selected > self.positive_thres]
+                X_selected_negative = X_selected[y_selected < self.negative_thres]
 
             # For every iteration, at least 5 responders are selected
-            if X_selected_responsive.shape[0] < 5:
+            if X_selected_positive.shape[0] < 5:
+                if self.random_state is not None:
+                    raise Exception("Error: fewer than 5 positives were selected while random_state is not None!")
                 continue
 
             if self.verbose:
-                print("Working on iteration %d/%d, %s/%d samples were responder/selected."\
-                        %(i+1, self.n_iter, X_selected_responsive.shape[0], n_select))
+                print("Working on iteration %d/%d, %s/%d samples were positive/selected."\
+                        %(i+1, self.n_iter, X_selected_positive.shape[0], n_select))
             i += 1
 
             # p_values
-            _, p = ttest_ind(X_selected_responsive, X_selected_resistant, axis=0, equal_var=False)
+            _, p = ttest_ind(X_selected_positive, X_selected_negative, axis=0, equal_var=False)
             if pvalues is None:
                 pvalues = p
             else:
@@ -86,11 +102,11 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
             # fold_change == mean change?
             # TODO implement other normalization method
-            responsive_mean = X_selected_responsive.mean(axis=0)
-            resistant_mean = X_selected_resistant.mean(axis=0)
-            mean_change = responsive_mean - resistant_mean
-            #mean_change = np.select([responsive_mean >= resistant_mean, responsive_mean < resistant_mean],
-            #                        [responsive_mean / resistant_mean, -resistant_mean / responsive_mean])
+            positive_mean = X_selected_positive.mean(axis=0)
+            negative_mean = X_selected_negative.mean(axis=0)
+            mean_change = positive_mean - negative_mean
+            #mean_change = np.select([positive_mean > negative_mean, positive_mean < negative_mean],
+            #                        [positive_mean / negative_mean, -negative_mean / positive_mean])
             # mean_change could be adjusted by power of 2
             # mean_change = 2**mean_change if mean_change>0 else -2**abs(mean_change)
             if fold_changes is None:
@@ -99,9 +115,9 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
                 fold_changes = np.vstack((fold_changes, mean_change))
 
             if base_values is None:
-                base_values = resistant_mean
+                base_values = negative_mean
             else:
-                base_values = np.vstack((base_values, resistant_mean))
+                base_values = np.vstack((base_values, negative_mean))
 
         self.fold_changes_ = np.asarray(fold_changes)
         self.pvalues_ = np.asarray(pvalues)
@@ -122,7 +138,7 @@ class CachedIRAPSCore(MemoryFit, IRAPSCore):
 """
 
 
-class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, ClassifierMixin)):
+class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, RegressorMixin)):
     """
     Extend the bases of both sklearn feature_selector and classifier.
     From sklearn BaseEstimator:
@@ -132,10 +148,11 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
         get_support()
         fit_transform(X)
         transform(X)
-    From sklearn classifier:
-        predict(X)
-        predict_proba(X)
+    From sklearn RegressorMixin:
+        score(X, y): R2
     New:
+        predict(X)
+        predict_discretize(X)
         get_signature()
     Properties:
         discretize_value
@@ -186,7 +203,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
         self.signature_ = np.asarray(signature)
         self.mask_ = mask
         ## TODO: support other discretize method: fixed value, upper third quater, etc.
-        self.discretize_value = y.mean() - y.std()
+        self.discretize_value = y.mean() + y.std() * self.iraps_core.positive_thres
 
         return self
 
@@ -212,7 +229,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
         else:
             return None
 
-    def predict_proba(self, X):
+    def predict(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
@@ -227,8 +244,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Cl
 
         return corrcoef
 
-    def predict(self, X, clf_threshold=0.4):
-        return self.predict_proba(X) > clf_threshold
+    def predict_discretize(self, X, clf_cutoff=0.4):
+        return self.predict(X) >= clf_cutoff
 
 
 class IRAPSScorer(_BaseScorer):
@@ -238,11 +255,12 @@ class IRAPSScorer(_BaseScorer):
     def __call__(self, clf, X, y, sample_weight=None):
         # support pipeline object
         if isinstance(clf, Pipeline):
-            discretize_value = clf.steps[-1][-1].discretize_value
+            clf = clf.steps[-1][-1]
+        if clf.iraps_core.positive_thres < clf.iraps_core.negative_thres:
+            y_true = y < clf.discretize_value
         else:
-            discretize_value = clf.discretize_value
-        y_true = y < discretize_value
-        y_pred = clf.predict_proba(X)
+            y_true = y > clf.discretize_value
+        y_pred = clf.predict(X)
         if sample_weight is not None:
             return self._sign * self._score_func(y_true, y_pred,
                                                  sample_weight=sample_weight,
