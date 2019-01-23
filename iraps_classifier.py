@@ -15,9 +15,10 @@ from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics.scorer import _BaseScorer
+from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
-from sklearn.utils import as_float_array, check_X_y
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils import as_float_array, check_random_state, check_X_y
+from sklearn.utils.validation import _num_samples, check_is_fitted
 
 
 VERSION = '0.1.1'
@@ -273,3 +274,31 @@ class IRAPSScorer(_BaseScorer):
 
 iraps_auc_scorer = IRAPSScorer(roc_auc_score, 1, {})
 
+
+class OrderedKFold(_BaseKFold):
+    """
+    Split into K fold based on ordered target value 
+    
+    Parameters
+    ----------
+    n_splits : int, default=3
+        Number of folds. Must be at least 2.
+    """
+    def __init__(self, n_splits=3, shuffle=False, random_state=None):
+        super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
+
+    def _iter_test_indices(self, X, y, groups=None):
+        n_samples = _num_samples(X)
+        n_splits = self.n_splits
+        y = np.asarray(y)
+        sorted_index = np.argsort(y)
+        if self.shuffle:
+            current = 0
+            for i in range(n_samples/int(n_splits)):
+                start, stop = current, current + n_splits
+                check_random_state(self.random_state).shuffle(sorted_index[start:stop])
+                current = stop
+            check_random_state(self.random_state).shuffle(sorted_index[current:])
+        
+        for i in range(n_splits):
+            yield sorted_index[i:n_samples:n_splits]
