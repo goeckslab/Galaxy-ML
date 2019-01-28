@@ -18,7 +18,7 @@ from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
-from sklearn.utils.validation import _num_samples, check_is_fitted
+from sklearn.utils.validation import _num_samples, check_array, check_is_fitted
 
 
 VERSION = '0.1.1'
@@ -159,7 +159,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         discretize_value
 
     """
-    def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1, occurance=0.8, discretize='z_score'):
+    def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1, occurance=0.8, discretize=-1):
         self.iraps_core = iraps_core
         self.p_thres = p_thres
         self.fc_thres = fc_thres
@@ -204,7 +204,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         self.signature_ = np.asarray(signature)
         self.mask_ = mask
         ## TODO: support other discretize method: fixed value, upper third quater, etc.
-        self.discretize_value = y.mean() + y.std() * self.iraps_core.positive_thres
+        self.discretize_value = y.mean() + y.std() * self.discretize
 
         return self
 
@@ -302,3 +302,80 @@ class OrderedKFold(_BaseKFold):
         
         for i in range(n_splits):
             yield sorted_index[i:n_samples:n_splits]
+
+
+class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
+    """
+    Convert continuous target to binary labels (True and False)
+    and apply a classification estimator.
+
+    Parameters
+    ----------
+    classifier: object
+        Estimator object such as derived from sklearn `ClassifierMixin`.
+
+    z_score: float, default=-1.0
+        Threshold value based on z_score. Will be ignored when
+        fixed_value is set
+
+    value: float, default=None
+        Threshold value
+
+    less_is_positive: boolean, default=True
+        When target is less the threshold value, it will be converted
+        to True, False otherwise.
+
+    Attributes
+    ----------
+    classifier_: object
+        Fitted classifier
+
+    discretize_value: float
+        The threshold value used to discretize True and False targets
+    """
+    def __init__(self, classifier, z_score=-1, value=None, less_is_positive=True):
+        self.classifier = classifier
+        self.z_score = z_score
+        self.value = None
+        self.less_is_positive = less_is_positive
+
+    def fit(self, X, y, sample_weight=None):
+        """
+        Convert y to True and False labels and then fit the classifier with X and new y
+
+        Returns
+        ------
+        self: object
+        """
+        y = check_array(y, accept_sparse=False, force_all_finite=True,
+                        ensure_2d=False, dtype='numeric')
+        assert (y.ndim == 1 or y.shape[1] == 2)
+
+        if value is None:
+            discretize_value = y.mean() + y.std() * z_score
+        else:
+            discretize_value = Value
+        self.discretize_value_ = discretize_value
+
+        if less_is_positive:
+            y_trans = y <= discretize_value
+        else:
+            y_trans = y >= discretize_value
+
+        self.classifier_ = clone(self.classifier)
+        self.classifier_.fit(X, y_trans, sample_weight)
+
+        return self
+
+    def predict_proba(self, X):
+        """
+        Predict class probabilities of X.
+        """
+        check_is_fitted(self, 'classifier_')
+        return self.classifier_.predict_proba(X)
+
+    def predict(self, X):
+        """Predict class label of X
+        """
+        check_is_fitted(self, 'classifier_')
+        return self.classifier_.predict(X)
