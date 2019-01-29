@@ -1,19 +1,27 @@
 """
 class IRAPScore
 class IRAPSClassifier
-class IRAPSScorer
+class _IRAPSScorer
+class _TransformedTargetScorer
+class _TransformedTargetProbaScorer
 iraps_auc_scorer
+trans_auc_scorer
+trans_accuracy_scorer
+trans_balanced_accuracy_scorer
+trans_precision_scorer
+trans_recall_scorer
 """
+
 
 import numpy as np
 import random
 
 from abc import ABCMeta
 from scipy.stats import ttest_ind
+from sklearn import metrics
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
-from sklearn.metrics import roc_auc_score
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
@@ -249,7 +257,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         return self.predict(X) >= clf_cutoff
 
 
-class IRAPSScorer(_BaseScorer):
+class _IRAPSScorer(_BaseScorer):
     """
     base class to make IRAPS specific scorer
     """
@@ -272,7 +280,7 @@ class IRAPSScorer(_BaseScorer):
     def _factory_args(self):
         return ", needs_iraps=True"
 
-iraps_auc_scorer = IRAPSScorer(roc_auc_score, 1, {})
+iraps_auc_scorer = _IRAPSScorer(metrics.roc_auc_score, 1, {})
 
 
 class OrderedKFold(_BaseKFold):
@@ -358,12 +366,16 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         self.discretize_value_ = discretize_value
 
         if less_is_positive:
-            y_trans = y <= discretize_value
+            y_trans = y < discretize_value
         else:
-            y_trans = y >= discretize_value
+            y_trans = y > discretize_value
 
         self.classifier_ = clone(self.classifier)
-        self.classifier_.fit(X, y_trans, sample_weight)
+        
+        if sample_weight is not None:
+            self.classifier_.fit(X, y_trans, sample_weight=sample_weight)
+        else:
+            self.classifier_.fit(X, y_trans)
 
         return self
 
@@ -379,3 +391,62 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, 'classifier_')
         return self.classifier_.predict(X)
+
+
+class _TransformedTargetScorer(_BaseScorer):
+    """
+    base class to make binarized target specific scorer
+    """
+    def __call__(self, clf, X, y, sample_weight=None):
+        # support pipeline object
+        if isinstance(clf, Pipeline):
+            clf = clf.steps[-1][-1]
+        if clf.less_is_positive:
+            y_trans = y < clf.discretize_value
+        else:
+            y_trans = y > clf.discretize_value
+        y_pred = clf.predict(X)
+        if sample_weight is not None:
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 sample_weight=sample_weight,
+                                                 **self._kwargs)
+        else:
+            return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
+
+
+class _TransformedTargetProbaScorer(_BaseScorer):
+    """
+    base class to make binarized target specific scorer
+    """
+    def __call__(self, clf, X, y, sample_weight=None):
+        # support pipeline object
+        if isinstance(clf, Pipeline):
+            clf = clf.steps[-1][-1]
+        if clf.less_is_positive:
+            y_trans = y < clf.discretize_value
+        else:
+            y_trans = y > clf.discretize_value
+        y_pred = clf.predict(X)
+        if sample_weight is not None:
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 sample_weight=sample_weight,
+                                                 **self._kwargs)
+        else:
+            return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
+
+
+#roc_auc
+trans_auc_scorer = _TransformedTargetProbaScorer(metrics.roc_auc_score, 1, {})
+
+#accuracy
+trans_accuracy_scorer = _TransformedTargetScorer(metrics.accuracy_score)
+
+#balanced_accuracy
+trans_balanced_accuracy_scorer = _TransformedTargetScorer(metrics.balanced_accuracy_score)
+ 
+#precision
+trans_precision_scorer = _TransformedTargetScorer(metrics.precision_score)
+
+#recall
+trans_recall_scorer = _TransformedTargetScorer(metrics.recall_score)
+
