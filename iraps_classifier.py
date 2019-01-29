@@ -2,14 +2,15 @@
 class IRAPScore
 class IRAPSClassifier
 class _IRAPSScorer
-class _TransformedTargetScorer
-class _TransformedTargetProbaScorer
+class BinarizeTargetClassifier
+class _binarizeTargetScorer
+class _binarizeTargetProbaScorer
 iraps_auc_scorer
-trans_auc_scorer
-trans_accuracy_scorer
-trans_balanced_accuracy_scorer
-trans_precision_scorer
-trans_recall_scorer
+binarize_auc_scorer
+binarize_accuracy_scorer
+binarize_balanced_accuracy_scorer
+binarize_precision_scorer
+binarize_recall_scorer
 """
 
 
@@ -344,7 +345,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
     def __init__(self, classifier, z_score=-1, value=None, less_is_positive=True):
         self.classifier = classifier
         self.z_score = z_score
-        self.value = None
+        self.value = value
         self.less_is_positive = less_is_positive
 
     def fit(self, X, y, sample_weight=None):
@@ -359,13 +360,15 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
                         ensure_2d=False, dtype='numeric')
         assert (y.ndim == 1 or y.shape[1] == 2)
 
-        if value is None:
-            discretize_value = y.mean() + y.std() * z_score
-        else:
-            discretize_value = Value
-        self.discretize_value_ = discretize_value
+        y = y.ravel()
 
-        if less_is_positive:
+        if self.value is None:
+            discretize_value = y.mean() + y.std() * self.z_score
+        else:
+            discretize_value = self.Value
+        self.discretize_value = discretize_value
+
+        if self.less_is_positive:
             y_trans = y < discretize_value
         else:
             y_trans = y > discretize_value
@@ -393,7 +396,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         return self.classifier_.predict(X)
 
 
-class _TransformedTargetScorer(_BaseScorer):
+class _BinarizeTargetScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
@@ -414,7 +417,7 @@ class _TransformedTargetScorer(_BaseScorer):
             return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
 
 
-class _TransformedTargetProbaScorer(_BaseScorer):
+class _BinarizeTargetProbaScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
@@ -426,7 +429,8 @@ class _TransformedTargetProbaScorer(_BaseScorer):
             y_trans = y < clf.discretize_value
         else:
             y_trans = y > clf.discretize_value
-        y_pred = clf.predict(X)
+        y_pred = clf.predict_proba(X)
+        y_pred = y_pred[:, 1]
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_pred,
                                                  sample_weight=sample_weight,
@@ -436,17 +440,16 @@ class _TransformedTargetProbaScorer(_BaseScorer):
 
 
 #roc_auc
-trans_auc_scorer = _TransformedTargetProbaScorer(metrics.roc_auc_score, 1, {})
+binarize_auc_scorer = _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
 
 #accuracy
-trans_accuracy_scorer = _TransformedTargetScorer(metrics.accuracy_score)
+binarize_accuracy_scorer = _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
 
 #balanced_accuracy
-trans_balanced_accuracy_scorer = _TransformedTargetScorer(metrics.balanced_accuracy_score)
+binarize_balanced_accuracy_scorer = _BinarizeTargetScorer(metrics.balanced_accuracy_score, 1, {})
  
 #precision
-trans_precision_scorer = _TransformedTargetScorer(metrics.precision_score)
+binarize_precision_scorer = _BinarizeTargetScorer(metrics.precision_score, 1, {})
 
 #recall
-trans_recall_scorer = _TransformedTargetScorer(metrics.recall_score)
-
+binarize_recall_scorer = _BinarizeTargetScorer(metrics.recall_score, 1, {})
