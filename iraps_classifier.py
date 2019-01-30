@@ -3,8 +3,9 @@ class IRAPScore
 class IRAPSClassifier
 class _IRAPSScorer
 class BinarizeTargetClassifier
-class _binarizeTargetScorer
-class _binarizeTargetProbaScorer
+class _BinarizeTargetScorer
+class _BinarizeTargetProbaScorer
+class _BinarizeRegressionScorer
 iraps_auc_scorer
 binarize_auc_scorer
 binarize_accuracy_scorer
@@ -278,10 +279,11 @@ class _IRAPSScorer(_BaseScorer):
         else:
             return self._sign * self._score_func(y_true, y_pred, **self._kwargs)
 
-    def _factory_args(self):
-        return ", needs_iraps=True"
-
+# roc_auc_scorer
 iraps_auc_scorer = _IRAPSScorer(metrics.roc_auc_score, 1, {})
+
+# average_precision_scorer
+iraps_average_precision_scorer = _IRAPSScorer(metrics.average_precision_score, 1, {})
 
 
 class OrderedKFold(_BaseKFold):
@@ -453,3 +455,105 @@ binarize_precision_scorer = _BinarizeTargetScorer(metrics.precision_score, 1, {}
 
 #recall
 binarize_recall_scorer = _BinarizeTargetScorer(metrics.recall_score, 1, {})
+
+# average_precision_scorer
+binarize_average_precision_scorer = _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
+
+
+class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
+    """
+    Extend regression estimator to have discretize_value
+
+    Parameters
+    ----------
+    regressor: object
+        Estimator object such as derived from sklearn `RegressionMixin`.
+
+    z_score: float, default=-1.0
+        Threshold value based on z_score. Will be ignored when
+        fixed_value is set
+
+    value: float, default=None
+        Threshold value
+
+    less_is_positive: boolean, default=True
+        When target is less the threshold value, it will be converted
+        to True, False otherwise.
+
+    Attributes
+    ----------
+    regressor_: object
+        Fitted regressor
+
+    discretize_value: float
+        The threshold value used to discretize True and False targets
+    """
+    def __init__(self, regressor, z_score=-1, value=None, less_is_positive=True):
+        self.regressor = regressor
+        self.z_score = z_score
+        self.value = value
+        self.less_is_positive = less_is_positive
+
+    def fit(self, X, y, sample_weight=None):
+        """
+        Calculate the discretize_value fit the regressor with traning data
+
+        Returns
+        ------
+        self: object
+        """
+        y = check_array(y, accept_sparse=False, force_all_finite=True,
+                        ensure_2d=False, dtype='numeric')
+        assert (y.ndim == 1 or y.shape[1] == 2)
+
+        if self.value is None:
+            discretize_value = y.mean() + y.std() * self.z_score
+        else:
+            discretize_value = self.Value
+        self.discretize_value = discretize_value
+
+        self.regressor_ = clone(self.regressor)
+
+        if sample_weight is not None:
+            self.regressor_.fit(X, y_trans, sample_weight=sample_weight)
+        else:
+            self.regressor_.fit(X, y_trans)
+
+        return self
+
+    def predict(self, X):
+        """Predict class label of X
+        """
+        check_is_fitted(self, 'regressor_')
+        return self.regressor_.predict(X)
+
+
+class _BinarizeRegressionScorer(_BaseScorer):
+    """
+    base class to specific scorer for BinaarizeTargetRegressor
+    """
+    def __call__(self, clf, X, y, sample_weight=None):
+        # support pipeline object
+        if isinstance(clf, Pipeline):
+            clf = clf.steps[-1][-1]
+        if clf.less_is_positive:
+            y_true = y < clf.discretize_value
+        else:
+            y_true = y > clf.discretize_value
+        y_pred = clf.predict(X)
+        # normalize regression prediction to [0, 1] as prediction score
+        if not np.all((y_pred>=0) & (y_pred<=1)):
+            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
+        y_pred = 1 - y_pred
+        if sample_weight is not None:
+            return self._sign * self._score_func(y_true, y_pred,
+                                                 sample_weight=sample_weight,
+                                                 **self._kwargs)
+        else:
+            return self._sign * self._score_func(y_true, y_pred, **self._kwargs)
+
+# roc_auc_scorer
+regression_auc_scorer = _BinarizeRegressionScorer(metrics.roc_auc_score, 1, {})
+
+# average_precision_scorer
+regression_average_precision_scorer = _BinarizeRegressionScorer(metrics.average_precision_score, 1, {})
