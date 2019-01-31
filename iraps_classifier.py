@@ -1,13 +1,13 @@
 """
 class IRAPScore
 class IRAPSClassifier
-class _IRAPSScorer
 class BinarizeTargetClassifier
 class _BinarizeTargetScorer
 class _BinarizeTargetProbaScorer
-class _BinarizeRegressionScorer
-iraps_auc_scorer
+
 binarize_auc_scorer
+binarize_average_precision_scorer
+
 binarize_accuracy_scorer
 binarize_balanced_accuracy_scorer
 binarize_precision_scorer
@@ -28,7 +28,7 @@ from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
-from sklearn.utils.validation import _num_samples, check_array, check_is_fitted
+from sklearn.utils.validation import _num_samples, check_array, check_is_fitted, column_or_1d
 
 
 VERSION = '0.1.1'
@@ -64,7 +64,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         X: array-like (n_samples x n_features)
         y: 1-d array-like (n_samples)
         """
-        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=True)
+        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
         #each iteration select a random number of random subset of training samples
         # this is somewhat different from the original IRAPS method, but effect is almost the same.
         SAMPLE_SIZE = [0.25, 0.75]
@@ -162,8 +162,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
     From sklearn RegressorMixin:
         score(X, y): R2
     New:
+        predict_proba(X)
         predict(X)
-        predict_discretize(X)
         get_signature()
     Properties:
         discretize_value
@@ -215,6 +215,10 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         self.mask_ = mask
         ## TODO: support other discretize method: fixed value, upper third quater, etc.
         self.discretize_value = y.mean() + y.std() * self.discretize
+        if self.iraps_core.negative_thres > self.iraps_core.positive_thres:
+            self.less_is_positive = True
+        else:
+            self.less_is_positive = False
 
         return self
 
@@ -240,7 +244,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         else:
             return None
 
-    def predict(self, X):
+    def predict_proba(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
@@ -249,41 +253,15 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
             print('The classifier got None signature or the number of sinature feature is less than minimum!')
             return
 
+        X = as_float_array(X)
         X_transformed = self.transform(X) - signature[1]
         corrcoef = np.array([np.corrcoef(signature[0], e)[0][1] for e in X_transformed])
         corrcoef[np.isnan(corrcoef)] = np.finfo(np.float32).min
 
         return corrcoef
 
-    def predict_discretize(self, X, clf_cutoff=0.4):
+    def predict(self, X, clf_cutoff=0.4):
         return self.predict(X) >= clf_cutoff
-
-
-class _IRAPSScorer(_BaseScorer):
-    """
-    base class to make IRAPS specific scorer
-    """
-    def __call__(self, clf, X, y, sample_weight=None):
-        # support pipeline object
-        if isinstance(clf, Pipeline):
-            clf = clf.steps[-1][-1]
-        if clf.iraps_core.positive_thres < clf.iraps_core.negative_thres:
-            y_true = y < clf.discretize_value
-        else:
-            y_true = y > clf.discretize_value
-        y_pred = clf.predict(X)
-        if sample_weight is not None:
-            return self._sign * self._score_func(y_true, y_pred,
-                                                 sample_weight=sample_weight,
-                                                 **self._kwargs)
-        else:
-            return self._sign * self._score_func(y_true, y_pred, **self._kwargs)
-
-# roc_auc_scorer
-iraps_auc_scorer = _IRAPSScorer(metrics.roc_auc_score, 1, {})
-
-# average_precision_scorer
-iraps_average_precision_scorer = _IRAPSScorer(metrics.average_precision_score, 1, {})
 
 
 class OrderedKFold(_BaseKFold):
@@ -360,9 +338,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         """
         y = check_array(y, accept_sparse=False, force_all_finite=True,
                         ensure_2d=False, dtype='numeric')
-        assert (y.ndim == 1 or y.shape[1] == 2)
-
-        y = y.ravel()
+        y = column_or_1d(y)
 
         if self.value is None:
             discretize_value = y.mean() + y.std() * self.z_score
@@ -389,7 +365,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         Predict class probabilities of X.
         """
         check_is_fitted(self, 'classifier_')
-        return self.classifier_.predict_proba(X)
+        proba = self.classifier_.predict_proba(X)
+        return proba[:, 1]
 
     def predict(self, X):
         """Predict class label of X
@@ -432,7 +409,6 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         else:
             y_trans = y > clf.discretize_value
         y_pred = clf.predict_proba(X)
-        y_pred = y_pred[:, 1]
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_pred,
                                                  sample_weight=sample_weight,
@@ -440,9 +416,6 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         else:
             return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
 
-
-#roc_auc
-binarize_auc_scorer = _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
 
 #accuracy
 binarize_accuracy_scorer = _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
@@ -456,8 +429,17 @@ binarize_precision_scorer = _BinarizeTargetScorer(metrics.precision_score, 1, {}
 #recall
 binarize_recall_scorer = _BinarizeTargetScorer(metrics.recall_score, 1, {})
 
+#roc_auc
+binarize_auc_scorer = _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
+
 # average_precision_scorer
 binarize_average_precision_scorer = _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
+
+# roc_auc_scorer
+iraps_auc_scorer = binarize_auc_scorer
+
+# average_precision_scorer
+iraps_average_precision_scorer = binarize_average_precision_scorer
 
 
 class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
@@ -504,7 +486,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         """
         y = check_array(y, accept_sparse=False, force_all_finite=True,
                         ensure_2d=False, dtype='numeric')
-        assert (y.ndim == 1 or y.shape[1] == 2)
+        y = column_or_1d(y)
 
         if self.value is None:
             discretize_value = y.mean() + y.std() * self.z_score
@@ -515,45 +497,28 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         self.regressor_ = clone(self.regressor)
 
         if sample_weight is not None:
-            self.regressor_.fit(X, y_trans, sample_weight=sample_weight)
+            self.regressor_.fit(X, y, sample_weight=sample_weight)
         else:
-            self.regressor_.fit(X, y_trans)
+            self.regressor_.fit(X, y)
 
         return self
 
     def predict(self, X):
-        """Predict class label of X
+        """Predict target value of X
         """
         check_is_fitted(self, 'regressor_')
         return self.regressor_.predict(X)
 
-
-class _BinarizeRegressionScorer(_BaseScorer):
-    """
-    base class to specific scorer for BinaarizeTargetRegressor
-    """
-    def __call__(self, clf, X, y, sample_weight=None):
-        # support pipeline object
-        if isinstance(clf, Pipeline):
-            clf = clf.steps[-1][-1]
-        if clf.less_is_positive:
-            y_true = y < clf.discretize_value
-        else:
-            y_true = y > clf.discretize_value
-        y_pred = clf.predict(X)
-        # normalize regression prediction to [0, 1] as prediction score
+    def predict_proba(self, X):
+        y_pred = self.predict(X)
         if not np.all((y_pred>=0) & (y_pred<=1)):
             y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
         y_pred = 1 - y_pred
-        if sample_weight is not None:
-            return self._sign * self._score_func(y_true, y_pred,
-                                                 sample_weight=sample_weight,
-                                                 **self._kwargs)
-        else:
-            return self._sign * self._score_func(y_true, y_pred, **self._kwargs)
+        return y_pred
+
 
 # roc_auc_scorer
-regression_auc_scorer = _BinarizeRegressionScorer(metrics.roc_auc_score, 1, {})
+regression_auc_scorer = binarize_auc_scorer
 
 # average_precision_scorer
-regression_average_precision_scorer = _BinarizeRegressionScorer(metrics.average_precision_score, 1, {})
+regression_average_precision_scorer = binarize_average_precision_scorer
