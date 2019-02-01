@@ -24,6 +24,7 @@ from utils import get_cv, get_scoring, get_X_y, load_model, read_columns, SafeEv
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
+CACHE_DIR = './cached'
 
 
 def get_search_params(params_builder):
@@ -209,6 +210,10 @@ if __name__ == '__main__':
 
     with open(infile_pipeline, 'rb') as pipeline_handler:
         pipeline = load_model(pipeline_handler)
+
+    # cache iraps_core fits could increase search speed significantly
+    if pipeline.steps[-1][-1].__class__.__name__ == 'IRAPSClassifier':
+        pipeline.set_params(estimator__memory=CACHE_DIR)
 
     search_params = get_search_params(params_builder)
     searcher = optimizer(pipeline, search_params, **options)

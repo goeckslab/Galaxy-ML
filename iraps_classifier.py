@@ -29,7 +29,8 @@ from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
-from sklearn.utils.validation import _num_samples, check_array, check_is_fitted, column_or_1d
+from sklearn.utils.validation import (_num_samples, check_array, check_is_fitted,
+                                      check_memory, column_or_1d)
 
 
 VERSION = '0.1.1'
@@ -41,6 +42,14 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
     From sklearn BaseEstimator:
         get_params()
         set_params()
+
+    Parameters
+    ----------
+    n_iter: int, sample count
+    positive_thres: float, z_score shreshold to discretize positive target values
+    negative_thres: float, z_score threshold to discretize negative target values
+    verbose: 0 or geater, if not 0, print progress
+    random_state: int, random seed number
     """
     def __init__(self, n_iter=1000, positive_thres=-1,
                 negative_thres=0, verbose=0, random_state=None):
@@ -67,7 +76,8 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         """
         X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
         #each iteration select a random number of random subset of training samples
-        # this is somewhat different from the original IRAPS method, but effect is almost the same.
+        # this is somewhat different from the original IRAPS method,
+        # but effect is almost the same.
         SAMPLE_SIZE = [0.25, 0.75]
         n_samples = X.shape[0]
         pvalues = None
@@ -81,15 +91,18 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             ## TODO: support more random_state/seed
             if seed > max_try:
                 if i < 50:
-                    raise Exception("Max tries reached, too few (%d) valid feature lists were generated!" %i)
+                    raise Exception("Max tries reached, too few (%d) "
+                                    "valid feature lists were generated!" %i)
                 else:
                     warnings.warn("Max tries readched, %d valid feature lists were generated!" %i)
                     break
             if self.random_state is None:
-                n_select = random.randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
+                n_select = random.randint(int(n_samples*SAMPLE_SIZE[0]),
+                                          int(n_samples*SAMPLE_SIZE[1]))
                 index = random.sample(list(range(n_samples)), n_select)
             else:
-                n_select = random.Random(seed).randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
+                n_select = random.Random(seed).randint(int(n_samples*SAMPLE_SIZE[0]),
+                                                       int(n_samples*SAMPLE_SIZE[1]))
                 index = random.Random(seed).sample(list(range(n_samples)), n_select)
             seed += 1
             X_selected, y_selected = X[index], y[index]
@@ -106,7 +119,8 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             # For every iteration, at least 5 responders are selected
             if X_selected_positive.shape[0] < 5:
                 if self.random_state is not None:
-                    raise Exception("Error: fewer than 5 positives were selected while random_state is not None!")
+                    warnings.warn("Error: fewer than 5 positives were selected "
+                                    "while random_state is not None!")
                 continue
 
             if self.verbose:
@@ -147,16 +161,8 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         return self
 
 
-"""
-memory = joblib.Memory('./memory_cache')
-class MemoryFit(object):
-    def fit(self, *args, **kwargs):
-        fit = memory.cache(super(MemoryFit, self).fit)
-        cached_self = fit(*args, **kwargs)
-        vars(self).update(vars(cached_self))
-class CachedIRAPSCore(MemoryFit, IRAPSCore):
-    pass
-"""
+def _iraps_core_fit(iraps_core, X, y):
+    return iraps_core.fit(X, y)
 
 
 class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, RegressorMixin)):
@@ -178,31 +184,45 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
     Properties:
         discretize_value
 
+    Parameters
+    ----------
+    iraps_core: object
+    p_thres: float, threshold for p_values
+    fc_thres: float, threshold for fold change or mean difference
+    occurrence: float, occurrence rate selected by set of p_thres and fc_thres
+    discretize: float, threshold of z_score to discretize target value
+    memory: None, str or joblib.Memory object
     """
-    def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1, occurance=0.8, discretize=-1):
+    def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1,
+                 occurrence=0.8, discretize=-1, memory=None):
         self.iraps_core = iraps_core
         self.p_thres = p_thres
         self.fc_thres = fc_thres
-        self.occurance = occurance
+        self.occurrence = occurrence
         self.discretize = discretize
+        self.memory = memory
 
     def fit(self, X, y):
+        memory = check_memory(self.memory)
+        cached_fit = memory.cache(_iraps_core_fit)
+        iraps_core = clone(self.iraps_core)
         # allow pre-fitted iraps_core here
-        if not hasattr(self.iraps_core, 'pvalues_'):
-            self.iraps_core.fit(X, y)
+        if not hasattr(iraps_core, 'pvalues_'):
+            iraps_core = cached_fit(iraps_core, X, y)
+        self.iraps_core_ = iraps_core
 
-        pvalues = as_float_array(self.iraps_core.pvalues_, copy=True)
+        pvalues = as_float_array(iraps_core.pvalues_, copy=True)
         ## why np.nan is here?
         pvalues[np.isnan(pvalues)] = np.finfo(pvalues.dtype).max
 
-        fold_changes = as_float_array(self.iraps_core.fold_changes_, copy=True)
+        fold_changes = as_float_array(iraps_core.fold_changes_, copy=True)
         fold_changes[np.isnan(fold_changes)] = 0.0
 
-        base_values = as_float_array(self.iraps_core.base_values_, copy=True)
+        base_values = as_float_array(iraps_core.base_values_, copy=True)
 
         p_thres = self.p_thres
         fc_thres = self.fc_thres
-        occurance = self.occurance
+        occurrence = self.occurrence
 
         mask_0 = np.zeros(pvalues.shape, dtype=np.int32)
         # mark p_values less than the threashold
@@ -210,11 +230,11 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         # mark fold_changes only when greater than the threashold
         mask_0[abs(fold_changes) < fc_thres] = 0
 
-        # count the occurance and mask greater than the threshold
+        # count the occurrence and mask greater than the threshold
         counts = mask_0.sum(axis=0)
-        occurance_thres = int(occurance * self.iraps_core.n_iter)
+        occurrence_thres = int(occurrence * iraps_core.n_iter)
         mask = np.zeros(counts.shape, dtype=bool)
-        mask[counts >= occurance_thres] = 1
+        mask[counts >= occurrence_thres] = 1
 
         # generate signature
         fold_changes[mask_0 == 0] = 0.0
@@ -225,7 +245,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         self.mask_ = mask
         ## TODO: support other discretize method: fixed value, upper third quater, etc.
         self.discretize_value = y.mean() + y.std() * self.discretize
-        if self.iraps_core.negative_thres > self.iraps_core.positive_thres:
+        if iraps_core.negative_thres > iraps_core.positive_thres:
             self.less_is_positive = True
         else:
             self.less_is_positive = False
@@ -260,7 +280,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         """
         signature = self.get_signature()
         if signature is None:
-            print('The classifier got None signature or the number of sinature feature is less than minimum!')
+            print("The classifier got None signature or the number of sinature "
+                  "feature is less than minimum!")
             return
 
         X = as_float_array(X)
@@ -539,7 +560,8 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         y_pred = self.regressor_.predict(X)
         if not np.all((y_pred>=0) & (y_pred<=1)):
             y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
-        y_pred = 1 - y_pred
+        if self.less_is_positive:
+            y_pred = 1 - y_pred
         return y_pred
 
 
