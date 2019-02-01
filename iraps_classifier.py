@@ -17,6 +17,7 @@ binarize_recall_scorer
 
 import numpy as np
 import random
+import warnings
 
 from abc import ABCMeta
 from scipy.stats import ttest_ind
@@ -74,14 +75,23 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         base_values = None
 
         i = 0
+        seed = self.random_state if self.random_state else 0
+        max_try = seed + 2000
         while i < self.n_iter:
             ## TODO: support more random_state/seed
+            if seed > max_try:
+                if i < 50:
+                    raise Exception("Max tries reached, too few (%d) valid feature lists were generated!" %i)
+                else:
+                    warnings.warn("Max tries readched, %d valid feature lists were generated!" %i)
+                    break
             if self.random_state is None:
                 n_select = random.randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
                 index = random.sample(list(range(n_samples)), n_select)
             else:
-                n_select = random.Random(i).randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
-                index = random.Random(i).sample(list(range(n_samples)), n_select)
+                n_select = random.Random(seed).randint(int(n_samples*SAMPLE_SIZE[0]), int(n_samples*SAMPLE_SIZE[1]))
+                index = random.Random(seed).sample(list(range(n_samples)), n_select)
+            seed += 1
             X_selected, y_selected = X[index], y[index]
 
             # Spliting by z_scores.
@@ -162,8 +172,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
     From sklearn RegressorMixin:
         score(X, y): R2
     New:
-        predict_proba(X)
         predict(X)
+        predict_label(X)
         get_signature()
     Properties:
         discretize_value
@@ -244,7 +254,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         else:
             return None
 
-    def predict_proba(self, X):
+    def predict(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
@@ -260,7 +270,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
         return corrcoef
 
-    def predict(self, X, clf_cutoff=0.4):
+    def predict_label(self, X, clf_cutoff=0.4):
         return self.predict(X) >= clf_cutoff
 
 
@@ -358,9 +368,18 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         else:
             self.classifier_.fit(X, y_trans)
 
+        if hasattr(self.classifier_, 'feature_importances_'):
+            self.feature_importances_ = self.classifier_.feature_importances_
+        if hasattr(self.classifier_, 'coef_'):
+            self.coef_ = self.classifier_.coef_
+        if hasattr(self.classifier_, 'n_outputs_'):
+            self.n_outputs_ = self.classifier_.n_outputs_
+        if hasattr(self.classifier_, 'n_features_'):
+            self.n_features_ = self.classifier_.n_features_
+
         return self
 
-    def predict_proba(self, X):
+    def predict(self, X):
         """
         Predict class probabilities of X.
         """
@@ -368,7 +387,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         proba = self.classifier_.predict_proba(X)
         return proba[:, 1]
 
-    def predict(self, X):
+    def predict_label(self, X):
         """Predict class label of X
         """
         check_is_fitted(self, 'classifier_')
@@ -408,7 +427,7 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
             y_trans = y < clf.discretize_value
         else:
             y_trans = y > clf.discretize_value
-        y_pred = clf.predict_proba(X)
+        y_pred = clf.predict(X)
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_pred,
                                                  sample_weight=sample_weight,
@@ -501,16 +520,23 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         else:
             self.regressor_.fit(X, y)
 
+        # attach classifier attributes
+        if hasattr(self.regressor_, 'feature_importances_'):
+            self.feature_importances_ = self.regressor_.feature_importances_
+        if hasattr(self.regressor_, 'coef_'):
+            self.coef_ = self.regressor_.coef_
+        if hasattr(self.regressor_, 'n_outputs_'):
+            self.n_outputs_ = self.regressor_.n_outputs_
+        if hasattr(self.regressor_, 'n_features_'):
+            self.n_features_ = self.regressor_.n_features_
+
         return self
 
     def predict(self, X):
         """Predict target value of X
         """
         check_is_fitted(self, 'regressor_')
-        return self.regressor_.predict(X)
-
-    def predict_proba(self, X):
-        y_pred = self.predict(X)
+        y_pred = self.regressor_.predict(X)
         if not np.all((y_pred>=0) & (y_pred<=1)):
             y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
         y_pred = 1 - y_pred
