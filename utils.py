@@ -656,24 +656,28 @@ def get_estimator(estimator_json):
             except ValueError:
                 sys.exit("Unsupported parameter input: `%s`" % core_params)
             iraps_core.set_params(**params)
-        p_thres = estimator_json['p_thres']
-        fc_thres = estimator_json['fc_thres']
-        occurance = estimator_json['occurance']
-        discretize = estimator_json['discretize']
-        if discretize == '':
-            discretize = 'z_score'
-        return IRAPSClassifier(iraps_core, p_thres=p_thres, fc_thres=fc_thres,
-                                occurance=occurance, discretize=discretize)
+        options = {}
+        if estimator_json['p_thres'] is not None:
+            options['p_thres'] = estimator_json['p_thres']
+        if estimator_json['fc_thres'] is not None:
+            options['fc_thres'] = estimator_json['fc_thres']
+        if estimator_json['occurrence'] is not None:
+            options['occurrence'] = estimator_json['occurrence']
+        if estimator_json['discretize'] is not None:
+            options['discretize'] = estimator_json['discretize']
+        return IRAPSClassifier(iraps_core, **options)
 
     if estimator_module == "binarize_target":
         wrapped_estimator = estimator_json['wrapped_estimator']
         with open(wrapped_estimator, 'rb') as model_handler:
             wrapped_estimator = load_model(model_handler)
         options = {}
-        options['z_score'] = estimator_json['z_score']
-        options['value'] = estimator_json['value']
+        if estimator_json['z_score'] is not None:
+            options['z_score'] = estimator_json['z_score']
+        if estimator_json['value'] is not None:
+            options['value'] = estimator_json['value']
         options['less_is_positive'] = estimator_json['less_is_positive']
-        if estimator_json['clf_or_regr'] = 'BinarizeTargetClassifier':
+        if estimator_json['clf_or_regr'] == 'BinarizeTargetClassifier':
             return BinarizeTargetClassifier(wrapped_estimator, **options)
         else:
             return BinarizeTargetRegressor(wrapped_estimator, **options)

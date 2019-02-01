@@ -211,6 +211,7 @@ if __name__ == '__main__':
     with open(infile_pipeline, 'rb') as pipeline_handler:
         pipeline = load_model(pipeline_handler)
 
+    memory = joblib.Memory(location=CACHE_DIR, verbose=0)
     # cache iraps_core fits could increase search speed significantly
     if pipeline.steps[-1][-1].__class__.__name__ == 'IRAPSClassifier':
         pipeline.set_params(estimator__memory=CACHE_DIR)
@@ -229,6 +230,8 @@ if __name__ == '__main__':
                 pass
             for warning in w:
                 print(repr(warning.message))
+
+    memory.clear(warn=False)
 
     cv_result = pandas.DataFrame(searcher.cv_results_)
     col_rename = {}

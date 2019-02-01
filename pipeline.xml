@@ -208,10 +208,10 @@ with open('$outfile', 'wb') as out_handler:
                         <expand macro="estimator_params_text"
                             label="Type in parameter settings for IRAPSCORE if different from default:"
                             help="Default(=blank): n_iter=1000, responsive_thres=-1, resistant_thres=0, random_state=None. No double quotes"/>
-                        <param argument="p_thres" type="float" value="0.0001" label="P value threshold" help="Float. default=0.0001"/>
+                        <param argument="p_thres" type="float" value="0.001" label="P value threshold" help="Float. default=0.001"/>
                         <param argument="fc_thres" type="float" value="0.1" label="fold change threshold" help="Float. default=0.1"/>
-                        <param argument="occurance" type="float" value="0.8" label="reservation factor" help="Float. default=0.8"/>
-                        <param argument="discretize" type="text" value="" label="The way to discretize classification target value" help="default='z_score'"/>
+                        <param argument="occurrence" type="float" value="0.7" label="reservation factor" help="Float. default=0.7"/>
+                        <param argument="discretize" type="float" value="-1" label="The z_score threshold to discretize target value" help="Float. default=-1"/>
                     </when>
                     <when value="binarize_target">
                         <param name="clf_or_regr" type="select" label="Classifier or Regressor:">
