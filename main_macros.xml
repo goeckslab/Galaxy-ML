@@ -949,7 +949,7 @@
     <option value="SelectFromModel">SelectFromModel - Meta-transformer for selecting features based on importance weights</option>
     <option value="RFE">RFE - Feature ranking with recursive feature elimination</option>
     <option value="RFECV">RFECV - Feature ranking with recursive feature elimination and cross-validated selection of the best number of features</option>
-    <option value="DyRFECV">DyRFECV - Extended RFECV with changeable steps</option>
+    <yield/>
   </xml>
 
   <xml name="feature_selection_algorithm_details">
@@ -1122,7 +1122,9 @@
   <xml name="feature_selection_fs">
     <conditional name="fs_algorithm_selector">
       <param name="selected_algorithm" type="select" label="Select a feature selection algorithm">
-        <expand macro="feature_selection_algorithms"/>
+        <expand macro="feature_selection_algorithms">
+          <option value="DyRFECV">DyRFECV - Extended RFECV with changeable steps</option>
+        </expand>
       </param>
       <expand macro="feature_selection_algorithm_details"/>
       <expand macro="feature_selection_SelectFromModel"/>
@@ -1214,8 +1216,8 @@
       <when value="neg_mean_squared_log_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="neg_median_absolute_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="r2"><expand macro="secondary_scoring_selection_regression"/></when>
-      <when value="binarize_auc_scorer"><expand macro="secondary_scoring_selection_anormaly"></when>
-      <when value="binarize_average_precision_scorer"><expand macro="secondary_scoring_selection_anormaly"></when>
+      <when value="binarize_auc_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
+      <when value="binarize_average_precision_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
     </conditional>
   </xml>
 

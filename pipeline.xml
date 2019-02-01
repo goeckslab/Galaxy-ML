@@ -47,6 +47,11 @@ params['final_estimator']['estimator_selector']['c_estimator'] =\
         '$final_estimator.estimator_selector.c_estimator'
 #end if
 
+#if $final_estimator.estimator_selector.selected_module == 'binarize_target':
+params['final_estimator']['estimator_selector']['wrapped_estimator'] =\
+        '$final_estimator.estimator_selector.wrapped_estimator'
+#end if
+
 pipeline_steps = []
 
 def get_component(input_json, check_none=False):
@@ -193,6 +198,7 @@ with open('$outfile', 'wb') as out_handler:
                 <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
                     <expand macro="estimator_module_options">
                         <option value="IRAPS">IRAPS</option>
+                        <option value="binarize_target">Binarize Target Classifier or Regressor</option>
                         <option value="customer_estimator">Load a customer estimator</option>
                         <option value="none">none -- The last component of pre-processing step will turn to a final estimator</option>
                     </expand>
@@ -207,8 +213,18 @@ with open('$outfile', 'wb') as out_handler:
                         <param argument="occurance" type="float" value="0.8" label="reservation factor" help="Float. default=0.8"/>
                         <param argument="discretize" type="text" value="" label="The way to discretize classification target value" help="default='z_score'"/>
                     </when>
+                    <when value="binarize_target">
+                        <param name="clf_or_regr" type="select" label="Classifier or Regressor:">
+                            <option value="BinarizeTargetClassifier">BinarizeTargetClassifier</option>
+                            <option value="BinarizeTargetRegressor">BinarizeTargetRegressor</option>
+                        </param>
+                        <param name="wrapped_estimator" type="data" format="zip" label="Choose the dataset containing the wrapped estimator or pipeline"/>
+                        <param name='z_score' type="float" value="-1" optional="false" label="Discrize target values using z_score"/>
+                        <param name='value' type="float" value="" optional="true" label="Discretize target values using a fixed value instead" help="Optional. default: None."/>
+                        <param name="less_is_positive" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Are the detecting values smaller than others?"/>
+                    </when>
                     <when value="customer_estimator">
-                        <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the customer estimator or pipeline:"/>
+                        <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the customer estimator or pipeline"/>
                     </when>
                     <when value="none"/>
                 </expand>

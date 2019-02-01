@@ -376,11 +376,15 @@ class SafePickler(pickle.Unpickler):
     """
     def find_class(self, module, name):
 
+        customer_classes = {
+            'IRAPSCore': IRAPSCore,
+            'IRAPSClassifier': IRAPSClassifier,
+            'BinarizeTargetClassifier': BinarizeTargetClassifier,
+            'BinarizeTargetRegressor': BinarizeTargetRegressor
+        }
+
         if module == '__main__':
-            if name == 'IRAPSCore':
-                return IRAPSCore
-            if name == "IRAPSClassifier":
-                return IRAPSClassifier
+            return customer_classes[name]
         # sk_whitelist could be read from tool
         global sk_whitelist
         if not sk_whitelist:
@@ -660,6 +664,19 @@ def get_estimator(estimator_json):
             discretize = 'z_score'
         return IRAPSClassifier(iraps_core, p_thres=p_thres, fc_thres=fc_thres,
                                 occurance=occurance, discretize=discretize)
+
+    if estimator_module == "binarize_target":
+        wrapped_estimator = estimator_json['wrapped_estimator']
+        with open(wrapped_estimator, 'rb') as model_handler:
+            wrapped_estimator = load_model(model_handler)
+        options = {}
+        options['z_score'] = estimator_json['z_score']
+        options['value'] = estimator_json['value']
+        options['less_is_positive'] = estimator_json['less_is_positive']
+        if estimator_json['clf_or_regr'] = 'BinarizeTargetClassifier':
+            return BinarizeTargetClassifier(wrapped_estimator, **options)
+        else:
+            return BinarizeTargetRegressor(wrapped_estimator, **options)
 
     estimator_cls = estimator_json['selected_estimator']
 
