@@ -18,7 +18,8 @@ from sklearn import (cluster, compose, decomposition, ensemble, feature_extracti
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
 
-from iraps_classifier import IRAPSCore, IRAPSClassifier, iraps_auc_scorer
+from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
+                    BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
 from utils import get_cv, get_scoring, get_X_y, load_model, read_columns, SafeEval
 
 

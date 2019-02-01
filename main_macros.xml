@@ -1184,7 +1184,8 @@
         <option value="neg_mean_squared_log_error">Regression -- 'neg_mean_squared_log_error'</option>
         <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
         <option value="r2">Regression -- 'r2'</option>
-        <option value="iraps_auc_scorer">IRAPS -- roc_auc</option>
+        <option value="binarize_auc_scorer">anomaly detection -- binarize_auc_scorer</option>
+        <option value="binarize_average_precision_scorer">anomaly detection -- binarize_average_precision_scorer</option>
       </param>
       <when value="default"/>
       <when value="accuracy"><expand macro="secondary_scoring_selection_classification"/></when>
@@ -1213,7 +1214,8 @@
       <when value="neg_mean_squared_log_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="neg_median_absolute_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="r2"><expand macro="secondary_scoring_selection_regression"/></when>
-      <when value="iraps_auc_scorer"/>
+      <when value="binarize_auc_scorer"><expand macro="secondary_scoring_selection_anormaly"></when>
+      <when value="binarize_average_precision_scorer"><expand macro="secondary_scoring_selection_anormaly"></when>
     </conditional>
   </xml>
 
@@ -1250,6 +1252,13 @@
       <option value="neg_mean_squared_log_error">Regression -- 'neg_mean_squared_log_error'</option>
       <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
       <option value="r2">Regression -- 'r2'</option>
+    </param>
+  </xml>
+
+  <xml name="secondary_scoring_selection_anormaly">
+    <param name="secondary_scoring" type="select" multiple="true" label="Additional scoring used in multi-metric mode:" help="If the same metric with the primary is chosen, the metric will be ignored.">
+      <option value="binarize_auc_scorer">anomaly detection -- binarize_auc_scorer</option>
+      <option value="binarize_average_precision_scorer">anomaly detection -- binarize_average_precision_scorer</option>
     </param>
   </xml>
 

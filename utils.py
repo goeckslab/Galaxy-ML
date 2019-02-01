@@ -33,7 +33,8 @@ try:
     IRAPSClassifier
 except NameError:
     try:
-        from iraps_classifier import IRAPSCore, IRAPSClassifier, iraps_auc_scorer
+        from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
+                    BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
     except ModuleNotFoundError:
         pass
 
@@ -755,10 +756,9 @@ def get_scoring(scoring_json):
     if scoring_json['primary_scoring'] == 'default':
         return None
 
-    if scoring_json['primary_scoring'] == 'iraps_auc_scorer':
-        return iraps_auc_scorer
-
     my_scorers = metrics.SCORERS
+    my_scorers['binarize_auc_scorer'] = binarize_auc_scorer
+    my_scorers['binarize_average_precision_scorer'] = binarize_average_precision_scorer
     if 'balanced_accuracy' not in my_scorers:
         my_scorers['balanced_accuracy'] = metrics.make_scorer(balanced_accuracy_score)
 
