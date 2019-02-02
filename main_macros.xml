@@ -813,6 +813,7 @@
 
   <xml name="cv_splitter">
     <option value="default" selected="true">default splitter</option>
+    <option value="OrderedKFold">OrderedKFold</option>
     <option value="KFold">KFold</option>
     <option value="StratifiedKFold">StratifiedKFold</option>
     <option value="LeaveOneOut">LeaveOneOut</option>
@@ -829,6 +830,11 @@
   <xml name="cv_splitter_options">
     <when value="default">
       <expand macro="cv_n_splits"/>
+    </when>
+    <when value="OrderedKFold">
+      <expand macro="cv_n_splits"/>
+      <expand macro="cv_shuffle"/>
+      <expand macro="random_state"/>
     </when>
     <when value="KFold">
       <expand macro="cv_n_splits"/>

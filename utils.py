@@ -33,7 +33,7 @@ try:
     IRAPSClassifier
 except NameError:
     try:
-        from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
+        from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
     except ModuleNotFoundError:
         pass
@@ -380,7 +380,8 @@ class SafePickler(pickle.Unpickler):
             'IRAPSCore': IRAPSCore,
             'IRAPSClassifier': IRAPSClassifier,
             'BinarizeTargetClassifier': BinarizeTargetClassifier,
-            'BinarizeTargetRegressor': BinarizeTargetRegressor
+            'BinarizeTargetRegressor': BinarizeTargetRegressor,
+            'OrderedKFold': OrderedKFold
         }
 
         if module == '__main__':
@@ -754,7 +755,10 @@ def get_cv(cv_json):
     if test_size and test_size > 1.0:
         cv_json['test_size'] = int(test_size)
 
-    cv_class = getattr(model_selection, cv)
+    if cv == 'OrderedKFold':
+        cv_class = OrderedKFold
+    else:
+        cv_class = getattr(model_selection, cv)
     splitter = cv_class(**cv_json)
 
     return splitter, groups
