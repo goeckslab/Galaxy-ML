@@ -2,8 +2,10 @@
 class IRAPScore
 class IRAPSClassifier
 class BinarizeTargetClassifier
+class BinarizeTargetRegressor
 class _BinarizeTargetScorer
 class _BinarizeTargetProbaScorer
+class OrderedKFold
 
 binarize_auc_scorer
 binarize_average_precision_scorer
@@ -22,7 +24,7 @@ import warnings
 from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn import metrics
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, clone, RegressorMixin
 from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
@@ -303,6 +305,8 @@ class OrderedKFold(_BaseKFold):
     ----------
     n_splits : int, default=3
         Number of folds. Must be at least 2.
+    shuffle: bool
+    random_state: None or int
     """
     def __init__(self, n_splits=3, shuffle=False, random_state=None):
         super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
@@ -314,11 +318,23 @@ class OrderedKFold(_BaseKFold):
         sorted_index = np.argsort(y)
         if self.shuffle:
             current = 0
-            for i in range(n_samples/int(n_splits)):
-                start, stop = current, current + n_splits
-                check_random_state(self.random_state).shuffle(sorted_index[start:stop])
-                current = stop
-            check_random_state(self.random_state).shuffle(sorted_index[current:])
+            seed = self.random_state
+            if seed is None:
+                for i in range(n_samples/int(n_splits)):
+                    start, stop = current, current + n_splits
+                    random.shuffle(sorted_index[start:stop])
+                    current = stop
+                random.shuffle(sorted_index[current:])
+            elif type(seed) is int:
+                for i in range(n_samples/int(n_splits)):
+                    start, stop = current, current + n_splits
+                    random.Random(seed).shuffle(sorted_index[start:stop])
+                    current = stop
+                    seed += 1
+                random.Random(seed).shuffle(sorted_index[current:])
+            else:
+                raise Exception("Invalid random_state for OrderedKFold, "
+                                "only None and int are supported!")
         
         for i in range(n_splits):
             yield sorted_index[i:n_samples:n_splits]
