@@ -53,8 +53,9 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
     verbose: 0 or geater, if not 0, print progress
     random_state: int, random seed number
     """
+
     def __init__(self, n_iter=1000, positive_thres=-1,
-                negative_thres=0, verbose=0, random_state=None):
+                 negative_thres=0, verbose=0, random_state=None):
         """
         IRAPS turns towwards general Anomaly Detection
         It comapares positive_thres with negative_thres,
@@ -77,7 +78,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         y: 1-d array-like (n_samples)
         """
         X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
-        #each iteration select a random number of random subset of training samples
+        # each iteration select a random number of random subset of training samples
         # this is somewhat different from the original IRAPS method,
         # but effect is almost the same.
         SAMPLE_SIZE = [0.25, 0.75]
@@ -93,24 +94,24 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             ## TODO: support more random_state/seed
             if seed > max_try:
                 if i < 50:
-                    raise Exception("Max tries reached, too few (%d) "
-                                    "valid feature lists were generated!" %i)
+                    raise ValueError("Max tries reached, too few (%d) "
+                                     "valid feature lists were generated!" % i)
                 else:
-                    warnings.warn("Max tries readched, %d valid feature lists were generated!" %i)
+                    warnings.warn("Max tries readched, %d valid feature lists were generated!" % i)
                     break
             if self.random_state is None:
-                n_select = random.randint(int(n_samples*SAMPLE_SIZE[0]),
-                                          int(n_samples*SAMPLE_SIZE[1]))
+                n_select = random.randint(int(n_samples * SAMPLE_SIZE[0]),
+                                          int(n_samples * SAMPLE_SIZE[1]))
                 index = random.sample(list(range(n_samples)), n_select)
             else:
-                n_select = random.Random(seed).randint(int(n_samples*SAMPLE_SIZE[0]),
-                                                       int(n_samples*SAMPLE_SIZE[1]))
+                n_select = random.Random(seed).randint(int(n_samples * SAMPLE_SIZE[0]),
+                                                       int(n_samples * SAMPLE_SIZE[1]))
                 index = random.Random(seed).sample(list(range(n_samples)), n_select)
             seed += 1
             X_selected, y_selected = X[index], y[index]
 
             # Spliting by z_scores.
-            y_selected = (y_selected - y_selected.mean())/y_selected.std()
+            y_selected = (y_selected - y_selected.mean()) / y_selected.std()
             if self.positive_thres < self.negative_thres:
                 X_selected_positive = X_selected[y_selected < self.positive_thres]
                 X_selected_negative = X_selected[y_selected > self.negative_thres]
@@ -122,12 +123,12 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             if X_selected_positive.shape[0] < 5:
                 if self.random_state is not None:
                     warnings.warn("Error: fewer than 5 positives were selected "
-                                    "while random_state is not None!")
+                                  "while random_state is not None!")
                 continue
 
             if self.verbose:
-                print("Working on iteration %d/%d, %s/%d samples were positive/selected."\
-                        %(i+1, self.n_iter, X_selected_positive.shape[0], n_select))
+                print("Working on iteration %d/%d, %s/%d samples were positive/selected." \
+                      % (i + 1, self.n_iter, X_selected_positive.shape[0], n_select))
             i += 1
 
             # p_values
@@ -142,7 +143,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             positive_mean = X_selected_positive.mean(axis=0)
             negative_mean = X_selected_negative.mean(axis=0)
             mean_change = positive_mean - negative_mean
-            #mean_change = np.select([positive_mean > negative_mean, positive_mean < negative_mean],
+            # mean_change = np.select([positive_mean > negative_mean, positive_mean < negative_mean],
             #                        [positive_mean / negative_mean, -negative_mean / positive_mean])
             # mean_change could be adjusted by power of 2
             # mean_change = 2**mean_change if mean_change>0 else -2**abs(mean_change)
@@ -194,15 +195,19 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
     occurrence: float, occurrence rate selected by set of p_thres and fc_thres
     discretize: float, threshold of z_score to discretize target value
     memory: None, str or joblib.Memory object
+    min_signature_features: int, the mininum number of features in a signature
     """
+
     def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1,
-                 occurrence=0.8, discretize=-1, memory=None):
+                 occurrence=0.8, discretize=-1, memory=None,
+                 min_signature_features=1):
         self.iraps_core = iraps_core
         self.p_thres = p_thres
         self.fc_thres = fc_thres
         self.occurrence = occurrence
         self.discretize = discretize
         self.memory = memory
+        self.min_signature_features = min_signature_features
 
     def fit(self, X, y):
         memory = check_memory(self.memory)
@@ -242,6 +247,10 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         fold_changes[mask_0 == 0] = 0.0
         signature = fold_changes[:, mask].sum(axis=0) / counts[mask]
         signature = np.vstack((signature, base_values[:, mask].mean(axis=0)))
+        # It's not clearn whether min_size could impact prediction performance
+        if signature.shape[1] < self.min_signature_features:
+            raise ValueError("The classifier got None signature or the number of sinature "
+                             "feature is less than minimum!")
 
         self.signature_ = np.asarray(signature)
         self.mask_ = mask
@@ -254,7 +263,6 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
         return self
 
-
     def _get_support_mask(self):
         """
         return mask of feature selection indices
@@ -263,28 +271,19 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
         return self.mask_
 
-    def get_signature(self, min_size=1):
+    def get_signature(self):
         """
         return signature
         """
-        #TODO: implement minimum size of signature
-        # It's not clearn whether min_size could impact prediction performance
         check_is_fitted(self, 'signature_')
 
-        if self.signature_.shape[1] >= min_size:
-            return self.signature_
-        else:
-            return None
+        return self.signature_
 
     def predict(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
         signature = self.get_signature()
-        if signature is None:
-            print("The classifier got None signature or the number of sinature "
-                  "feature is less than minimum!")
-            return
 
         X = as_float_array(X)
         X_transformed = self.transform(X) - signature[1]
@@ -299,8 +298,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
 class OrderedKFold(_BaseKFold):
     """
-    Split into K fold based on ordered target value 
-    
+    Split into K fold based on ordered target value
+
     Parameters
     ----------
     n_splits : int, default=3
@@ -308,6 +307,7 @@ class OrderedKFold(_BaseKFold):
     shuffle: bool
     random_state: None or int
     """
+
     def __init__(self, n_splits=3, shuffle=False, random_state=None):
         super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
 
@@ -320,13 +320,13 @@ class OrderedKFold(_BaseKFold):
             current = 0
             seed = self.random_state
             if seed is None:
-                for i in range(n_samples/int(n_splits)):
+                for i in range(n_samples / int(n_splits)):
                     start, stop = current, current + n_splits
                     random.shuffle(sorted_index[start:stop])
                     current = stop
                 random.shuffle(sorted_index[current:])
             elif type(seed) is int:
-                for i in range(n_samples/int(n_splits)):
+                for i in range(n_samples / int(n_splits)):
                     start, stop = current, current + n_splits
                     random.Random(seed).shuffle(sorted_index[start:stop])
                     current = stop
@@ -335,7 +335,7 @@ class OrderedKFold(_BaseKFold):
             else:
                 raise Exception("Invalid random_state for OrderedKFold, "
                                 "only None and int are supported!")
-        
+
         for i in range(n_splits):
             yield sorted_index[i:n_samples:n_splits]
 
@@ -369,6 +369,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
     discretize_value: float
         The threshold value used to discretize True and False targets
     """
+
     def __init__(self, classifier, z_score=-1, value=None, less_is_positive=True):
         self.classifier = classifier
         self.z_score = z_score
@@ -399,7 +400,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             y_trans = y > discretize_value
 
         self.classifier_ = clone(self.classifier)
-        
+
         if sample_weight is not None:
             self.classifier_.fit(X, y_trans, sample_weight=sample_weight)
         else:
@@ -435,6 +436,7 @@ class _BinarizeTargetScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
+
     def __call__(self, clf, X, y, sample_weight=None):
         # support pipeline object
         if isinstance(clf, Pipeline):
@@ -456,6 +458,7 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
+
     def __call__(self, clf, X, y, sample_weight=None):
         # support pipeline object
         if isinstance(clf, Pipeline):
@@ -473,19 +476,19 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
             return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
 
 
-#accuracy
+# accuracy
 binarize_accuracy_scorer = _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
 
-#balanced_accuracy
+# balanced_accuracy
 binarize_balanced_accuracy_scorer = _BinarizeTargetScorer(metrics.balanced_accuracy_score, 1, {})
- 
-#precision
+
+# precision
 binarize_precision_scorer = _BinarizeTargetScorer(metrics.precision_score, 1, {})
 
-#recall
+# recall
 binarize_recall_scorer = _BinarizeTargetScorer(metrics.recall_score, 1, {})
 
-#roc_auc
+# roc_auc
 binarize_auc_scorer = _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
 
 # average_precision_scorer
@@ -526,6 +529,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
     discretize_value: float
         The threshold value used to discretize True and False targets
     """
+
     def __init__(self, regressor, z_score=-1, value=None, less_is_positive=True):
         self.regressor = regressor
         self.z_score = z_score
@@ -574,7 +578,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self, 'regressor_')
         y_pred = self.regressor_.predict(X)
-        if not np.all((y_pred>=0) & (y_pred<=1)):
+        if not np.all((y_pred >= 0) & (y_pred <= 1)):
             y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
         if self.less_is_positive:
             y_pred = 1 - y_pred
