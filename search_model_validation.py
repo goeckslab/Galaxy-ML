@@ -215,6 +215,8 @@ if __name__ == '__main__':
     # cache iraps_core fits could increase search speed significantly
     if pipeline.steps[-1][-1].__class__.__name__ == 'IRAPSClassifier':
         pipeline.set_params(estimator__memory=CACHE_DIR)
+        # TODO run irapsclassifier in parallel? No solution yet
+        options['n_jobs'] = 1
 
     search_params = get_search_params(params_builder)
     searcher = optimizer(pipeline, search_params, **options)
