@@ -248,7 +248,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         signature = fold_changes[:, mask].sum(axis=0) / counts[mask]
         signature = np.vstack((signature, base_values[:, mask].mean(axis=0)))
         # It's not clearn whether min_size could impact prediction performance
-        if signature.shape[1] < self.min_signature_features:
+        if signature is None or signature.shape[1] < self.min_signature_features:
             raise ValueError("The classifier got None signature or the number of sinature "
                              "feature is less than minimum!")
 
