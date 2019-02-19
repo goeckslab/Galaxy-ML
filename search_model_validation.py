@@ -241,6 +241,7 @@ if __name__ == '__main__':
         if col.endswith('_primary'):
             col_rename[col] = col[:-7] + primary_scoring
     cv_result.rename(inplace=True, columns=col_rename)
+    cv_result = cv_result[sorted(cv_result.columns)]
     cv_result.to_csv(path_or_buf=outfile_result, sep='\t', header=True, index=False)
 
     if outfile_estimator:

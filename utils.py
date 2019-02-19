@@ -26,7 +26,7 @@ from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
 
 try:
     import skrebate
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 try:
@@ -35,7 +35,7 @@ except NameError:
     try:
         from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
-    except ModuleNotFoundError:
+    except ImportError:
         pass
 
 try:
@@ -647,26 +647,6 @@ def get_estimator(estimator_json):
         with open(c_estimator, 'rb') as model_handler:
             new_model = load_model(model_handler)
         return new_model
-
-    if estimator_module == 'IRAPS':
-        iraps_core = IRAPSCore()
-        core_params = estimator_json['text_params'].strip()
-        if core_params != '':
-            try:
-                params = safe_eval('dict(' + core_params + ')')
-            except ValueError:
-                sys.exit("Unsupported parameter input: `%s`" % core_params)
-            iraps_core.set_params(**params)
-        options = {}
-        if estimator_json['p_thres'] is not None:
-            options['p_thres'] = estimator_json['p_thres']
-        if estimator_json['fc_thres'] is not None:
-            options['fc_thres'] = estimator_json['fc_thres']
-        if estimator_json['occurrence'] is not None:
-            options['occurrence'] = estimator_json['occurrence']
-        if estimator_json['discretize'] is not None:
-            options['discretize'] = estimator_json['discretize']
-        return IRAPSClassifier(iraps_core, **options)
 
     if estimator_module == "binarize_target":
         wrapped_estimator = estimator_json['wrapped_estimator']

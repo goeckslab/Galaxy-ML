@@ -112,6 +112,25 @@ def get_component(input_json, check_none=False):
         if options != '':
             options = safe_eval( 'dict(' + options + ')' )
             obj.set_params(**options)
+    elif input_json['component_type'] == 'IRAPS':
+        iraps_core = IRAPSCore()
+        core_params = input_json['text_params'].strip()
+        if core_params != '':
+            try:
+                params = safe_eval('dict(' + core_params + ')')
+            except ValueError:
+                sys.exit("Unsupported parameter input: `%s`" % core_params)
+            iraps_core.set_params(**params)
+        options = {}
+        if input_json['p_thres'] is not None:
+            options['p_thres'] = input_json['p_thres']
+        if input_json['fc_thres'] is not None:
+            options['fc_thres'] = input_json['fc_thres']
+        if input_json['occurrence'] is not None:
+            options['occurrence'] = input_json['occurrence']
+        if input_json['discretize'] is not None:
+            options['discretize'] = input_json['discretize']
+        obj = IRAPSClassifier(iraps_core, **options)
     if 'n_jobs' in obj.get_params():
         obj.set_params( n_jobs=N_JOBS )
     return obj, is_imblearn
@@ -165,6 +184,7 @@ with open('$outfile', 'wb') as out_handler:
                     <option value="FeatureAgglomeration">Agglomerate Features</option>
                     <option value="skrebate">SK-rebate feature selection</option>
                     <option value="imblearn">imbalanced-learn sampling</option>
+                    <option value="IRAPS">IRAPS -- feature selector and classifier</option>
                 </param>
                 <when value="None"/>
                 <when value="pre_processor">
@@ -191,28 +211,27 @@ with open('$outfile', 'wb') as out_handler:
                 <when value="imblearn">
                     <expand macro="imbalanced_learn_sampling"/>
                 </when>
+                <when value="IRAPS">
+                    <expand macro="estimator_params_text"
+                        label="Type in parameter settings for IRAPSCORE if different from default:"
+                        help="Default(=blank): n_iter=1000, responsive_thres=-1, resistant_thres=0, random_state=None. No double quotes"/>
+                    <param argument="p_thres" type="float" value="0.001" label="P value threshold" help="Float. default=0.001"/>
+                    <param argument="fc_thres" type="float" value="0.1" label="fold change threshold" help="Float. default=0.1"/>
+                    <param argument="occurrence" type="float" value="0.7" label="reservation factor" help="Float. default=0.7"/>
+                    <param argument="discretize" type="float" value="-1" label="The z_score threshold to discretize target value" help="Float. default=-1"/>
+                </when>
             </conditional>
         </repeat>
         <section name="final_estimator" title="Final Estimator" expanded="true">
             <conditional name="estimator_selector">
                 <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
                     <expand macro="estimator_module_options">
-                        <option value="IRAPS">IRAPS</option>
                         <option value="binarize_target">Binarize Target Classifier or Regressor</option>
                         <option value="customer_estimator">Load a customer estimator</option>
                         <option value="none">none -- The last component of pre-processing step will turn to a final estimator</option>
                     </expand>
                 </param>
                 <expand macro="estimator_suboptions">
-                    <when value="IRAPS">
-                        <expand macro="estimator_params_text"
-                            label="Type in parameter settings for IRAPSCORE if different from default:"
-                            help="Default(=blank): n_iter=1000, responsive_thres=-1, resistant_thres=0, random_state=None. No double quotes"/>
-                        <param argument="p_thres" type="float" value="0.001" label="P value threshold" help="Float. default=0.001"/>
-                        <param argument="fc_thres" type="float" value="0.1" label="fold change threshold" help="Float. default=0.1"/>
-                        <param argument="occurrence" type="float" value="0.7" label="reservation factor" help="Float. default=0.7"/>
-                        <param argument="discretize" type="float" value="-1" label="The z_score threshold to discretize target value" help="Float. default=-1"/>
-                    </when>
                     <when value="binarize_target">
                         <param name="clf_or_regr" type="select" label="Classifier or Regressor:">
                             <option value="BinarizeTargetClassifier">BinarizeTargetClassifier</option>
