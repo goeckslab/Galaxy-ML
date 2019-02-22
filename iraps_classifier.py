@@ -320,13 +320,13 @@ class OrderedKFold(_BaseKFold):
             current = 0
             seed = self.random_state
             if seed is None:
-                for i in range(n_samples / int(n_splits)):
+                for i in range(n_samples // int(n_splits)):
                     start, stop = current, current + n_splits
                     random.shuffle(sorted_index[start:stop])
                     current = stop
                 random.shuffle(sorted_index[current:])
             elif type(seed) is int:
-                for i in range(n_samples / int(n_splits)):
+                for i in range(n_samples // int(n_splits)):
                     start, stop = current, current + n_splits
                     random.Random(seed).shuffle(sorted_index[start:stop])
                     current = stop
