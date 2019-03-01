@@ -203,7 +203,7 @@ class DyRFE(RFE):
             if step_score:
                 self.scores_.append(step_score(estimator, features))
             support_[features[ranks][:threshold]] = False
-            ranking_[np.logical_not(support_)] = 1
+            ranking_[np.logical_not(support_)] += 1
 
             step_i += 1
 
