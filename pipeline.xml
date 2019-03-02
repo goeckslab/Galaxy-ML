@@ -104,6 +104,8 @@ def get_component(input_json, check_none=False):
         algorithm = input_json['imblearn_selector']['select_algorithm']
         if algorithm == 'over_sampling.SMOTENC':
             obj = over_sampling.SMOTENC(categorical_features=[])
+        elif algorithm == 'Z_RandomOverSampler':
+            obj = Z_RandomOverSampler()
         else:
             globals = algorithm.split('.')
             mod, klass = globals[0], globals[1]
@@ -360,7 +362,7 @@ with open('$outfile', 'wb') as out_handler:
             </conditional>
             <param name="selected_module" value="ensemble"/>
             <param name="selected_estimator" value="AdaBoostClassifier"/>
-            <output name="outfile" file="pipeline08" compare="sim_size" delta="5"/>
+            <output name="outfile" file="pipeline08" compare="sim_size" delta="20"/>
         </test>
         <test>
             <conditional name="component_selector">

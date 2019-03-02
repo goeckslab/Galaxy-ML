@@ -1655,6 +1655,7 @@
         <option value="over_sampling.SMOTENC">over_sampling.SMOTENC</option>
         <option value="combine.SMOTEENN">combine.SMOTEENN</option>
         <option value="combine.SMOTETomek">combine.SMOTETomek</option>
+        <option value="Z_RandomOverSampler">Z_RandomOverSampler - for regression</option>
       </param>
       <when value="under_sampling.ClusterCentroids">
         <expand macro="estimator_params_text"
@@ -1731,6 +1732,10 @@
       <when value="combine.SMOTETomek">
         <expand macro="estimator_params_text"
               help="Default(=blank): sampling_strategy='auto', random_state=None, smote=None, tomek=None."/>
+      </when>
+      <when value="Z_RandomOverSampler">
+        <expand macro="estimator_params_text"
+              help="Default(=blank): sampling_strategy='auto', random_state=None, negative_thres=0, positive_thres=-1."/>
       </when>
     </conditional>
   </xml>
