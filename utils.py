@@ -37,6 +37,11 @@ except ImportError:
     pass
 
 try:
+    import imblearn
+except ImportError:
+    pass
+
+try:
     IRAPSClassifier
 except NameError:
     try:
@@ -683,7 +688,9 @@ class SafeEval(Interpreter):
                 'skrebate_MultiSURFstar': getattr(skrebate, 'MultiSURFstar'),
                 'skrebate_TuRF': getattr(skrebate, 'TuRF'),
                 'xgboost_XGBClassifier' : getattr(xgboost, 'XGBClassifier'),
-                'xgboost_XGBRegressor' : getattr(xgboost, 'XGBRegressor')
+                'xgboost_XGBRegressor' : getattr(xgboost, 'XGBRegressor'),
+                'imblearn_over_sampling': getattr(imblearn, 'over_sampling'),
+                'imblearn_combine': getattr(imblearn, 'combine')
             }
             syms.update(estimator_table)
 
