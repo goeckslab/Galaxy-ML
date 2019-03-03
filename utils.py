@@ -406,6 +406,9 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
             for train, test in cv.split(X, y, groups))
 
         scores = np.sum(scores, axis=0)
+        diff = int(scores.shape[0]) - len(step)
+        if diff > 0:
+            step = np.r_[step, [step[-1]] * diff]
         scores_rev = scores[::-1]
         argmax_idx = len(scores) - np.argmax(scores_rev) - 1
         n_features_to_select = max(
