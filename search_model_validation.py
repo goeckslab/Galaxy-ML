@@ -20,7 +20,8 @@ from sklearn.externals import joblib
 
 from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
-from utils import get_cv, get_scoring, get_X_y, load_model, read_columns, SafeEval
+from utils import (Z_RandomOverSampler, MyPipeline, DyRFE, DyRFECV,
+                    get_cv, get_scoring, get_X_y, load_model, read_columns, SafeEval)
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))

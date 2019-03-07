@@ -449,7 +449,9 @@ class SafePickler(pickle.Unpickler):
             'BinarizeTargetClassifier': BinarizeTargetClassifier,
             'BinarizeTargetRegressor': BinarizeTargetRegressor,
             'OrderedKFold': OrderedKFold,
-            'Z_RandomOverSampler': Z_RandomOverSampler
+            'Z_RandomOverSampler': Z_RandomOverSampler,
+            'DyRFECV': DyRFECV,
+            'DyRFE': DyRFE
         }
 
         if module == '__main__':
