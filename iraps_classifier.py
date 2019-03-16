@@ -31,6 +31,7 @@ from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
+from sklearn.utils._joblib import Parallel, delayed
 from sklearn.utils.validation import (_num_samples, check_array, check_is_fitted,
                                       check_memory, column_or_1d)
 
@@ -47,15 +48,31 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
     Parameters
     ----------
-    n_iter: int, sample count
-    positive_thres: float, z_score shreshold to discretize positive target values
-    negative_thres: float, z_score threshold to discretize negative target values
-    verbose: 0 or geater, if not 0, print progress
-    random_state: int, random seed number
+    n_iter : int, sample count
+    positive_thres : float, z_score shreshold to discretize positive target values
+    negative_thres : float, z_score threshold to discretize negative target values
+    verbose : 0 or geater, if not 0, print progress
+    n_jobs : int, default=1. The number of CPUs to use to do the computation.
+    pre_dispatch : int, or string.
+        Controls the number of jobs that get dispatched during parallel
+        execution. Reducing this number can be useful to avoid an
+        explosion of memory consumption when more jobs get dispatched
+        than CPUs can process. This parameter can be:
+            - None, in which case all the jobs are immediately
+              created and spawned. Use this for lightweight and
+              fast-running jobs, to avoid delays due to on-demand
+              spawning of the jobs
+            - An int, giving the exact number of total jobs that are
+              spawned
+            - A string, giving an expression as a function of n_jobs,
+              as in '2*n_jobs'
+    random_state : int, random seed number
     """
 
     def __init__(self, n_iter=1000, positive_thres=-1,
-                 negative_thres=0, verbose=0, random_state=None):
+                 negative_thres=0, verbose=0, n_jobs=1,
+                 pre_dispatch='2*n_jobs',
+                 random_state=None):
         """
         IRAPS turns towwards general Anomaly Detection
         It comapares positive_thres with negative_thres,
@@ -70,6 +87,8 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.positive_thres = positive_thres
         self.negative_thres = negative_thres
         self.verbose = verbose
+        self.n_jobs = n_jobs
+        self.pre_dispatch = pre_dispatch
         self.random_state = random_state
 
     def fit(self, X, y):
@@ -78,65 +97,41 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         y: 1-d array-like (n_samples)
         """
         X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
-        # each iteration select a random number of random subset of training samples
-        # this is somewhat different from the original IRAPS method,
-        # but effect is almost the same.
-        SAMPLE_SIZE = [0.25, 0.75]
-        n_samples = X.shape[0]
-        pvalues = None
-        fold_changes = None
-        base_values = None
 
-        i = 0
-        seed = self.random_state if self.random_state else 0
-        max_try = seed + 2000
-        while i < self.n_iter:
-            ## TODO: support more random_state/seed
-            if seed > max_try:
-                if i < 50:
-                    raise ValueError("Max tries reached, too few (%d) "
-                                     "valid feature lists were generated!" % i)
-                else:
-                    warnings.warn("Max tries readched, %d valid feature lists were generated!" % i)
-                    break
-            if self.random_state is None:
+        def _stochastic_sampling(X, y, random_state=None, positive_thres=-1, negative_thres=0):
+            # each iteration select a random number of random subset of training samples
+            # this is somewhat different from the original IRAPS method,
+            # but effect is almost the same.
+            SAMPLE_SIZE = [0.25, 0.75]
+            n_samples = X.shape[0]
+
+            if random_state is None:
                 n_select = random.randint(int(n_samples * SAMPLE_SIZE[0]),
                                           int(n_samples * SAMPLE_SIZE[1]))
                 index = random.sample(list(range(n_samples)), n_select)
             else:
-                n_select = random.Random(seed).randint(int(n_samples * SAMPLE_SIZE[0]),
+                n_select = random.Random(random_state).randint(int(n_samples * SAMPLE_SIZE[0]),
                                                        int(n_samples * SAMPLE_SIZE[1]))
-                index = random.Random(seed).sample(list(range(n_samples)), n_select)
-            seed += 1
+                index = random.Random(random_state).sample(list(range(n_samples)), n_select)
+
             X_selected, y_selected = X[index], y[index]
 
             # Spliting by z_scores.
             y_selected = (y_selected - y_selected.mean()) / y_selected.std()
-            if self.positive_thres < self.negative_thres:
-                X_selected_positive = X_selected[y_selected < self.positive_thres]
-                X_selected_negative = X_selected[y_selected > self.negative_thres]
+            if positive_thres < negative_thres:
+                X_selected_positive = X_selected[y_selected < positive_thres]
+                X_selected_negative = X_selected[y_selected > negative_thres]
             else:
-                X_selected_positive = X_selected[y_selected > self.positive_thres]
-                X_selected_negative = X_selected[y_selected < self.negative_thres]
+                X_selected_positive = X_selected[y_selected > positive_thres]
+                X_selected_negative = X_selected[y_selected < negative_thres]
 
             # For every iteration, at least 5 responders are selected
             if X_selected_positive.shape[0] < 5:
-                if self.random_state is not None:
-                    warnings.warn("Error: fewer than 5 positives were selected "
-                                  "while random_state is not None!")
-                continue
-
-            if self.verbose:
-                print("Working on iteration %d/%d, %s/%d samples were positive/selected." \
-                      % (i + 1, self.n_iter, X_selected_positive.shape[0], n_select))
-            i += 1
+                warnings.warn("Warning: fewer than 5 positives were selected!")
+                return
 
             # p_values
             _, p = ttest_ind(X_selected_positive, X_selected_negative, axis=0, equal_var=False)
-            if pvalues is None:
-                pvalues = p
-            else:
-                pvalues = np.vstack((pvalues, p))
 
             # fold_change == mean change?
             # TODO implement other normalization method
@@ -147,18 +142,33 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             #                        [positive_mean / negative_mean, -negative_mean / positive_mean])
             # mean_change could be adjusted by power of 2
             # mean_change = 2**mean_change if mean_change>0 else -2**abs(mean_change)
-            if fold_changes is None:
-                fold_changes = mean_change
-            else:
-                fold_changes = np.vstack((fold_changes, mean_change))
 
-            if base_values is None:
-                base_values = negative_mean
-            else:
-                base_values = np.vstack((base_values, negative_mean))
+            return p, mean_change, negative_mean
 
-        self.fold_changes_ = np.asarray(fold_changes)
+        parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+                            pre_dispatch=self.pre_dispatch)
+        if self.random_state is None:
+            res = parallel(delayed(_stochastic_sampling)(
+                    X, y, random_state=None,
+                    positive_thres=self.positive_thres,
+                    negative_thres=self.negative_thres)
+                        for i in range(self.n_iter))
+        else:
+            res = parallel(delayed(_stochastic_sampling)(
+                    X, y, random_state=seed,
+                    positive_thres=self.positive_thres,
+                    negative_thres=self.negative_thres)
+                        for seed in range(self.random_state, self.random_state+self.n_iter))
+        res = [_ for _ in res if _]
+        if len(res) < 50:
+            raise ValueError("too few (%d) valid feature lists "
+                            "were generated!" % len(res))
+        pvalues = np.vstack([x[0] for x in res])
+        fold_changes = np.vstack([x[1] for x in res])
+        base_values = np.vstack([x[2] for x in res])
+
         self.pvalues_ = np.asarray(pvalues)
+        self.fold_changes_ = np.asarray(fold_changes)
         self.base_values_ = np.asarray(base_values)
 
         return self
