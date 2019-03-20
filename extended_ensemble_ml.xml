@@ -1,0 +1,118 @@
+<tool id="ex_ensemble_machine_learning" name="Extended Ensemble Learning" version="0.0.1">
+    <description>stacks multiple algorithms to form a stronger model</description>
+    <macros>
+        <import>main_macros.xml</import>
+    </macros>
+    <expand macro="python_requirements">
+        <!--requirement type="package" version="0.15.0.0">mlxtend</requirement-->
+    </expand>
+    <expand macro="macro_stdio"/>
+    <version_command>echo "$version"</version_command>
+    <command>
+        <![CDATA[
+        python "$main_script" '$inputs'
+        ]]>
+    </command>
+    <configfiles>
+        <inputs name="inputs" />
+        <configfile name="main_script">
+            <![CDATA[
+import json
+import warnings
+from mlxtend.regressor import StackingCVRegressor
+
+warnings.filterwarnings('ignore')
+
+with open('$__tool_directory__/sk_whitelist.json', 'r') as f:
+    sk_whitelist = json.load(f)
+exec(open('$__tool_directory__/utils.py').read(), globals())
+
+input_json_path = sys.argv[1]
+with open(input_json_path, 'r') as param_handler:
+    params = json.load(param_handler)
+
+base_estimators = []
+#for $base in $base_est_builder:
+with open('${base['base_estimator']}', 'rb') as handler:
+    model = load_model(handler)
+    base_estimators.append(model)
+#end for
+
+with open('$meta_estimator', 'rb') as f:
+    meta_estimator = load_model(f)
+
+options = params['options']
+splitter, groups = get_cv(options.pop('cv_selector'))
+options['cv'] = splitter
+if '$estimator_type' == 'StackingCVRegressor':
+    ensemble_estimator = StackingCVRegressor(
+            regressors=base_estimators,
+            meta_regressor=meta_estimator,
+            **options
+    )
+
+print(ensemble_estimator)
+with open('$outfile', 'wb') as out_handler:
+    pickle.dump(ensemble_estimator, out_handler, pickle.HIGHEST_PROTOCOL)
+
+            ]]>
+        </configfile>
+    </configfiles>
+    <inputs>
+        <param name="estimator_type" type="select" label="Choose the estimator selection">
+            <option value="StackingCVRegressor">regressor -- StackingCVRegressor</option>
+        </param>
+        <repeat name="base_est_builder" min="1" max="20" title="Base Estimator">
+            <param name="base_estimator" type="data" format="zip,json" label="Select the dataset containing base estimator" help="One estimator at a time."/>
+        </repeat>
+        <param name="meta_estimator" type="data" format="zip,json" label="Select the dataset containing the Meta estimator"/>
+        <section name="options" title="Advanced Options" expanded="false">
+            <expand macro="cv_reduced"/>
+            <!--ToDo support group splitters-->
+            <param argument="use_features_in_secondary" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
+            <param argument="store_train_meta_features" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
+            <param argument="refit" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true"/>
+        </section>
+    </inputs>
+    <outputs>
+        <data format="zip" name="outfile" label="${estimator_type} on ${on_string}"/>
+    </outputs>
+    <tests>
+        <test>
+            <repeat name="base_est_builder">
+                <param name="base_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+            </repeat>
+            <repeat name="base_est_builder">
+                <param name="base_estimator" value="XGBRegressor01.zip" ftype="zip"/>
+            </repeat>
+            <param name="meta_estimator" value="LinearRegression01.zip" ftype="zip"/>
+            <output name="outfile" file="StackingCVRegressor01.zip" compare="sim_size" delta="5"/>
+        </test>
+    </tests>
+    <help>
+        <![CDATA[
+**What it does**
+        ]]>
+    </help>
+    <expand macro="sklearn_citation">
+        <expand macro="skrebate_citation"/>
+        <expand macro="xgboost_citation"/>
+        <expand macro="imblearn_citation"/>
+        <citation type="bibtex">
+            @article{raschkas_2018_mlxtend,
+                author       = {Sebastian Raschka},
+                title        = {MLxtend: Providing machine learning and data science 
+                                                utilities and extensions to Python’s  
+                                                scientific computing stack},
+                journal      = {The Journal of Open Source Software},
+                volume       = {3},
+                number       = {24},
+                month        = apr,
+                year         = 2018,
+                publisher    = {The Open Journal},
+                doi          = {10.21105/joss.00638},
+                url          = {http://joss.theoj.org/papers/10.21105/joss.00638}
+            }
+        </citation>
+    </expand>
+</tool>
