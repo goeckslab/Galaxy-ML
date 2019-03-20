@@ -3,9 +3,7 @@
     <macros>
         <import>main_macros.xml</import>
     </macros>
-    <expand macro="python_requirements">
-        <!--requirement type="package" version="0.15.0.0">mlxtend</requirement-->
-    </expand>
+    <expand macro="python_requirements"/>
     <expand macro="macro_stdio"/>
     <version_command>echo "$version"</version_command>
     <command>
