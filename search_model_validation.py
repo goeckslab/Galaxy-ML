@@ -11,6 +11,7 @@ import xgboost
 import warnings
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
+from mlxtend import regressor
 from sklearn import (cluster, compose, decomposition, ensemble, feature_extraction,
                     feature_selection, gaussian_process, kernel_approximation, metrics,
                     model_selection, naive_bayes, neighbors, pipeline, preprocessing,

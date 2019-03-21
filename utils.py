@@ -57,6 +57,14 @@ except NameError:
         pass
 
 try:
+    mlxtend
+except NameError:
+    try:
+        from mlxtend import regressor
+    except ImportError:
+        pass
+
+try:
     sk_whitelist
 except NameError:
     sk_whitelist = None
@@ -433,15 +441,20 @@ class SafePickler(pickle.Unpickler):
                 or  (   (   module.startswith('sklearn.')
                             or module.startswith('xgboost.')
                             or module.startswith('skrebate.')
-                            or module.startswith('imblearn')
+                            or module.startswith('imblearn.')
+                            or module.startswith('mlxtend.')
                             or module.startswith('numpy.')
                             or module == 'numpy'
                         )
                         and (name not in bad_names)
                     ):
                 # TODO: replace with a whitelist checker
-                if fullname not in sk_whitelist['SK_NAMES'] + sk_whitelist['SKR_NAMES'] + sk_whitelist['XGB_NAMES'] + sk_whitelist['NUMPY_NAMES'] + sk_whitelist['IMBLEARN_NAMES'] + good_names:
-                    print("Warning: global %s is not in pickler whitelist yet and will loss support soon. Contact tool author or leave a message at github.com" % fullname)
+                if fullname not in sk_whitelist['SK_NAMES'] + sk_whitelist['SKR_NAMES']\
+                        + sk_whitelist['XGB_NAMES'] + sk_whitelist['NUMPY_NAMES']\
+                        + sk_whitelist['IMBLEARN_NAMES'] + sk_whitelist['MLXTEND_NAMES']\
+                        + good_names:
+                    print("Warning: global %s is not in pickler whitelist yet and will loss support soon. "
+                          "Contact tool author or leave a message at github.com" % fullname)
                 mod = sys.modules[module]
                 return getattr(mod, name)
 
