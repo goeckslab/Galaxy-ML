@@ -1,20 +1,23 @@
 <tool id="keras_dl_model" name="Keras Model Builder" version="@VERSION@">
-	<description>constructs a deep learning model</description>
-	<macros>
-		<import>main_macros.xml</import>
-	</macros>
-	<expand macro="python_requirements"/>
-	<expand macro="macro_stdio"/>
-	<version_command>echo "@VERSION@"</version_command>
-	<command>
-		<![CDATA[
-		cp '$inputs' '$outfile'
-		]]>
-	</command>
-	<configfiles>
-		<inputs name="inputs"/>
+  <description>constructs a deep learning model</description>
+  <macros>
+    <import>main_macros.xml</import>
+  </macros>
+  <requirements>
+    <requirement type="package" version="1.13.1">tensorflow</requirement>
+    <requirement type="package" version="2.2.4">Keras</requirement>
+  </requirements>
+  <expand macro="macro_stdio"/>
+  <version_command>echo "@VERSION@"</version_command>
+  <command>
+    <![CDATA[
+    cp '$inputs' '$outfile'
+    ]]>
+  </command>
+  <configfiles>
+    <inputs name="inputs"/>
   </configfiles>
-	<inputs>
+  <inputs>
     <param name="learning_type" type="select" label="Do classification or regression?">
       <option value="keras_classifier">KerasClassifier</option>
       <option value="keras_regressor">KerasRegressor</option>
@@ -323,22 +326,19 @@
     <!--param name="metrics" type="select" label="Select metrics"-->
 	</inputs>
   <outputs>
-		<data format="json" name="outfile"/>
-	</outputs>
-	<tests>
-		<test>
-			<param name="layer_type" value="Dense"/>
-			<output name="outfile" file="best_score_.tabular"/>
-		</test>
-	</tests>
-	<help>
-			<![CDATA[
+    <data format="json" name="outfile"/>
+  </outputs>
+  <tests>
+    <test>
+      <param name="layer_type" value="Dense"/>
+      <output name="outfile" file="best_score_.tabular"/>
+    </test>
+  </tests>
+  <help>
+      <![CDATA[
 **Help**
-			]]>
-	</help>
-	<expand macro="sklearn_citation">
-		<expand macro="skrebate_citation"/>
-		<expand macro="xgboost_citation"/>
-		<expand macro="imblearn_citation"/>
-	</expand>
+      ]]>
+  </help>
+  <expand macro="sklearn_citation">
+  </expand>
 </tool>
