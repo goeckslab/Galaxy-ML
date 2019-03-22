@@ -1,5 +1,6 @@
 import ast
 import json
+import imblearn
 import numpy as np
 import os
 import pandas
@@ -7,12 +8,15 @@ import pickle
 import re
 import scipy
 import sklearn
+import skrebate
 import sys
 import warnings
 import xgboost
 
 from collections import Counter
 from asteval import Interpreter, make_symbol_table
+from imblearn import under_sampling, over_sampling, combine
+from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn import (cluster, compose, decomposition, ensemble, feature_extraction,
                     feature_selection, gaussian_process, kernel_approximation, metrics,
                     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
@@ -26,17 +30,11 @@ from sklearn.metrics.scorer import check_scoring
 from sklearn.utils import check_X_y, safe_indexing, safe_sqr
 from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
 
-
 try:
-    import skrebate
-except ImportError:
-    pass
-
-try:
-    import imblearn
-    from imblearn.pipeline import Pipeline as imbPipeline
-except ImportError:
-    imblearn = None
+    import mlxtend
+    from mlxtend import regressor
+except ImportError as e:
+    print(e)
     pass
 
 try:
@@ -53,14 +51,6 @@ try:
 except NameError:
     try:
         from preprocessors import Z_RandomOverSampler
-    except ImportError:
-        pass
-
-try:
-    mlxtend
-except NameError:
-    try:
-        from mlxtend import regressor
     except ImportError:
         pass
 
@@ -89,7 +79,7 @@ class MyPipeline(pipeline.Pipeline):
         return self
 
 
-if imblearn:
+if imbPipeline:
     class MyimbPipeline(imbPipeline):
         def fit(self, X, y=None, **fit_params):
             super(MyimbPipeline, self).fit(X, y, **fit_params)
