@@ -29,7 +29,7 @@ from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._split import _BaseKFold
-from sklearn.pipeline import Pipeline, _name_estimators
+from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
 from sklearn.utils._joblib import Parallel, delayed
 from sklearn.utils.validation import (_num_samples, check_array, check_is_fitted,
@@ -441,27 +441,6 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         check_is_fitted(self, 'classifier_')
         return self.classifier_.predict(X)
 
-    @property
-    def named_classifier(self):
-        return {key: value for key, value in _name_estimators([self.classifier])}
-
-    def get_params(self, deep=True):
-        """class name lowercase"""
-        if not deep:
-            return super(BinarizeTargetClassifier, self).get_params(deep=False)
-        else:
-            out = {}
-
-            for key, value in six.iteritems(super(BinarizeTargetClassifier,
-                                            self).get_params(deep=False)):
-                out['%s' % key] = value
-
-            for name, step in six.iteritems(self.named_classifier):
-                for key, value in six.iteritems(step.get_params(deep=True)):
-                    out['%s__%s' % (name, key)] = value
-
-        return out
-
 
 class _BinarizeTargetScorer(_BaseScorer):
     """
@@ -614,26 +593,6 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         if self.less_is_positive:
             y_pred = 1 - y_pred
         return y_pred
-
-    @property
-    def named_regressor(self):
-        return {key: value for key, value in _name_estimators([self.regressor])}
-
-    def get_params(self, deep=True):
-        """class name lowercase"""
-        if not deep:
-            return super(BinarizeTargetRegressor, self).get_params(deep=False)
-        else:
-            out = {}
-            for key, value in six.iteritems(super(BinarizeTargetRegressor,
-                                            self).get_params(deep=False)):
-                out['%s' % key] = value
-
-            for name, step in six.iteritems(self.named_regressor):
-                for key, value in six.iteritems(step.get_params(deep=True)):
-                    out['%s__%s' % (name, key)] = value
-
-        return out
 
 
 # roc_auc_scorer
