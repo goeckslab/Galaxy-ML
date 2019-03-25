@@ -1,5 +1,5 @@
 """
-class IRAPScore
+class IRAPSCore
 class IRAPSClassifier
 class BinarizeTargetClassifier
 class BinarizeTargetRegressor

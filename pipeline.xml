@@ -218,7 +218,7 @@ with open('$outfile', 'wb') as out_handler:
                 </when>
                 <when value="IRAPS">
                     <expand macro="estimator_params_text"
-                        label="Type in parameter settings for IRAPSCORE if different from default:"
+                        label="Type in parameter settings for IRAPSCore if different from default:"
                         help="Default(=blank): n_iter=1000, responsive_thres=-1, resistant_thres=0, random_state=None. No double quotes"/>
                     <param argument="p_thres" type="float" value="0.001" label="P value threshold" help="Float. default=0.001"/>
                     <param argument="fc_thres" type="float" value="0.1" label="fold change threshold" help="Float. default=0.1"/>
