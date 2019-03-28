@@ -355,10 +355,10 @@
       <option value="all_columns">All columns</option>
     </param>
     <when value="by_index_number">
-      <param name="@COL_NAME@" multiple="@MULTIPLE@" type="data_column" data_ref="@INFILE@" label="Select target column(s):"/>
+      <param name="@COL_NAME@" multiple="@MULTIPLE@" type="data_column" use_header_names="true" data_ref="@INFILE@" label="Select target column(s):"/>
     </when>
     <when value="all_but_by_index_number">
-      <param name="@COL_NAME@" multiple="@MULTIPLE@" type="data_column" data_ref="@INFILE@" label="Select target column(s):"/>
+      <param name="@COL_NAME@" multiple="@MULTIPLE@" type="data_column" use_header_names="true" data_ref="@INFILE@" label="Select target column(s):"/>
     </when>
     <when value="by_header_name">
       <param name="@COL_NAME@" type="text" value="" label="Type header name(s):" help="Comma-separated string. For example: target1,target2"/>
@@ -1287,6 +1287,7 @@
               <column name="name" index="2"/>
               <column name="value" index="1"/>
               <filter type="unique_value" name="unique_param" column="1"/>
+              <filter type="sort_by" name="sorted_param" column="2"/>
             </options>
           </param>
           <param name="sp_list" type="text" value="" optional="true" label="Search list" help="list or array-like, for example: [1, 10, 100, 1000], [True, False] and ['auto', 'sqrt', None]. See `help` section for more examples">
