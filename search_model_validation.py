@@ -216,11 +216,14 @@ if __name__ == '__main__':
             if p.endswith('memory'):
                 if len(p) > 8 and p[:-8].endswith('irapsclassifier'):
                     # cache iraps_core fits could increase search speed significantly
-                    estimator.set_params( p=memory )
+                    new_params = {p: memory}
+                    estimator.set_params( **new_params )
                 elif v:
-                    estimator.set_params( p=None )
+                    new_params = {p, None}
+                    estimator.set_params( **new_params )
             elif p.endswith('n_jobs') and v != N_JOBS:
-                estimator.set_params( p=N_JOBS )
+                new_params = {p: N_JOBS}
+                estimator.set_params( **new_params )
 
     param_grid = get_search_params(params_builder)
     searcher = optimizer(estimator, param_grid, **options)
