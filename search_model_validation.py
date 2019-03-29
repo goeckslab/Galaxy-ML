@@ -11,20 +11,23 @@ import xgboost
 import warnings
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
-from mlxtend import regressor
 from sklearn import (cluster, compose, decomposition, ensemble, feature_extraction,
                     feature_selection, gaussian_process, kernel_approximation, metrics,
                     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
                     svm, linear_model, tree, discriminant_analysis)
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
-
 from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
 from preprocessors import Z_RandomOverSampler
 from utils import (MyPipeline, DyRFE, DyRFECV, get_cv, get_scoring,
                     get_X_y, load_model, read_columns, SafeEval)
 
+try:
+    from mlxtend import regressor
+except ImportError as e:
+    print(e)
+    pass
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = './cached'
