@@ -21,8 +21,7 @@ from mlxtend.regressor import StackingCVRegressor
 
 warnings.filterwarnings('ignore')
 
-with open('$__tool_directory__/sk_whitelist.json', 'r') as f:
-    sk_whitelist = json.load(f)
+WL_FILE = '$__tool_directory__/pk_whitelist.json'
 
 exec(open('$__tool_directory__/iraps_classifier.py').read())
 exec(open('$__tool_directory__/preprocessors.py').read())

@@ -25,8 +25,7 @@ from sklearn import (preprocessing, svm, linear_model, ensemble, naive_bayes,
                     tree, neighbors, decomposition, kernel_approximation, cluster)
 from sklearn.pipeline import make_pipeline
 
-with open('$__tool_directory__/sk_whitelist.json', 'r') as f:
-    sk_whitelist = json.load(f)
+WL_FILE = '$__tool_directory__/pk_whitelist.json'
 
 exec(open('$__tool_directory__/iraps_classifier.py').read())
 exec(open('$__tool_directory__/preprocessors.py').read())

@@ -54,11 +54,11 @@ except NameError:
     except ImportError:
         pass
 
+# handle pickle white list file
 try:
-    sk_whitelist
+    WL_FILE  # global white list file from tools
 except NameError:
-    sk_whitelist = None
-
+    WL_FILE = os.path.join(os.path.dirname(__file__), 'pk_whitelist.json')
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 
@@ -384,12 +384,21 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
 
 class SafePickler(pickle.Unpickler):
     """
-    Used to safely deserialize scikit-learn model objects serialized by cPickle.dump
+    Used to safely deserialize scikit-learn model objects
     Usage:
         eg.: SafePickler.load(pickled_file_object)
     """
-    def find_class(self, module, name):
+    def __init__(self, file):
+        super(SafePickler, self).__init__(file)
+        # load global white list
+        with open(WL_FILE, 'r') as f:
+            self.pk_whitelist = json.load(f)
 
+    def find_class(self, module, name):
+        """ override """
+        pk_whitelist = self.pk_whitelist
+
+        # custom estimators
         if module == '__main__':
             custom_classes = {
                 'IRAPSCore': IRAPSCore,
@@ -402,12 +411,6 @@ class SafePickler(pickle.Unpickler):
                 'DyRFE': DyRFE
             }
             return custom_classes[name]
-        # sk_whitelist could be read from tool
-        global sk_whitelist
-        if not sk_whitelist:
-            whitelist_file = os.path.join(os.path.dirname(__file__), 'sk_whitelist.json')
-            with open(whitelist_file, 'r') as f:
-                sk_whitelist = json.load(f)
 
         bad_names = ('and', 'as', 'assert', 'break', 'class', 'continue',
                     'def', 'del', 'elif', 'else', 'except', 'exec',
@@ -439,9 +442,9 @@ class SafePickler(pickle.Unpickler):
                         and (name not in bad_names)
                     ):
                 # TODO: replace with a whitelist checker
-                if fullname not in sk_whitelist['SK_NAMES'] + sk_whitelist['SKR_NAMES']\
-                        + sk_whitelist['XGB_NAMES'] + sk_whitelist['NUMPY_NAMES']\
-                        + sk_whitelist['IMBLEARN_NAMES'] + sk_whitelist['MLXTEND_NAMES']\
+                if fullname not in pk_whitelist['SK_NAMES'] + pk_whitelist['SKR_NAMES']\
+                        + pk_whitelist['XGB_NAMES'] + pk_whitelist['NUMPY_NAMES']\
+                        + pk_whitelist['IMBLEARN_NAMES'] + pk_whitelist['MLXTEND_NAMES']\
                         + good_names:
                     print("Warning: global %s is not in pickler whitelist yet and will loss support soon. "
                           "Contact tool author or leave a message at github.com" % fullname)
