@@ -1111,7 +1111,7 @@
   </xml>
 
   <xml name="feature_selection_pipeline">
-    <!--compare to `feature_selection_fs`, no fitted estimator for SelectFromModel and no customer estimator for RFE and RFECV-->
+    <!--compare to `feature_selection_fs`, no fitted estimator for SelectFromModel and no custom estimator for RFE and RFECV-->
     <conditional name="fs_algorithm_selector">
       <param name="selected_algorithm" type="select" label="Select a feature selection algorithm">
         <expand macro="feature_selection_algorithms"/>
@@ -1448,12 +1448,12 @@
     <conditional name="estimator_selector">
       <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
         <expand macro="estimator_module_options">
-            <option value="customer_estimator">Load a customer estimator</option>
+            <option value="custom_estimator">Load a custom estimator</option>
         </expand>
       </param>
       <expand macro="estimator_suboptions">
-        <when value="customer_estimator">
-            <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the customer estimator or pipeline:"/>
+        <when value="custom_estimator">
+            <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline:"/>
         </when>
       </expand>
     </conditional>
