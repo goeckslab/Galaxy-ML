@@ -44,13 +44,13 @@ params['fs_algorithm_selector']['model_inputter']['fitted_estimator'] =\
 
 #if $fs_algorithm_selector.selected_algorithm == 'SelectFromModel'\
         and $fs_algorithm_selector.model_inputter.input_mode == 'new'\
-        and $fs_algorithm_selector.model_inputter.estimator_selector.selected_module == 'customer_estimator':
+        and $fs_algorithm_selector.model_inputter.estimator_selector.selected_module == 'custom_estimator':
 params['fs_algorithm_selector']['model_inputter']['estimator_selector']['c_estimator'] =\
         '$fs_algorithm_selector.model_inputter.estimator_selector.c_estimator'
 #end if
 
 #if $fs_algorithm_selector.selected_algorithm in ['RFE', 'RFECV', 'DyRFECV']\
-        and $fs_algorithm_selector.estimator_selector.selected_module == 'customer_estimator':
+        and $fs_algorithm_selector.estimator_selector.selected_module == 'custom_estimator':
 params['fs_algorithm_selector']['estimator_selector']['c_estimator'] =\
         '$fs_algorithm_selector.estimator_selector.c_estimator'
 #end if

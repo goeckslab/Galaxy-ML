@@ -40,7 +40,7 @@ input_json_path = sys.argv[1]
 with open(input_json_path, 'r') as param_handler:
     params = json.load(param_handler)
 
-#if $final_estimator.estimator_selector.selected_module == 'customer_estimator':
+#if $final_estimator.estimator_selector.selected_module == 'custom_estimator':
 params['final_estimator']['estimator_selector']['c_estimator'] =\
         '$final_estimator.estimator_selector.c_estimator'
 #end if
@@ -232,7 +232,7 @@ with open('$outfile', 'wb') as out_handler:
                 <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
                     <expand macro="estimator_module_options">
                         <option value="binarize_target">Binarize Target Classifier or Regressor</option>
-                        <option value="customer_estimator">Load a customer estimator</option>
+                        <option value="custom_estimator">Load a custom estimator</option>
                         <option value="none">none -- The last component of pre-processing step will turn to a final estimator</option>
                     </expand>
                 </param>
@@ -247,8 +247,8 @@ with open('$outfile', 'wb') as out_handler:
                         <param name='value' type="float" value="" optional="true" label="Discretize target values using a fixed value instead" help="Optional. default: None."/>
                         <param name="less_is_positive" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Are the detecting values smaller than others?"/>
                     </when>
-                    <when value="customer_estimator">
-                        <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the customer estimator or pipeline"/>
+                    <when value="custom_estimator">
+                        <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline"/>
                     </when>
                     <when value="none"/>
                 </expand>

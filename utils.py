@@ -391,7 +391,7 @@ class SafePickler(pickle.Unpickler):
     def find_class(self, module, name):
 
         if module == '__main__':
-            customer_classes = {
+            custom_classes = {
                 'IRAPSCore': IRAPSCore,
                 'IRAPSClassifier': IRAPSClassifier,
                 'BinarizeTargetClassifier': BinarizeTargetClassifier,
@@ -401,7 +401,7 @@ class SafePickler(pickle.Unpickler):
                 'DyRFECV': DyRFECV,
                 'DyRFE': DyRFE
             }
-            return customer_classes[name]
+            return custom_classes[name]
         # sk_whitelist could be read from tool
         global sk_whitelist
         if not sk_whitelist:
@@ -666,7 +666,7 @@ def get_estimator(estimator_json):
 
     estimator_module = estimator_json['selected_module']
 
-    if estimator_module == 'customer_estimator':
+    if estimator_module == 'custom_estimator':
         c_estimator = estimator_json['c_estimator']
         with open(c_estimator, 'rb') as model_handler:
             new_model = load_model(model_handler)
