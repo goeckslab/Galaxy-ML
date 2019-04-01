@@ -7,6 +7,8 @@ from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as imbPipeline
 from imblearn.utils import check_target_type
+from sklearn.utils import safe_indexing
+
 
 class Z_RandomOverSampler(BaseOverSampler):
 
