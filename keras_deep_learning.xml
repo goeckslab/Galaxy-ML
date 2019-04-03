@@ -324,9 +324,11 @@
       </when>
     </conditional>
     <!--param name="metrics" type="select" label="Select metrics"-->
+    <param name="epochs" format="integer" value="100" label="epochs"/>
+    <param name="batch_size" format="integer" value="10" label="batch_size"/>
 	</inputs>
   <outputs>
-    <data format="json" name="outfile"/>
+    <data format="zip" name="outfile" label="Keras Model Builder"/>
   </outputs>
   <tests>
     <test>
