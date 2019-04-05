@@ -220,8 +220,10 @@ class BaseKerasModel(BaseEstimator):
     epochs: int, from Keras
     batch_size: int, from Keras
     """
-    def __init__(self, layers, optimizer, model_type='sequential', loss='binary_crossentropy',
-                 epochs=100, batch_size=10, metrics=[]):
+    def __init__(self, layers, model_type='sequential', optimizer='sgd', loss='binary_crossentropy',
+                 epochs=100, batch_size=10, metrics=[], lr=None, momentum=None,
+                 decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
+                 beta_1=None, beta_2=None, schedule_decay=None):
         self.layers = layers
         self.optimizer = optimizer
         self.model_type = model_type
@@ -229,6 +231,55 @@ class BaseKerasModel(BaseEstimator):
         self.epochs = epochs
         self.batch_size = batch_size
         self.metrics = metrics
+        self.optimizer = optimizer
+
+        if self.optimizer == 'sgd':
+            self.lr = 0.01 if lr is None else lr
+            self.momentum = 0 if momentum is None else momentum
+            self.decay = 0 if decay is None else decay
+            self.nesterov = False if nesterov is None else nesterov
+
+        elif self.optimizer == 'rmsprop':
+            self.lr = 0.001 if lr is None else lr
+            self.rho = 0.9 if rho is None else rho
+            self.epsilon = None if epsilon is None else epsilon
+            self.decay = 0 if decay is None else decay
+
+        elif self.optimizer == 'adagrad':
+            self.lr = 0.01 if lr is None else lr
+            self.epsilon = None if epsilon is None else epsilon
+            self.decay = 0 if decay is None else decay
+
+        elif self.optimizer == 'adadelta':
+            self.lr = 1.0 if lr is None else lr
+            self.rho = 0.95 if rho is None else rho
+            self.epsilon = None if epsilon is None else epsilon
+            self.decay = 0 if decay is None else decay
+
+        elif self.optimizer == 'adam':
+            self.lr = 0.001 if lr is None else lr
+            self.beta_1 = 0.9 if beta_1 is None else beta_1
+            self.beta_2 = 0.999 if beta_2 is None else beta_2
+            self.epsilon = None if epsilon is None else epsilon
+            self.decay = 0 if decay is None else decay
+            self.amsgrad = False if amsgrad is None else amsgrad
+
+        elif self.optimizer == 'adamax':
+            self.lr = 0.002 if lr is None else lr
+            self.beta_1 = 0.9 if beta_1 is None else beta_1
+            self.beta_2 = 0.999 if beta_2 is None else beta_2
+            self.epsilon = None if epsilon is None else epsilon
+            self.decay = 0 if decay is None else decay
+
+        elif self.optimizer == 'nadam':
+            self.lr = 0.002 if lr is None else lr
+            self.beta_1 = 0.9 if beta_1 is None else beta_1
+            self.beta_2 = 0.999 if beta_2 is None else beta_2
+            self.epsilon = None if epsilon is None else epsilon
+            self.schedule_decay = 0.004 if schedule_decay is None else schedule_decay
+
+        else:
+            raise ValueError("Unsupported optimizer type: %s" % optimizer)
 
     def _fit(self, X, y, **kwargs):
         config = dict(
@@ -240,8 +291,30 @@ class BaseKerasModel(BaseEstimator):
 
         self.model_class_ = Sequential if self.model_type == 'sequential' else Model
         self.model_ = self.model_class_.from_config(config)
+
+        if self.optimizer == 'sgd':
+            self.optimizer_ = SGD(lr=self.lr, momentum=self.momentum,
+                                  decay=self.decay, nesterov=self.nesterov)
+        elif self.optimizer = 'rmsprop':
+            self.optimizer_ = RMSprop(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
+                                      decay=self.decay)
+        elif self.optimizer == 'adagrad':
+            self.optimizer_ = Adagrad(lr=self.lr, epsilon=self.epsilon,
+                                      decay=self.decay)
+        elif self.optimizer == 'adadelta':
+            self.optimizer_ = Adadelta(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
+                                      decay=self.decay)
+        elif self.optimizer == 'adam':
+            self.optimizer_ = Adam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                                   epsilon=self.epsilon, decay=self.decay, amsgrad=self.amsgrad)
+        elif self.optimizer == 'adamax':
+            self.optimizer_ = Adamax(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                                     epsilon=self.epsilon, decay=self.decay)
+        elif self.optimizer == 'nadam':
+            self.optimizer_ = Nadam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                                     epsilon=self.epsilon, schedule_decay=self.schedule_decay)
         
-        self.model_.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.metrics)
+        self.model_.compile(loss=self.loss, optimizer=self.optimizer_, metrics=self.metrics)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
