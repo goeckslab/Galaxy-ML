@@ -3,6 +3,7 @@ Galaxy wrapper for using Scikit-learn API with Keras models
 """
 
 import collections
+import numpy as np
 from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam)
@@ -221,7 +222,7 @@ class BaseKerasModel(BaseEstimator):
     batch_size: int, from Keras
     """
     def __init__(self, layers, model_type='sequential', optimizer='sgd', loss='binary_crossentropy',
-                 epochs=100, batch_size=10, metrics=[], lr=None, momentum=None,
+                 epochs=100, batch_size=None, metrics=[], lr=None, momentum=None,
                  decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None):
         self.layers = layers
@@ -281,6 +282,36 @@ class BaseKerasModel(BaseEstimator):
         else:
             raise ValueError("Unsupported optimizer type: %s" % optimizer)
 
+    @property
+    def _optimizer(self):
+        if self.optimizer == 'sgd':
+            return SGD(lr=self.lr, momentum=self.momentum,
+                       decay=self.decay, nesterov=self.nesterov)
+
+        elif self.optimizer == 'rmsprop':
+            return RMSprop(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
+                           decay=self.decay)
+
+        elif self.optimizer == 'adagrad':
+            return Adagrad(lr=self.lr, epsilon=self.epsilon,
+                           decay=self.decay)
+
+        elif self.optimizer == 'adadelta':
+            return Adadelta(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
+                            decay=self.decay)
+
+        elif self.optimizer == 'adam':
+            return Adam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                        epsilon=self.epsilon, decay=self.decay, amsgrad=self.amsgrad)
+
+        elif self.optimizer == 'adamax':
+            return Adamax(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                          epsilon=self.epsilon, decay=self.decay)
+
+        elif self.optimizer == 'nadam':
+            return Nadam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
+                         epsilon=self.epsilon, schedule_decay=self.schedule_decay)
+
     def _fit(self, X, y, **kwargs):
         config = dict(
             layers = self.layers.layers,
@@ -292,29 +323,7 @@ class BaseKerasModel(BaseEstimator):
         self.model_class_ = Sequential if self.model_type == 'sequential' else Model
         self.model_ = self.model_class_.from_config(config)
 
-        if self.optimizer == 'sgd':
-            self.optimizer_ = SGD(lr=self.lr, momentum=self.momentum,
-                                  decay=self.decay, nesterov=self.nesterov)
-        elif self.optimizer = 'rmsprop':
-            self.optimizer_ = RMSprop(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
-                                      decay=self.decay)
-        elif self.optimizer == 'adagrad':
-            self.optimizer_ = Adagrad(lr=self.lr, epsilon=self.epsilon,
-                                      decay=self.decay)
-        elif self.optimizer == 'adadelta':
-            self.optimizer_ = Adadelta(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
-                                      decay=self.decay)
-        elif self.optimizer == 'adam':
-            self.optimizer_ = Adam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                                   epsilon=self.epsilon, decay=self.decay, amsgrad=self.amsgrad)
-        elif self.optimizer == 'adamax':
-            self.optimizer_ = Adamax(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                                     epsilon=self.epsilon, decay=self.decay)
-        elif self.optimizer == 'nadam':
-            self.optimizer_ = Nadam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                                     epsilon=self.epsilon, schedule_decay=self.schedule_decay)
-        
-        self.model_.compile(loss=self.loss, optimizer=self.optimizer_, metrics=self.metrics)
+        self.model_.compile(loss=self.loss, optimizer=self._optimizer, metrics=self.metrics)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
@@ -328,12 +337,6 @@ class BaseKerasModel(BaseEstimator):
         self.model_.fit(X, y, **fit_params)
 
         return self
-
-    def set_params(self, **params):
-        valide_params = self.get_params(deep=True)
-
-        return self
-        
 
 
 class KerasGClassifier(BaseKerasModel):
@@ -377,7 +380,7 @@ class KerasGClassifier(BaseKerasModel):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
 
-        proba = self.model_.predict(x, **kwargs)
+        proba = self.model_.predict(X, **kwargs)
         if proba.shape[-1] > 1:
             classes = proba.argmax(axis=-1)
         else:

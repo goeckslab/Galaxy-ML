@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 import warnings
 from keras.models import Sequential
 from keras.layers import Dense, Activation
@@ -5,14 +7,28 @@ from keras_galaxy_models import (_get_params_from_dict, _param_to_dict, _update_
                                 SearchParam, KerasLayers, BaseKerasModel, KerasGClassifier,
                                 KerasGRegressor)
 from sklearn.base import clone
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from tensorflow import set_random_seed
 
 warnings.simplefilter('ignore')
+
+np.random.seed(1)
+set_random_seed(8888)
 
 model = Sequential()
 model.add(Dense(64))
 model.add(Activation('tanh'))
 model.add(Activation('tanh'))
 model.add(Dense(32))
+
+df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+X = df.iloc[:, 0:8].values.astype(float)
+y = df.iloc[:, 8].values
+
+train_model = Sequential()
+train_model.add(Dense(12, input_dim=8, activation='relu'))
+train_model.add(Dense(1, activation='sigmoid'))
+
 
 d = {'name': 'sequential_1',
     'layers': [{'class_name': 'Dense',
@@ -116,8 +132,7 @@ def test_update_dict():
                          'bias_regularizer': None,
                          'activity_regularizer': None,
                          'kernel_constraint': None,
-                         'bias_constraint': None}
-    }
+                         'bias_constraint': None}}
     assert got == expect, got
 
 
@@ -210,3 +225,163 @@ def test_clone_keras_layers():
 
     assert got1 == 4, got1
     assert got2 == 3, got2
+
+
+def test_get_params_base_keras_model():
+    config = model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    classifier = KerasGClassifier(layers_clone)
+
+    params = classifier.get_params()
+    got = {}
+    for key, value in params.items():
+        if not key.startswith('layers'):
+            got[key] = value
+
+    expect = {
+        'amsgrad': None,
+        'batch_size': None,
+        'beta_1': None,
+        'beta_2': None,
+        'decay': 0,
+        'epochs': 100,
+        'epsilon': None,
+        'loss': 'binary_crossentropy',
+        'lr': 0.01,
+        'metrics': [],
+        'model_type': 'sequential',
+        'momentum': 0,
+        'nesterov': False,
+        'optimizer': 'sgd',
+        'rho': None,
+        'schedule_decay': None
+    }
+
+    assert got == expect, got
+
+
+def test_set_params_base_keras_model():
+    config = model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    classifier = KerasGClassifier(layers_clone)
+
+    params = {
+        'layers__layers_3_Dense__config__kernel_initializer__config__scale': 2.0,
+        'layers__layers_2_Activation': None,
+        'lr': 0.05,
+    }
+
+    classifier.set_params(**params)
+
+    got1 = len(classifier.layers.layers)
+    got2 = classifier.lr
+    got3 = classifier.layers.layers[2]['config']['kernel_initializer']['config']['scale']
+
+    assert got1 == 3, got1
+    assert got2 == 0.05, got2
+    assert got3 == 2.0, got3
+
+
+
+def test_get_params_keras_g_classifier():
+    config = train_model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    classifier = KerasGClassifier(layers_clone, optimizer='adam', metrics=['accuracy'])
+
+    got = list(classifier.get_params().keys())
+    got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
+
+    expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'decay', 'epochs', 'epsilon',
+              'layers__layers_0_Dense__config__kernel_initializer__config__seed',
+              'layers__layers_1_Dense__config__kernel_initializer__config__seed',
+              'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+              'rho', 'schedule_decay']
+
+    assert got == expect, got
+
+
+def test_gridsearchcv_keras_g_classifier():
+    config = train_model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    classifier = KerasGClassifier(layers_clone, optimizer='adam', metrics=[])
+
+    param_grid = dict(
+        epochs = [60],
+        batch_size = [20],
+        lr = [0.03],
+        layers__layers_1_Dense__config__kernel_initializer__config__seed = [42],
+        layers__layers_0_Dense__config__kernel_initializer__config__seed = [999]
+    )
+    cv = StratifiedKFold(n_splits=3)
+
+    grid = GridSearchCV(classifier, param_grid, cv=cv, scoring='accuracy', refit=True)
+    grid_result = grid.fit(X, y)
+
+    got1 = round(grid_result.best_score_, 2)
+    got2 = grid_result.best_estimator_.lr
+    got3 = grid_result.best_estimator_.epochs
+    got4 = grid_result.best_estimator_.batch_size
+    got5 = grid_result.best_estimator_.layers.layers[0]['config']['kernel_initializer']['config']['seed']
+    got6 = grid_result.best_estimator_.layers.layers[1]['config']['kernel_initializer']['config']['seed']
+
+    assert got1 == 0.65, got1
+    assert got2 == 0.03, got2
+    assert got3 == 60, got3
+    assert got4 == 20, got4
+    assert got5 == 999, got5
+    assert got6 == 42, got6
+
+
+def test_get_params_keras_g_regressor():
+    config = train_model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    regressor = KerasGRegressor(layers_clone, optimizer='sgd')
+
+    got = list(regressor.get_params().keys())
+    got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
+
+    expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'decay', 'epochs', 'epsilon',
+              'layers__layers_0_Dense__config__kernel_initializer__config__seed',
+              'layers__layers_1_Dense__config__kernel_initializer__config__seed',
+              'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+              'rho', 'schedule_decay']
+
+    assert got == expect, got
+
+
+def test_gridsearchcv_keras_g_regressor():
+    config = train_model.get_config()
+    layers = KerasLayers(name=config['name'], layers=config['layers'])
+    layers_clone = clone(layers)
+    regressor = KerasGRegressor(layers_clone, optimizer='adam', metrics=[])
+
+    param_grid = dict(
+        epochs = [60],
+        batch_size = [20],
+        lr = [0.03],
+        layers__layers_1_Dense__config__kernel_initializer__config__seed = [42],
+        layers__layers_0_Dense__config__kernel_initializer__config__seed = [999]
+    )
+    cv = KFold(n_splits=3)
+
+    grid = GridSearchCV(regressor, param_grid, cv=cv, scoring='r2', refit=True)
+    grid_result = grid.fit(X, y)
+
+    got1 = round(grid_result.best_score_, 2)
+    got2 = grid_result.best_estimator_.lr
+    got3 = grid_result.best_estimator_.epochs
+    got4 = grid_result.best_estimator_.batch_size
+    got5 = grid_result.best_estimator_.layers.layers[0]['config']['kernel_initializer']['config']['seed']
+    got6 = grid_result.best_estimator_.layers.layers[1]['config']['kernel_initializer']['config']['seed']
+
+    assert got1 == -0.54, got1
+    assert got2 == 0.03, got2
+    assert got3 == 60, got3
+    assert got4 == 20, got4
+    assert got5 == 999, got5
+    assert got6 == 42, got6
