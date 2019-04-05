@@ -3,6 +3,7 @@ Galaxy wrapper for using Scikit-learn API with Keras models
 """
 
 import collections
+from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam)
 from keras.utils import to_categorical
@@ -13,31 +14,48 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
 
 
-class KerasSGD(SGD, BaseEstimator):
+class BaseOptimizer(BaseEstimator):
+    """
+    Base wrapper for Keras Optimizers
+    """
+    def get_params(self, deep=True):
+        out = super(BaseOptimizer, self).get_params(deep=deep)
+        for k, v in six.iteritems(out):
+            try:
+                out[k] = K.eval(v)
+            except AttributeError:
+                pass
+        return out
+
+    def set_params(self, **params):
+        raise NotImplementedError()
+
+
+class KerasSGD(SGD, BaseOptimizer):
     pass
 
 
-class KerasRMSprop(RMSprop, BaseEstimator):
+class KerasRMSprop(RMSprop, BaseOptimizer):
     pass
 
 
-class KerasAdagrad(Adagrad, BaseEstimator):
+class KerasAdagrad(Adagrad, BaseOptimizer):
     pass
 
 
-class KerasAdadelta(Adadelta, BaseEstimator):
+class KerasAdadelta(Adadelta, BaseOptimizer):
     pass
 
 
-class KerasAdam(Adam, BaseEstimator):
+class KerasAdam(Adam, BaseOptimizer):
     pass
 
 
-class KerasAdamax(Adamax, BaseEstimator):
+class KerasAdamax(Adamax, BaseOptimizer):
     pass
 
 
-class KerasNadam(Nadam, BaseEstimator):
+class KerasNadam(Nadam, BaseOptimizer):
     pass
 
 
@@ -77,7 +95,7 @@ def _param_to_dict(s, v):
 
 def _update_dict(d, u):
     """
-    Update value for nested dictionary
+    Update value for nested dictionary, but not adding new keys
 
     Parameters:
     d: dict, the source dictionary
@@ -85,7 +103,9 @@ def _update_dict(d, u):
     """
     for k, v in six.iteritems(u):
         if isinstance(v, collections.Mapping):
-            d[k] = update(d.get(k, {}), v)
+            d[k] = _update_dict(d[k], v)
+        elif k not in d:
+            raise KeyError
         else:
             d[k] = v
     return d
@@ -124,12 +144,14 @@ class KerasLayers(BaseEstimator):
         for idx, lyr in enumerate(self.layers):
             named = 'layers_%s_%s' % (str(idx), lyr['class_name'])
             rval.append((named, lyr))
+
         return rval
 
 
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
         out = super(KerasLayers, self).get_params(deep=False)
+
         if not deep:
             return out
 
@@ -140,7 +162,6 @@ class KerasLayers(BaseEstimator):
         return out
 
     def set_params(self, **params):
-        valid_params = self.get_params(deep=True)
 
         for key in list(six.iterkeys(params)):
             if not key.startswith('layers'):
@@ -153,8 +174,10 @@ class KerasLayers(BaseEstimator):
         layers = self.layers
         named_layers = self.named_layers
         names = []
+        named_layers_dict = {}
         if named_layers:
             names, _ = zip(*named_layers)
+            named_layers_dict = dict(named_layers)
         for name in list(six.iterkeys(params)):
             if '__' not in name:
                 for i, layer_name in enumerate(names):
@@ -172,18 +195,14 @@ class KerasLayers(BaseEstimator):
         search_params = sorted(search_params, key=lambda x: x.depth)
 
         for param in search_params:
-            if param.s_param not in valid_params:
-                raise ValueError('Invalid parameter %s for estimator %s. '
-                                 'Check the list of available parameters '
-                                 'with `estimator.get_params().keys()`.' %
-                                 (key, self))
-            for i, layer_name in enumerate(names):
-                update = param.to_dict
-                key = list(six.iterkeys(update))[0]
-                if layer_name == key:
-                    _update_dict(layers[i], update[key])
-                    break
-            valid_params[param.s_param] = param.value
+            update = param.to_dict()
+            try:
+                _update_dict(named_layers_dict, update)
+            except KeyError:
+                raise ValueError("Invalid parameter %s for estimator %s. "
+                                 "Check the list of available parameters "
+                                 "with `estimator.get_params().keys()`." %
+                                 (param.s_param, self))
 
         return self
 
@@ -236,6 +255,12 @@ class BaseKerasModel(BaseEstimator):
         self.model_.fit(X, y, **fit_params)
 
         return self
+
+    def set_params(self, **params):
+        valide_params = self.get_params(deep=True)
+
+        return self
+        
 
 
 class KerasGClassifier(BaseKerasModel):
