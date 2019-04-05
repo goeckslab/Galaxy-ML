@@ -8,7 +8,8 @@ from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam)
 from keras.utils import to_categorical
-from sklearn.base import BaseEstimator, clone
+from keras.utils.generic_utils import to_list
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
 from sklearn.externals import six
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
@@ -214,12 +215,24 @@ class BaseKerasModel(BaseEstimator):
 
     Parameters
     ----------
-    layers: KerasLayers object
-    optimizer: object
-    model: str, 'sequential' or 'functional'
-    loss: str, same as Keras `loss`
-    epochs: int, from Keras
-    batch_size: int, from Keras
+    layers : KerasLayers object
+    model_type : str, 'sequential' or 'functional'
+    optimizer : str, 'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
+                'adamax', 'nadam', default 'sgd'
+    loss : str, same as Keras `loss`, default 'binary_crossentropy',
+    epochs : int, fit_param from Keras,
+    batch_size : int, fit_param, from Keras
+    metrics : list of strings, default []
+    lr : None or float, optimizer parameter, default change with `optimizer`
+    momentum : None or float, for optimizer `sgd` only, ignored otherwise
+    nesterov : None or bool, for optimizer `sgd` only, ignored otherwise
+    decay : None or float, optimizer parameter, default change with `optimizer`
+    rho : None or float, optimizer parameter, default change with `optimizer`
+    epsilon : None or float, optimizer parameter, default change with `optimizer`
+    amsgrad : None or bool, for optimizer `adam` only, ignored otherwise
+    beta_1 : None or float, optimizer parameter, default change with `optimizer`
+    beta_2 : None or float, optimizer parameter, default change with `optimizer`
+    schedule_decay : None or float, optimizer parameter, default change with `optimizer`
     """
     def __init__(self, layers, model_type='sequential', optimizer='sgd', loss='binary_crossentropy',
                  epochs=100, batch_size=None, metrics=[], lr=None, momentum=None,
@@ -339,7 +352,7 @@ class BaseKerasModel(BaseEstimator):
         return self
 
 
-class KerasGClassifier(BaseKerasModel):
+class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """
     Scikit-learn classifier API for Keras
     """
@@ -351,6 +364,7 @@ class KerasGClassifier(BaseKerasModel):
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
         check_classification_targets(y)
+
         if len(y.shape) == 2 and y.shape[1] > 1:
             self.classes_ = np.arange(y.shape[1])
         elif (len(y.shape) == 2 and y.shape[1] == 1) or len(y.shape) == 1:
@@ -399,20 +413,24 @@ class KerasGClassifier(BaseKerasModel):
         for name, output in zip(self.model_.metrics_names, outputs):
             if name == 'acc':
                 return output
+
         raise ValueError('The model is not configured to compute accuracy. '
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
 
 
-class KerasGRegressor(BaseKerasModel):
+class KerasGRegressor(BaseKerasModel, RegressorMixin):
+    """
+    Scikit-learn API wrapper for Keras regressor
+    """
     def fit(self, X, y, **kwargs):
          X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'])
          return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
-
         X = check_array(X, accept_sparse=['csc', 'csr'])
+
         return np.squeeze(self.model_.predict(X, **kwargs), axis=-1)
 
     def score(self, X, y, **kwargs):
