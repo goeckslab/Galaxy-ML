@@ -4,8 +4,8 @@ import warnings
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras_galaxy_models import (_get_params_from_dict, _param_to_dict, _update_dict,
-                                SearchParam, KerasLayers, BaseKerasModel, KerasGClassifier,
-                                KerasGRegressor)
+                                 check_params, SearchParam, KerasLayers,
+                                 BaseKerasModel, KerasGClassifier, KerasGRegressor)
 from sklearn.base import clone
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from tensorflow import set_random_seed
@@ -245,7 +245,7 @@ def test_get_params_base_keras_model():
         'beta_1': None,
         'beta_2': None,
         'decay': 0,
-        'epochs': 100,
+        'epochs': 1,
         'epsilon': None,
         'loss': 'binary_crossentropy',
         'lr': 0.01,
@@ -385,3 +385,30 @@ def test_gridsearchcv_keras_g_regressor():
     assert got4 == 20, got4
     assert got5 == 999, got5
     assert got6 == 42, got6
+
+
+def test_check_params():
+    fn = (Sequential.fit, Sequential.predict)
+    params1 = dict(
+        epochs = 100,
+        validation_split = 0.2
+    )
+    params2 = dict(
+        random_state = 9999
+    )
+    try:
+        check_params(params1, fn)
+        got1 = True
+    except ValueError:
+        got1 = False
+        pass
+
+    try:
+        check_params(params2, Sequential.fit)
+        got2 = True
+    except ValueError:
+        got2 = False
+        pass
+
+    assert got1 is True, got1
+    assert got2 is False, got2

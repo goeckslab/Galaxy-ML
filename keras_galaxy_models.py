@@ -8,7 +8,7 @@ from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam)
 from keras.utils import to_categorical
-from keras.utils.generic_utils import to_list
+from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
 from sklearn.externals import six
 from sklearn.utils import check_array, check_X_y
@@ -111,6 +111,26 @@ def _update_dict(d, u):
         else:
             d[k] = v
     return d
+
+
+def check_params(params, fn):
+    """
+    Check whether params are valid for function(s)
+
+    Parameter:
+    ----------
+    params : dict
+    fn : function or functions iterables
+    """
+    if not isinstance(fn, (list, tuple)):
+        fn = [fn]
+    for p in list(six.iterkeys(params)):
+        for f in fn:
+            if has_arg(f, p):
+                break
+        else:
+            raise ValueError(
+                "{} is not a legal parameter".format(p))
 
 
 class SearchParam(object):
@@ -234,18 +254,24 @@ class BaseKerasModel(BaseEstimator):
     beta_2 : None or float, optimizer parameter, default change with `optimizer`
     schedule_decay : None or float, optimizer parameter, default change with `optimizer`
     """
-    def __init__(self, layers, model_type='sequential', optimizer='sgd', loss='binary_crossentropy',
-                 epochs=100, batch_size=None, metrics=[], lr=None, momentum=None,
+    def __init__(self, layers, model_type='sequential', optimizer='sgd',
+                 loss='binary_crossentropy', metrics=[], lr=None, momentum=None,
                  decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
-                 beta_1=None, beta_2=None, schedule_decay=None):
+                 beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
+                 batch_size=None, **fit_params):
         self.layers = layers
-        self.optimizer = optimizer
         self.model_type = model_type
+        self.optimizer = optimizer
         self.loss = loss
+        self.metrics = metrics
         self.epochs = epochs
         self.batch_size = batch_size
-        self.metrics = metrics
-        self.optimizer = optimizer
+        self.fit_params = fit_params
+
+        if self.model_type == 'sequential':
+            check_params(fit_params, Sequential.fit)
+        else:
+            check_params(fit_params, Model.fit)
 
         if self.optimizer == 'sgd':
             self.lr = 0.01 if lr is None else lr
@@ -341,12 +367,11 @@ class BaseKerasModel(BaseEstimator):
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
-        fit_params = dict(
-            epochs = self.epochs,
-            batch_size = self.batch_size
-        )
+        fit_params = self.fit_params
+        fit_params.update(
+            dict(epochs = self.epochs, batch_size = self.batch_size))
         fit_params.update(kwargs)
-        
+
         self.model_.fit(X, y, **fit_params)
 
         return self
@@ -364,6 +389,10 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
         check_classification_targets(y)
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.fit)
+        else:
+            check_params(kwargs, Model.fit)
 
         if len(y.shape) == 2 and y.shape[1] > 1:
             self.classes_ = np.arange(y.shape[1])
@@ -383,6 +412,10 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def predict_proba(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.predict)
+        else:
+            check_params(kwargs, Model.predict)
 
         probs = self.model_.predict(X, **kwargs)
         if probs.shape[1] == 1:
@@ -393,6 +426,10 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.predict)
+        else:
+            check_params(kwargs, Model.predict)
 
         proba = self.model_.predict(X, **kwargs)
         if proba.shape[-1] > 1:
@@ -404,6 +441,10 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def score(self, X, y, **kwargs):
         X = check_array(X, accept_sparse=['csc', 'csr'])
         y = np.searchsorted(self.classes_, y)
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.evaluate)
+        else:
+            check_params(kwargs, Model.evaluate)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
@@ -424,18 +465,32 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
     Scikit-learn API wrapper for Keras regressor
     """
     def fit(self, X, y, **kwargs):
-         X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'])
-         return super(KerasGRegressor, self)._fit(X, y, **kwargs)
+        X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'])
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.fit)
+        else:
+            check_params(kwargs, Model.fit)
+
+        return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.predict)
+        else:
+            check_params(kwargs, Model.predict)
 
         return np.squeeze(self.model_.predict(X, **kwargs), axis=-1)
 
     def score(self, X, y, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
+        if self.model_type == 'sequential':
+            check_params(kwargs, Sequential.evaluate)
+        else:
+            check_params(kwargs, Model.evaluate)
+
         loss = self.model_.evaluate(X, y, **kwargs)
         if isinstance(loss, list):
             return -loss[0]
