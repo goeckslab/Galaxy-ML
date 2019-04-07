@@ -41,6 +41,7 @@ except NameError:
 try:
     DyRFECV
 except NameError:
+    # feature_selectors is required to use `utils`
     from feature_selectors import DyRFE, DyRFECV, check_feature_importances
 
 try:
@@ -60,7 +61,7 @@ except NameError:
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 
 
-class SafePickler(pickle.Unpickler):
+class SafePickler(pickle.Unpickler, object):
     """
     Used to safely deserialize scikit-learn model objects
     Usage:
