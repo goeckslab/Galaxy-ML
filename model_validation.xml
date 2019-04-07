@@ -27,6 +27,8 @@ from sklearn.pipeline import Pipeline
 WL_FILE = '$__tool_directory__/pk_whitelist.json'
 
 exec(open('$__tool_directory__/iraps_classifier.py').read())
+exec(open('$__tool_directory__/preprocessors.py').read())
+exec(open('$__tool_directory__/feature_selectors.py').read())
 exec(open('$__tool_directory__/utils.py').read(), globals())
 
 warnings.filterwarnings('ignore')
