@@ -267,11 +267,9 @@ class BaseKerasModel(BaseEstimator):
         self.epochs = epochs
         self.batch_size = batch_size
         self.fit_params = fit_params
+        #TODO support compile parameters
 
-        if self.model_type == 'sequential':
-            check_params(fit_params, Sequential.fit)
-        else:
-            check_params(fit_params, Model.fit)
+        check_params(fit_params, Model.fit)
 
         if self.optimizer == 'sgd':
             self.lr = 0.01 if lr is None else lr
@@ -471,10 +469,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
         check_classification_targets(y)
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.fit)
-        else:
-            check_params(kwargs, Model.fit)
+        check_params(kwargs, Model.fit)
 
         if len(y.shape) == 2 and y.shape[1] > 1:
             self.classes_ = np.arange(y.shape[1])
@@ -494,10 +489,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def predict_proba(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.predict)
-        else:
-            check_params(kwargs, Model.predict)
+        check_params(kwargs, Model.predict)
 
         probs = self.model_.predict(X, **kwargs)
         if probs.shape[1] == 1:
@@ -508,10 +500,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.predict)
-        else:
-            check_params(kwargs, Model.predict)
+        check_params(kwargs, Model.predict)
 
         proba = self.model_.predict(X, **kwargs)
         if proba.shape[-1] > 1:
@@ -523,10 +512,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def score(self, X, y, **kwargs):
         X = check_array(X, accept_sparse=['csc', 'csr'])
         y = np.searchsorted(self.classes_, y)
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.evaluate)
-        else:
-            check_params(kwargs, Model.evaluate)
+        check_params(kwargs, Model.evaluate)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
@@ -548,30 +534,21 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
     """
     def fit(self, X, y, **kwargs):
         X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'])
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.fit)
-        else:
-            check_params(kwargs, Model.fit)
+        check_params(kwargs, Model.fit)
 
         return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.predict)
-        else:
-            check_params(kwargs, Model.predict)
+        check_params(kwargs, Model.predict)
 
         return np.squeeze(self.model_.predict(X, **kwargs), axis=-1)
 
     def score(self, X, y, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
-        if self.model_type == 'sequential':
-            check_params(kwargs, Sequential.evaluate)
-        else:
-            check_params(kwargs, Model.evaluate)
+        check_params(kwargs, Model.evaluate)
 
         loss = self.model_.evaluate(X, y, **kwargs)
         if isinstance(loss, list):
