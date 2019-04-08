@@ -235,7 +235,7 @@ class BaseKerasModel(BaseEstimator):
 
     Parameters
     ----------
-    layers : KerasLayers object
+    config : dictionary, from `model.get_config()`
     model_type : str, 'sequential' or 'functional'
     optimizer : str, 'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
                 'adamax', 'nadam', default 'sgd'
@@ -254,12 +254,12 @@ class BaseKerasModel(BaseEstimator):
     beta_2 : None or float, optimizer parameter, default change with `optimizer`
     schedule_decay : None or float, optimizer parameter, default change with `optimizer`
     """
-    def __init__(self, layers, model_type='sequential', optimizer='sgd',
+    def __init__(self, config, model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None, momentum=None,
                  decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, **fit_params):
-        self.layers = layers
+        self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
         self.loss = loss
@@ -351,10 +351,20 @@ class BaseKerasModel(BaseEstimator):
             return Nadam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
                          epsilon=self.epsilon, schedule_decay=self.schedule_decay)
 
+    @property
+    def named_layers(self):
+        rval = []
+        for idx, lyr in enumerate(self.config['layers']):
+            class_name = lyr['class_name']
+            if class_name in ['Model', 'Sequential']:
+                raise ValueError("Model layers are not supported yet!")
+            named = 'layers_%s_%s' % (str(idx), class_name)
+            rval.append((named, lyr))
+
+        return rval
+
     def _fit(self, X, y, **kwargs):
-        config = dict(
-            layers = self.layers.layers,
-            name = self.layers.name)
+        config = self.config
 
         if self.model_type not in ['sequential', 'functional']:
             raise ValueError("Unsupported model type %s" % self.model_type)
@@ -373,6 +383,78 @@ class BaseKerasModel(BaseEstimator):
         fit_params.update(kwargs)
 
         self.model_.fit(X, y, **fit_params)
+
+        return self
+
+    def get_params(self, deep=True):
+        """Return parameter names for GridSearch"""
+        out = super(BaseKerasModel, self).get_params(deep=False)
+
+        if not deep:
+            return out
+
+        out.update(self.named_layers)
+        for name, lyr in self.named_layers:
+            out.update(_get_params_from_dict(lyr, name))
+
+        return out
+
+    def set_params(self, **params):
+        """
+        """
+        valid_params = self.get_params(deep=False)
+        # 1. replace `config`
+        if 'config' in params:
+            setattr(self, 'config', params.pop('config'))
+
+        # 2. replace individual layer or non-layer parameters
+        named_layers = self.named_layers
+        names = []
+        named_layers_dict = {}
+        if named_layers:
+            names, _ = zip(*named_layers)
+            named_layers_dict = dict(named_layers)
+        for name in list(six.iterkeys(params)):
+            if '__' not in name:
+                for i, layer_name in enumerate(names):
+                    # replace layer
+                    if layer_name == name:
+                        new_val = params.pop(name)
+                        if new_val is None:
+                            del self.config['layers'][i]
+                        else:
+                            self.config['layers'][i] = new_val
+                        break
+                else:
+                    # replace non-layer parameter
+                    if name not in valid_params:
+                        raise ValueError("Invalid parameter %s for estimator %s. "
+                                         "Check the list of available parameters "
+                                         "with `estimator.get_params().keys()`." %
+                                         (name, self))
+                    setattr(self, name, params.pop(name))
+
+            elif not name.startswith('layers'):
+                # suppose all other parameters are layers parameters,
+                # raise error otherwise
+                raise ValueError("Invalid parameter %s for estimator %s. "
+                                 "Check the list of available parameters "
+                                 "with `estimator.get_params().keys()`." %
+                                 (name, self))
+
+        # 3. replace layer parameter
+        search_params = [SearchParam(k, v) for k, v in six.iteritems(params)]
+        search_params = sorted(search_params, key=lambda x: x.depth)
+
+        for param in search_params:
+            update = param.to_dict()
+            try:
+                _update_dict(named_layers_dict, update)
+            except KeyError:
+                raise ValueError("Invalid parameter %s for estimator %s. "
+                                 "Check the list of available parameters "
+                                 "with `estimator.get_params().keys()`." %
+                                 (param.s_param, self))
 
         return self
 
