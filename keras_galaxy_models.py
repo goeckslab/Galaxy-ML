@@ -456,6 +456,21 @@ class BaseKerasModel(BaseEstimator):
 
         return self
 
+    def to_json(self):
+        if hasattr(self, 'model_'):
+            # fitted
+            return self.model_.to_json()
+        else:
+            config = self.config
+
+            if self.model_type not in ['sequential', 'functional']:
+                raise ValueError("Unsupported model type %s" % self.model_type)
+
+            model_class_ = Sequential if self.model_type == 'sequential' else Model
+            model_ = model_class_.from_config(config)
+
+            return model_.to_json()
+
 
 class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """

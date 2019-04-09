@@ -543,3 +543,14 @@ def test_set_params_functional_model():
     assert got2 == 64, got2
     assert got3 == 0.03, got3
     assert got4 == 200, got4
+
+
+def test_to_json_keras_g_classifier():
+    config = model.get_config()
+    classifier = KerasGClassifier(config, model_type='sequential')
+
+    got = classifier.to_json()
+
+    with open('./test-data/to_json.txt', 'r') as f:
+        expect = f.read()
+    assert got == expect, got
