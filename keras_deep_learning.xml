@@ -22,7 +22,7 @@
       <option value="keras_classifier">KerasClassifier</option>
       <option value="keras_regressor">KerasRegressor</option>
     </param>
-    <section name="layers_config" title="Layer Config" expanded="true">
+    <section name="layers_config" title="Layers Construct" expanded="true">
       <conditional name="model_selection">
         <param name="model_type" type="select" label="Select keras model type">
           <option value="Sequential" selected="true">Sequential</option>
@@ -108,91 +108,133 @@
                 <expand macro="keras_activations"/>
               </when>
               <when value="Dropout">
-                <expand macro="layer_Dropout">
+                <expand macro="layer_Dropout"/>
               </when>
               <when value="Flatten">
+                <expand macro="layer_Flatten"/>
               </when>
               <when value="Input">
+                <expand macro="layer_Input"/>
               </when>
               <when value="Reshape">
+                <expand macro="layer_Reshape"/>
               </when>
               <when value="Permute">
+                <expand macro="layer_Permute"/>
               </when>
               <when value="RepeatVector">
+                <expand macro="layer_RepeatVector"/>
               </when>
               <when value="Lambda">
+                <expand macro="layer_Lambda"/>
               </when>
               <when value="ActivityRegularization">
+                <expand macro="layer_ActivityRegularization"/>
               </when>
               <when value="Masking">
+                <expand macro="layer_Masking"/>
               </when>
               <when value="SpatialDropout1D">
+                <expand macro="layer_SpatialDropout1D"/>
               </when>
               <when value="SpatialDropout2D">
+                <expand macro="layer_SpatialDropout2D"/>
               </when>
               <when value="SpatialDropout3D">
+                <expand macro="layer_SpatialDropout3D"/>
               </when>
               <when value="Conv1D">
+                <expand macro="layer_Conv1D"/>
               </when>
               <when value="Conv2D">
+                <expand macro="layer_Conv2D"/>
               </when>
               <when value="SeparableConv1D">
+                <expand macro="layer_SeparableConv1D"/>
               </when>
               <when value="SeparableConv2D">
+                <expand macro="layer_SeparableConv2D"/>
               </when>
               <when value="DepthwiseConv2D">
+                <expand macro="layer_DepthwiseConv2D"/>
               </when>
               <when value="Conv2DTranspose">
+                <expand macro="layer_Conv2DTranspose"/>
               </when>
               <when value="Conv3D">
+                <expand macro="layer_Conv3D"/>
               </when>
               <when value="Conv3DTranspose">
+                <expand macro="layer_Conv3DTranspose"/>
               </when>
               <when value="Cropping1D">
+                <expand macro="layer_Cropping1D"/>
               </when>
               <when value="Cropping2D">
+                <expand macro="layer_Cropping2D"/>
               </when>
               <when value="Cropping3D">
+                <expand macro="layer_Cropping3D"/>
               </when>
               <when value="UpSampling1D">
+                <expand macro="layer_UpSampling1D"/>
               </when>
               <when value="UpSampling2D">
+                <expand macro="layer_UpSampling2D"/>
               </when>
               <when value="UpSampling3D">
+                <expand macro="layer_UpSampling3D"/>
               </when>
               <when value="ZeroPadding1D">
+                <expand macro="layer_ZeroPadding1D"/>
               </when>
               <when value="ZeroPadding2D">
+                <expand macro="layer_ZeroPadding2D"/>
               </when>
               <when value="ZeroPadding3D">
+                <expand macro="layer_ZeroPadding3D"/>
               </when>
               <when value="MaxPooling1D">
+                <expand macro="layer_MaxPooling1D"/>
               </when>
               <when value="MaxPooling2D">
+                <expand macro="layer_MaxPooling2D"/>
               </when>
               <when value="MaxPooling3D">
+                <expand macro="layer_MaxPooling3D"/>
               </when>
               <when value="AveragePooling1D">
+                <expand macro="layer_AveragePooling1D"/>
               </when>
               <when value="AveragePooling2D">
+                <expand macro="layer_AveragePooling2D"/>
               </when>
               <when value="AveragePooling3D">
+                <expand macro="layer_AveragePooling3D"/>
               </when>
               <when value="GlobalMaxPooling1D">
+                <expand macro="layer_GlobalMaxPooling1D"/>
               </when>
               <when value="GlobalAveragePooling1D">
+                <expand macro="layer_GlobalAveragePooling1D"/>
               </when>
               <when value="GlobalMaxPooling2D">
+                <expand macro="layer_GlobalMaxPooling2D"/>
               </when>
               <when value="GlobalAveragePooling2D">
+                <expand macro="layer_GlobalAveragePooling2D"/>
               </when>
               <when value="GlobalMaxPooling3D">
+                <expand macro="layer_GlobalMaxPooling3D"/>
               </when>
               <when value="GlobalAveragePooling3D">
+                <expand macro="layer_GlobalAveragePooling3D"/>
               </when>
               <when value="LocallyConnected1D">
+                <expand macro="layer_LocallyConnected1D"/>
               </when>
               <when value="LocallyConnected2D">
+                <expand macro="layer_LocallyConnected2D"/>
               </when>
               <when value="RNN">
               </when>
@@ -219,26 +261,37 @@
               <when value="CuDNNLSTM">
               </when>
               <when value="Embedding">
+                <expand macro="layer_Embedding"/>
               </when>
               <when value="LeakyReLU">
+                <expand macro="layer_LeakyReLU"/>
               </when>
               <when value="PReLU">
+                <expand macro="layer_PReLU"/>
               </when>
               <when value="ELU">
+                <expand macro="layer_ELU"/>
               </when>
               <when value="ThresholdedReLU">
+                <expand macro="layer_ThresholdedReLU"/>
               </when>
               <when value="Softmax">
+                <expand macro="layer_Softmax"/>
               </when>
               <when value="ReLU">
+                <expand macro="layer_ReLU"/>
               </when>
               <when value="BatchNormalization">
+                <expand macro="layer_Embedding"/>
               </when>
               <when value="GaussianNoise">
+                <expand macro="layer_Embedding"/>
               </when>
               <when value="GaussianDropout">
+                <expand macro="layer_Embedding"/>
               </when>
               <when value="AlphaDropout">
+                <expand macro="layer_Embedding"/>
               </when>
             </conditional>
           </repeat>
@@ -247,7 +300,7 @@
         </when>
       </conditional>
     </section>
-    <section name="compile_params" title="Compile parameters" expanded="true">
+    <section name="compile_params" title="Compile Parameters" expanded="true">
       <param name="loss" type="select" label="Select a loss function">
         <option value="mean_squared_error">mse / MSE/ mean_squared_error</option>
         <option value="mean_absolute_error">mae / MAE / mean_absolute_error</option>
@@ -320,9 +373,9 @@
       </conditional>
       <!--param name="metrics" type="select" label="Select metrics"-->
     </section>
-    <section name="fit_params" title="Fit parameters" expanded="true">
-      <param name="epochs" format="integer" value="100" label="epochs"/>
-      <param name="batch_size" format="integer" value="10" label="batch_size"/>
+    <section name="fit_params" title="Fit Parameters" expanded="true">
+      <param name="epochs" type="integer" value="1" label="epochs"/>
+      <param name="batch_size" type="integer" value="" label="batch_size"/>
     </section>
 	</inputs>
   <outputs>
@@ -339,6 +392,6 @@
 **Help**
       ]]>
   </help>
-  <expand macro="sklearn_citation">
-  </expand>
+  <citations>
+  </citations>
 </tool>

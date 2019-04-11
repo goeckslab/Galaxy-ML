@@ -96,7 +96,7 @@
 		<param argument="rate" type="float" value="" min="0." max="1.0" help="Fraction of the input units to drop."/>
 		<param argument="noise_shape" type="text" value="" help="1D integer tensor representing the shape of the
             binary dropout mask that will be multiplied with the input."/>
-		<param argument="seed" type="integer" value="" min="0" help="A Python integer to use as random seed.">
+		<param argument="seed" type="integer" value="" min="0" help="A Python integer to use as random seed."/>
 		<yield/>
 	</xml>
 
@@ -183,7 +183,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of a single integer, specifying the stride length of the convolution."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -211,7 +211,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -239,7 +239,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of single integer, specifying the stride length of the convolution. "/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -271,7 +271,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -303,7 +303,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -333,7 +333,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -362,7 +362,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 3 integers, specifying the depth, height and width of the 3D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 3 integers, specifying the strides of the convolution along each spatial dimension."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -390,7 +390,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 3 integers, specifying the depth, height and width of the 3D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 3 integers, specifying the strides of the convolution along each spatial dimension."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -417,7 +417,7 @@
 
 	<xml name="layer_Cropping1D">
 		<param argument="cropping" type="text" value="(1, 1)" help="int or tuple of int (length 2) How many units should be trimmed off at the beginning and end of the cropping dimension (axis 1).
-							If a single int is provided, the same value will be used for both.">
+							If a single int is provided, the same value will be used for both."/>
 		<yield/>
 	</xml>
 
@@ -637,7 +637,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of a single integer, specifying the stride length of the convolution."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 			</param>
@@ -662,7 +662,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="(1, 1)" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="options" title="Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -706,10 +706,10 @@
 	<xml name="layer_Embedding">
 		<param argument="input_dim" type="integer" value="" min="0" help="int > 0. Size of the vocabulary, i.e. maximum integer index + 1."/>
 		<param argument="output_dim" type="integer" value="" min="0" help="int >= 0. Dimension of the dense embedding."/>
-		<section name="options" name="Advanced Options" expanded="false">
-			<expand macro="keras_initializer" argument="embeddings_initializer" default_embeddings="true"/>
-			<expand macro="keras_regularizer" argument="embeddings_regularizer"/>
-			<expand macro="keras_regularizer" argument="activity_regularizer"/>
+		<section name="options" title="Advanced Options" expanded="false">
+			<expand macro="keras_initializers" argument="embeddings_initializer" default_embeddings="true"/>
+			<expand macro="keras_regularizers" argument="embeddings_regularizer"/>
+			<expand macro="keras_regularizers" argument="activity_regularizer"/>
 			<expand macro="keras_constraints" argument="embeddings_constraint"/>
 			<param argument="mask_zero" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false"/>
 			<param argument="input_length" type="integer" value="" optional="true" min="0" help="Length of input sequences. Required if connecting Flatten then Dense layers upstream"/>
@@ -753,8 +753,8 @@
 	</xml>
 
 	<xml name="layer_PReLU">
-		<expand macro="keras_initializer" argument="alpha_initializer" default_bias="true"/>
-		<expand macro="keras_regularizer" argument="alpha_regularizer"/>
+		<expand macro="keras_initializers" argument="alpha_initializer" default_bias="true"/>
+		<expand macro="keras_regularizers" argument="alpha_regularizer"/>
 		<expand macro="keras_constraints" argument="alpha_constraint"/>
 		<param argument="shared_axes" type="text" value="" help="the axes along which to share learnable parameters for the activation function. E.g. [1, 2]">
 			<sanitizer>
@@ -791,7 +791,7 @@
 
 	<!--Normalization Layers-->
 
-	<!--Noise layers->
+	<!--Noise layers-->
 
 
 </macros>
