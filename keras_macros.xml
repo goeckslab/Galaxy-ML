@@ -11,8 +11,8 @@
     <section name="optimizer_options" title="Optimizer Advanced Options" expanded="false">
       <param argument="lr" type="float" value="@LR@" optional="true" label="Learning rate" help="float >= 0"/>
       <yield/>
-      <param argument="clipnorm" type="float" value="" optional="true" label="clipnorm" help="float >= 0"/>
-      <param argument="clipvalue" type="float" value="" optional="true" label="clipvalue" help="float >= 0"/>
+      <!--param argument="clipnorm" type="float" value="" optional="true" label="clipnorm" help="float >= 0"/-->
+      <!--param argument="clipvalue" type="float" value="" optional="true" label="clipvalue" help="float >= 0"/-->
     </section>
   </xml>
 
@@ -60,24 +60,59 @@
   </xml>
 
   <xml name="keras_regularizers" token_argument="kernel_regularizer">
-    <param argument="@ARGUMENT@" type="text" value="(0. , 0.)" optional="true" label="@ARGUMENT@" help="(l1, l2). l1/l2: float; L1/l2 regularization factor."/>
+    <param argument="@ARGUMENT@" type="text" value="(0. , 0.)" optional="true" label="@ARGUMENT@"
+						help="(l1, l2). l1/l2: float; L1/l2 regularization factor. (0., 0.) is equivalent to `None`"/>
   </xml>
 
+	<xml name="keras_constraints_options">
+		<section name="constraint_options" title="Constraint Advanced Options" expanded="false">
+			<yield/>
+			<param argument="axis" type="text" value="0" help="Integer or list of integers. axis along which to calculate weight norms">
+				<sanitizer>
+					<valid initial="default">
+						<add value="["/>
+						<add value="]"/>
+					</valid>
+				</sanitizer>
+			</param>
+		</section>
+	</xml>
+
   <xml name="keras_constraints" token_argument="kernel_constraint">
-    <param argument="@ARGUMENT@" type="select" label="@ARGUMENT@">
-      <option value="None" selected="true">None (default)</option>
-      <option value="max_norm">maxnorm / max_norm / MaxNorm</option>
-      <option value="non_neg">nonneg / non_neg / NonNeg</option>
-      <option value="unit_norm">unitnorm / unit_norm / UnitNorm</option>
-      <option value="min_max_norm">min_max_norm / MinMaxNorm</option>
-    </param>
+		<conditional name="@ARGUMENT@">
+			<param argument="constraint_type" type="select" label="@ARGUMENT@">
+				<option value="None" selected="true">None (default)</option>
+				<option value="MaxNorm">maxnorm / max_norm / MaxNorm</option>
+				<option value="NonNeg">nonneg / non_neg / NonNeg</option>
+				<option value="UnitNorm">unitnorm / unit_norm / UnitNorm</option>
+				<option value="MinMaxNorm">min_max_norm / MinMaxNorm</option>
+			</param>
+			<when value="None"/>
+			<when value="MaxNorm">
+				<expand macro="keras_constraints_options">
+					<param argument="max_value" type="float" value="2" help="the maximum norm for the incoming weights."/>
+				</expand>
+			</when>
+			<when value="NonNeg">
+			</when>
+			<when value="UnitNorm">
+				<expand macro="keras_constraints_options"/>
+			</when>
+			<when value="MinMaxNorm">
+				<expand macro="keras_constraints_options">
+					<param argument="min_value" type="float" value="0." help="the minimum norm for the incoming weights."/>
+					<param argument="max_value" type="float" value="1." help="the maximum norm for the incoming weights."/>
+					<param argument="max_value" type="float" value="1." help="rate for enforcing the constraint."/>
+				</expand>
+			</when>
+		</conditional>
   </xml>
 
 	<!--Core Layers-->
 
 	<xml name="layer_Dense">
 		<param argument="units" type="integer" value="" optional="false" label="units" help="Positive integer, dimensionality of the output space."/>
-		<section name="dense_options" title="Layer Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="input_shape" type="text" value="" optional="true" label="input_shape" help="None or tuple of integers. Only required for the first layer."/>
 			<expand macro="keras_activations"/>
 			<param argument="use_bias" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="true" />
@@ -117,6 +152,7 @@
 			<option value="float64">float64</option>
 			<option value="int32">int32</option>
 			<option value="int64">int64</option>
+			<!--TODO add more DTYPEs-->
 		</param>
 		<param argument="sparse" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false" />
 		<!--param argument="tensor" type="data" format="zip" help="Optional existing tensor to wrap into the `Input` layer."/ -->
@@ -183,7 +219,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of a single integer, specifying the stride length of the convolution."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -211,7 +247,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -239,7 +275,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of single integer, specifying the stride length of the convolution. "/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -271,7 +307,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -303,7 +339,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -333,7 +369,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -362,7 +398,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 3 integers, specifying the depth, height and width of the 3D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 3 integers, specifying the strides of the convolution along each spatial dimension."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -390,7 +426,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 3 integers, specifying the depth, height and width of the 3D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of 3 integers, specifying the strides of the convolution along each spatial dimension."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -508,7 +544,7 @@
 
 	<xml name="layer_MaxPooling2D">
 		<param name="pool_size" type="text" value="(2, 2)" help="integer or tuple of 2 integers, factors by which to downscale (vertical, horizontal)"/>
-		<param name="strides" type="text" value="" help=" Integer, tuple of 2 integers, or None. Strides values. If None, it will default to pool_size."/>
+		<param name="strides" type="text" value="" help="Integer, tuple of 2 integers, or None. Strides values. If None, it will default to pool_size."/>
 		<param argument="padding" type="select" >
 			<option value="valid" selected="true">valid - no padding</option>
 			<option value="same">same - output has the same length as the original input</option>
@@ -637,7 +673,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of a single integer, specifying the length of the 1D convolution window."/>
 		<param argument="strides" type="text" value="1" help="An integer or tuple/list of a single integer, specifying the stride length of the convolution."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 			</param>
@@ -662,7 +698,7 @@
 		<param argument="filters" type="integer" value="" min="0" help="the dimensionality of the output space (i.e. the number of output filters in the convolution)."/>
 		<param argument="kernel_size" type="text" value="" help="An integer or tuple/list of 2 integers, specifying the height and width of the 2D convolution window."/>
 		<param argument="strides" type="text" value="(1, 1)" help="An integer or tuple/list of 2 integers, specifying the strides of the convolution along the height and width."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="padding" type="select" help="">
 				<option value="valid" selected="true">valid - no padding</option>
 				<option value="same">same - output has the same length as the original input</option>
@@ -689,7 +725,7 @@
 
 	<xml name="layer_RNN">
 		<param argument="cell" >
-		<section name="options" name="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<param argument="return_sequences" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false" />
 			<param argument="return_state" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false" />
 			<param argument="go_backwards" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false" />
@@ -706,7 +742,7 @@
 	<xml name="layer_Embedding">
 		<param argument="input_dim" type="integer" value="" min="0" help="int > 0. Size of the vocabulary, i.e. maximum integer index + 1."/>
 		<param argument="output_dim" type="integer" value="" min="0" help="int >= 0. Dimension of the dense embedding."/>
-		<section name="options" title="Advanced Options" expanded="false">
+		<section name="layer_options" title="Layer Advanced Options" expanded="false">
 			<expand macro="keras_initializers" argument="embeddings_initializer" default_embeddings="true"/>
 			<expand macro="keras_regularizers" argument="embeddings_regularizer"/>
 			<expand macro="keras_regularizers" argument="activity_regularizer"/>
@@ -720,7 +756,7 @@
 	<!--Merge Layers-->
 
 	<xml name="layer_merge">
-		<param name="merging_layers" type="text" value="[ ]" label="Type the layer names in a list">
+		<param name="merging_layers" type="text" value="[ ]" label="Type the layer index numbers in a list" help="List of numbers">
 			<sanitizer>
 				<valid initial="default">
 					<add value="["/>

@@ -6,12 +6,13 @@
   <requirements>
     <requirement type="package" version="1.13.1">tensorflow</requirement>
     <requirement type="package" version="2.2.4">Keras</requirement>
+    <requirement type="package" version="0.20.2">scikit-learn</requirement>
   </requirements>
   <expand macro="macro_stdio"/>
   <version_command>echo "@VERSION@"</version_command>
   <command>
     <![CDATA[
-    cp '$inputs' '$outfile'
+    python '$__tool_directory__/keras_galaxy_models.py' '$inputs' '$outfile'
     ]]>
   </command>
   <configfiles>
@@ -40,7 +41,7 @@
                 <option value="Reshape">Reshape</option>
                 <option value="Permute">Permute</option>
                 <option value="RepeatVector">RepeatVector</option>
-                <option value="Lambda">Lambda</option>
+                <option value="Lambda">Lambda -- Not supported</option>
                 <option value="ActivityRegularization">ActivityRegularization</option>
                 <option value="Masking">Masking</option>
                 <option value="SpatialDropout1D">SpatialDropout1D</option>
@@ -126,7 +127,6 @@
                 <expand macro="layer_RepeatVector"/>
               </when>
               <when value="Lambda">
-                <expand macro="layer_Lambda"/>
               </when>
               <when value="ActivityRegularization">
                 <expand macro="layer_ActivityRegularization"/>
