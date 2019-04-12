@@ -224,8 +224,8 @@ if __name__ == '__main__':
                 elif v:
                     new_params = {p, None}
                     estimator.set_params( **new_params )
-            elif p.endswith('n_jobs') and v != N_JOBS:
-                new_params = {p: N_JOBS}
+            elif p.endswith('n_jobs'):
+                new_params = {p: 1}
                 estimator.set_params( **new_params )
 
     param_grid = get_search_params(params_builder)

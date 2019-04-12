@@ -98,8 +98,8 @@ class TDMScaler(BaseEstimator, TransformerMixin):
 
     References
     ----------
-    .. [1] Thompson JA, Tan J and Greene CS (2016) Cross‐platform normalization of
-           microarray and RNA‐seq data for machine learning applications. PeerJ 4, e1621.
+    .. [1] Thompson JA, Tan J and Greene CS (2016) Cross-platform normalization of
+           microarray and RNA-seq data for machine learning applications. PeerJ 4, e1621.
     """
 
     def __init__(self, q_lower=25.0, q_upper=75.0, ):
