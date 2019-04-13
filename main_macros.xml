@@ -10,6 +10,8 @@
           <requirement type="package" version="0.9.13">asteval</requirement>
           <requirement type="package" version="0.6">skrebate</requirement>
           <requirement type="package" version="0.4.2">imbalanced-learn</requirement>
+          <requirement type="package" version="1.13.1">tensorflow</requirement>
+          <requirement type="package" version="2.2.4">Keras</requirement>
           <!--requirement type="package" version="0.16.0.0">mlxtend</requirement-->
           <yield/>
       </requirements>
@@ -1287,7 +1289,6 @@
               <column name="name" index="2"/>
               <column name="value" index="1"/>
               <filter type="unique_value" name="unique_param" column="1"/>
-              <filter type="sort_by" name="sorted_param" column="2"/>
             </options>
           </param>
           <param name="sp_list" type="text" value="" optional="true" label="Search list" help="list or array-like, for example: [1, 10, 100, 1000], [True, False] and ['auto', 'sqrt', None]. See `help` section for more examples">

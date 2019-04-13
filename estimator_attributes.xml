@@ -23,6 +23,7 @@ WL_FILE = '$__tool_directory__/pk_whitelist.json'
 exec(open('$__tool_directory__/iraps_classifier.py').read())
 exec(open('$__tool_directory__/preprocessors.py').read())
 exec(open('$__tool_directory__/feature_selectors.py').read())
+exec(open('$__tool_directory__/keras_galaxy_models.py').read())
 exec(open('$__tool_directory__/utils.py').read(), globals())
 
 warnings.simplefilter('ignore')
@@ -36,12 +37,20 @@ with open(infile_object, 'rb') as f:
 if attribute == 'get_params':
     ## get_params()
     res = est_obj.get_params()
+    params = [SearchParam(k, v) for k, v in res.items()]
+    params = sorted(params, key=lambda x: (x.depth, x.s_param))
     results = []
-    for k, v in res.items():
+    for param in params:
         ## params below won't be shown for search in the searchcv tool
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread', 'verbose')
+        ## And show partial `repr` for values which are dictionary,
+        ## especially useful for keras models
+        k, v = param.s_param, param.value
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread',
+                    'verbose', 'name')
         if k.endswith(keywords):
             results.append(['*', k, k+": "+repr(v)])
+        elif type(v) is dict:
+            results.append(['@', k, k+": "+repr(v)[:20]])
         else:
             results.append(['@', k, k+": "+repr(v)])
     results.append(['', 'Note:', '@, params eligible for search in searchcv tool.'])

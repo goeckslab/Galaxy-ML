@@ -52,6 +52,15 @@ except NameError:
     except ImportError:
         pass
 
+try:
+    KerasGClassifier
+except NameError:
+    try:
+        from keras_galaxy_models import KerasGClassifier, KerasGRegressor
+    except ImportError as e:
+        print(e)
+        pass
+
 # handle pickle white list file
 try:
     WL_FILE  # global white list file from tools
@@ -78,7 +87,8 @@ class SafePickler(pickle.Unpickler, object):
         pk_whitelist = self.pk_whitelist
 
         # custom estimators
-        if module == '__main__':
+        if module in ['__main__', 'keras_galaxy_models', 'feature_selectors',
+                      'preprocessors', 'iraps_classifier']:
             custom_classes = {
                 'IRAPSCore': IRAPSCore,
                 'IRAPSClassifier': IRAPSClassifier,
@@ -87,7 +97,9 @@ class SafePickler(pickle.Unpickler, object):
                 'OrderedKFold': OrderedKFold,
                 'Z_RandomOverSampler': Z_RandomOverSampler,
                 'DyRFECV': DyRFECV,
-                'DyRFE': DyRFE
+                'DyRFE': DyRFE,
+                'KerasGClassifier': KerasGClassifier,
+                'KerasGRegressor': KerasGRegressor
             }
             return custom_classes[name]
 
