@@ -38,6 +38,7 @@
           <option value="functional">Model (functional API)</option>
         </param>
         <when value="sequential">
+          <param argument="input_shape" type="text" value="(32, )" optional="true" label="input_shape" help="Tuple of integers or None. Required for the first layer."/>
           <repeat name="layers" min="1" max="500" title="LAYER">
             <conditional name="layer_selection">
               <param name="layer_type" type="select" label="Choose the type of layer">
@@ -45,11 +46,11 @@
                 <option value="Activation">Activation</option>
                 <option value="Dropout">Dropout</option>
                 <option value="Flatten">Flatten</option>
-                <option value="Input">Input</option>
+                <!--option value="Input">Input</option-->
                 <option value="Reshape">Reshape</option>
                 <option value="Permute">Permute</option>
                 <option value="RepeatVector">RepeatVector</option>
-                <option value="Lambda">Lambda -- Not supported</option>
+                <!--option value="Lambda">Lambda - Not supported</option-->
                 <option value="ActivityRegularization">ActivityRegularization</option>
                 <option value="Masking">Masking</option>
                 <option value="SpatialDropout1D">SpatialDropout1D</option>
@@ -382,8 +383,8 @@
       <!--param name="metrics" type="select" label="Select metrics"-->
     </section>
     <section name="fit_params" title="Fit Parameters" expanded="true">
-      <param name="epochs" type="integer" value="1" label="epochs"/>
-      <param name="batch_size" type="integer" value="" label="batch_size"/>
+      <param name="epochs" type="integer" value="1" min="1" label="epochs"/>
+      <param name="batch_size" type="integer" value="" optional="true" label="batch_size" help="Integer or blank for None"/>
     </section>
 	</inputs>
   <outputs>

@@ -113,7 +113,6 @@
 	<xml name="layer_Dense">
 		<param argument="units" type="integer" value="" optional="false" label="units" help="Positive integer, dimensionality of the output space."/>
 		<section name="layer_options" title="Layer Advanced Options" expanded="false">
-			<param argument="input_shape" type="text" value="" optional="true" label="input_shape" help="None or tuple of integers. Only required for the first layer."/>
 			<expand macro="keras_activations"/>
 			<param argument="use_bias" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="true" />
 			<expand macro="keras_initializers" default_kernel="true"/>

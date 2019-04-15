@@ -26,8 +26,8 @@ def _handle_shape(literal):
 def _handle_regularizer(literal):
     """Construct regularizer from string literal
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     literal : str. E.g. '(0.1, 0)'
     """
     literal = literal.strip()
@@ -48,11 +48,11 @@ def _handle_regularizer(literal):
 
 
 def _handle_constraint(config):
-    """Construct constraint from string literal.
+    """Construct constraint from galaxy tool parameters.
     Suppose correct dictionary format
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     config : dict. E.g.
         "bias_constraint":
             {"constraint_options":
@@ -80,22 +80,20 @@ def _handle_lambda(literal):
     return None
 
 
-def get_sequential_model(layers):
+def get_sequential_model(config):
     """Construct keras Sequential model from Galaxy tool parameters
 
     Parameters:
     -----------
-    layers : dictionary, galaxy tool parameters loaded by JSON
+    config : dictionary, galaxy tool parameters loaded by JSON
     """
     model = Sequential()
+    input_shape = _handle_shape(config['input_shape'])
+    layers = config['layers']
     for layer in layers:
         options = layer['layer_selection']
         layer_type = options.pop('layer_type')
-        if layer_type == 'Input':
-            klass = keras.engine.input_layer.Input
-        else:
-            klass = getattr(keras.layers, layer_type)
-
+        klass = getattr(keras.layers, layer_type)
         other_options = options.pop('layer_options', {})
         options.update(other_options)
         ## parameters needs special care
@@ -124,8 +122,9 @@ def get_sequential_model(layers):
                 idxs = literal_eval(value)
                 options[key] = [all_layers[i-1] for i in idxs]
 
-        if 'input_shape' in options and options['input_shape'] is None:
-            options.pop('input_shape')
+        # add input_shape to the first layer only
+        if not getattr(model, '_layers') and input_shape is not None:
+            options['input_shape'] = input_shape
 
         model.add(klass(**options))
 
@@ -161,7 +160,7 @@ if __name__ == '__main__':
         klass = KerasGRegressor
 
     model_type = inputs['layers_config']['model_selection']['model_type']
-    layers_config = inputs['layers_config']['model_selection']['layers']
+    layers_config = inputs['layers_config']['model_selection']
 
     if model_type == 'sequential':
         model = get_sequential_model(layers_config)
