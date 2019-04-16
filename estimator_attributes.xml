@@ -38,7 +38,7 @@ if attribute == 'get_params':
     ## get_params()
     res = est_obj.get_params()
     params = [SearchParam(k, v) for k, v in res.items()]
-    params = sorted(params, key=lambda x: (x.depth, x.s_param))
+    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
     results = []
     for param in params:
         ## params below won't be shown for search in the searchcv tool
@@ -50,7 +50,7 @@ if attribute == 'get_params':
         if k.endswith(keywords):
             results.append(['*', k, k+": "+repr(v)])
         elif type(v) is dict:
-            results.append(['@', k, k+": "+repr(v)[:20]])
+            results.append(['@', k, k+": "+repr(v)[:100]])
         else:
             results.append(['@', k, k+": "+repr(v)])
     results.append(['', 'Note:', '@, params eligible for search in searchcv tool.'])

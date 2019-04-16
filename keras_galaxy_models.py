@@ -149,6 +149,13 @@ class SearchParam(object):
     def depth(self):
         return len(self.s_param.split('__'))
 
+    @property
+    def sort_depth(self):
+        if self.depth > 2:
+            return 2
+        else:
+            return self.depth
+
     def to_dict(self):
         return _param_to_dict(self.s_param, self.value)
 
