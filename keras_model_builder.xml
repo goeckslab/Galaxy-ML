@@ -13,7 +13,7 @@
 					 '$inputs'
 					 'keras_model_builder'
 					 '$outfile'
-					 '$config'
+					 '$infile_json'
 
     ]]>
   </command>
@@ -21,7 +21,7 @@
     <inputs name="inputs"/>
   </configfiles>
   <inputs>
-		<param name="config" type="data" format="json" label="Select the dataset containing Keras model configurations"/>
+		<param name="infile_json" type="data" format="json" label="Select the dataset containing Keras model configurations"/>
     <param name="learning_type" type="select" label="Do classification or regression?">
       <option value="keras_classifier">KerasClassifier</option>
       <option value="keras_regressor">KerasRegressor</option>
@@ -110,8 +110,24 @@
   </outputs>
   <tests>
     <test>
-      <param name="layer_type" value="Dense"/>
-      <output name="outfile" file="best_score_.tabular"/>
+      <param name="infile_json" value="keras01.json" ftype="json"/>
+			<param name="learning_type" value="keras_regressor"/>
+			<section name="fit_params">
+				<param name="epochs" value="100"/>
+			</section>
+      <output name="outfile" file="keras_model01" compare="sim_size" delta="5"/>
+    </test>
+		<test>
+      <param name="infile_json" value="keras02.json" ftype="json"/>
+			<section name="compile_params">
+				<conditional name="optimizer_selection">
+					<param name="optimizer_type" value="Adam"/>
+				</conditional>
+			</section>
+			<section name="fit_params">
+				<param name="epochs" value="100"/>
+			</section>
+      <output name="outfile" file="keras_model02" compare="sim_size" delta="5"/>
     </test>
   </tests>
   <help>

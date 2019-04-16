@@ -195,7 +195,7 @@ if __name__ == '__main__':
     outfile = sys.argv[3]
 
     if len(sys.argv) > 4:
-        infile_config = sys.argv[4]
+        infile_json = sys.argv[4]
 
     # for keras_model_builder tool
     if tool_id == 'keras_model_builder':
@@ -204,15 +204,19 @@ if __name__ == '__main__':
         else:
             klass = KerasGRegressor
 
-        with open(infile_config, 'r') as f:
-            config = json.load(f)
+        with open(infile_json, 'r') as f:
+            json_model = json.load(f)
+
+        config = json_model['config']
 
         options = {}
 
-        if config['name'].startswith('sequential'):
+        if json_model['class_name'] == 'Sequential':
             options['model_type'] = 'sequential'
-        else:
+        elif json_model['class_name'] == 'Model':
             options['model_type'] = 'functional'
+        else:
+            raise ValueError("Unknow Keras model class: %s" % json_model['class_name'])
         options['loss'] = inputs['compile_params']['loss']
         options['optimizer'] = inputs['compile_params']['optimizer_selection']['optimizer_type'].lower()
         options.update( inputs['compile_params']['optimizer_selection']['optimizer_options'] )
@@ -233,12 +237,7 @@ if __name__ == '__main__':
         else:
             model = get_functional_model(layers_config)
 
-        config = model.get_config()
-
-        ## model type check
-        if not config['name'].startswith(('model', 'sequential')):
-            raise ValueError("Expect name in config being `sequential` or `model`"
-                             " but got %s" % config['name'])
+        json_string = model.to_json()
 
         with open(outfile, 'w') as f:
-            json.dump(config, f)
+            f.write(json_string)
