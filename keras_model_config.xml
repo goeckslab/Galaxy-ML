@@ -1,4 +1,4 @@
-<tool id="keras_model_structure" name="Keras Model Structure" version="@VERSION@">
+<tool id="keras_model_config" name="Keras Model Configuration" version="@VERSION@">
   <description>builds model structure and outputs config</description>
   <macros>
 		<import>main_macros.xml</import>
@@ -11,7 +11,7 @@
     <![CDATA[
     python '$__tool_directory__/keras_deep_learning.py'
 					 '$inputs'
-					 'keras_model_structure'
+					 'keras_model_config'
 					 '$outfile'
     ]]>
   </command>
@@ -463,7 +463,7 @@
 		</conditional>
 	</inputs>
   <outputs>
-    <data format="json" name="outfile" label="Keras Model Stucture"/>
+    <data format="json" name="outfile" label="Keras Model Config"/>
   </outputs>
   <tests>
     <test>

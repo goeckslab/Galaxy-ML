@@ -18,6 +18,7 @@ from sklearn.externals import six
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
+from tensorflow import set_random_seed
 
 
 class BaseOptimizer(BaseEstimator):
@@ -251,8 +252,6 @@ class BaseKerasModel(BaseEstimator):
     optimizer : str, 'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
                 'adamax', 'nadam', default 'sgd'
     loss : str, same as Keras `loss`, default 'binary_crossentropy',
-    epochs : int, fit_param from Keras,
-    batch_size : int, fit_param, from Keras
     metrics : list of strings, default []
     lr : None or float, optimizer parameter, default change with `optimizer`
     momentum : None or float, for optimizer `sgd` only, ignored otherwise
@@ -264,12 +263,15 @@ class BaseKerasModel(BaseEstimator):
     beta_1 : None or float, optimizer parameter, default change with `optimizer`
     beta_2 : None or float, optimizer parameter, default change with `optimizer`
     schedule_decay : None or float, optimizer parameter, default change with `optimizer`
+    epochs : int, fit_param from Keras,
+    batch_size : int, fit_param, from Keras
+    seed : None or int, backend random seed, default 0
     """
     def __init__(self, config, model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None, momentum=None,
                  decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, **fit_params):
+                 batch_size=None, seed=0, **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -277,6 +279,7 @@ class BaseKerasModel(BaseEstimator):
         self.metrics = metrics
         self.epochs = epochs
         self.batch_size = batch_size
+        self.seed = seed
         self.fit_params = fit_params
         #TODO support compile parameters
 
@@ -438,6 +441,10 @@ class BaseKerasModel(BaseEstimator):
         fit_params.update(
             dict(epochs = self.epochs, batch_size = self.batch_size))
         fit_params.update(kwargs)
+
+        # set tensorflow random seed
+        if self.seed is not None and K.backend() == 'tensorflow':
+            set_random_seed(self.seed)
 
         self.model_.fit(X, y, **fit_params)
 

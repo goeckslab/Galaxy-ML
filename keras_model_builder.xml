@@ -103,6 +103,7 @@
       <param name="epochs" type="integer" value="1" min="1" label="epochs"/>
       <param name="batch_size" type="integer" value="" optional="true" label="batch_size" help="Integer or blank for None"/>
     </section>
+		<param name="random_seed" type="integer" value="0" label="Random Seed" help="Integer or blank for None"/>
 	</inputs>
   <outputs>
     <data format="zip" name="outfile" label="Keras Model Builder  on ${on_string}"/>

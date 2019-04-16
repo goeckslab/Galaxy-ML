@@ -280,7 +280,8 @@ def test_get_params_base_keras_model():
         'nesterov': False,
         'optimizer': 'sgd',
         'rho': None,
-        'schedule_decay': None
+        'schedule_decay': None,
+        'seed': 0
     }
 
     assert got == expect, got
@@ -317,7 +318,7 @@ def test_get_params_keras_g_classifier():
 
     expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay', 'epochs',
               'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov',
-              'optimizer', 'rho', 'schedule_decay',
+              'optimizer', 'rho', 'schedule_decay', 'seed',
               'layers_0_Dense__config__kernel_initializer__config__seed',
               'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -364,7 +365,7 @@ def test_get_params_keras_g_regressor():
 
     expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay', 'epochs',
               'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov',
-              'optimizer', 'rho', 'schedule_decay',
+              'optimizer', 'rho', 'schedule_decay', 'seed',
               'layers_0_Dense__config__kernel_initializer__config__seed',
               'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -458,6 +459,7 @@ def test_funtional_model_get_params():
         'optimizer': 'sgd',
         'rho': None,
         'schedule_decay': None,
+        'seed': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',
         'layers_1_Conv2D__config': {'name': 'conv2d_1',
