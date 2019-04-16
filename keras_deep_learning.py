@@ -152,30 +152,52 @@ if __name__ == '__main__':
     with open(input_json_path, 'r') as param_handler:
         inputs = json.load(param_handler)
 
-    outfile = sys.argv[2]
+    tool_id = sys.argv[2]
+    outfile = sys.argv[3]
 
-    if inputs['learning_type'] == 'keras_classifier':
-        klass = KerasGClassifier
+    if len(sys.argv) > 4:
+        infile_config = sys.argv[4]
+
+    if tool_id == 'keras_model_builder':
+        if inputs['learning_type'] == 'keras_classifier':
+            klass = KerasGClassifier
+        else:
+            klass = KerasGRegressor
+
+        with open(infile_config, 'r') as f:
+            config = json.load(f)
+
+        options = {}
+
+        if config['name'].startswith('sequential'):
+            options['model_type'] = 'sequential'
+        else:
+            options['model_type'] = 'functional'
+        options['loss'] = inputs['compile_params']['loss']
+        options['optimizer'] = inputs['compile_params']['optimizer_selection']['optimizer_type'].lower()
+        options.update( inputs['compile_params']['optimizer_selection']['optimizer_options'] )
+        options.update(inputs['fit_params'])
+
+        estimator = klass(config, **options)
+
+        with open(outfile, 'wb') as f:
+            pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+        
     else:
-        klass = KerasGRegressor
+        model_type = inputs['model_selection']['model_type']
+        layers_config = inputs['model_selection']
 
-    model_type = inputs['layers_config']['model_selection']['model_type']
-    layers_config = inputs['layers_config']['model_selection']
+        if model_type == 'sequential':
+            model = get_sequential_model(layers_config)
+        else:
+            model = get_functional_model(layers_config)
 
-    if model_type == 'sequential':
-        model = get_sequential_model(layers_config)
-    else:
-        model = get_functional_model(layers_config)
+        config = model.get_config()
 
-    config = model.get_config()
-    options = {}
-    options['model_type'] = model_type
-    options['loss'] = inputs['compile_params']['loss']
-    options['optimizer'] = inputs['compile_params']['optimizer_selection']['optimizer_type'].lower()
-    options.update( inputs['compile_params']['optimizer_selection']['optimizer_options'] )
-    options.update(inputs['fit_params'])
+        ## model type check
+        if not config['name'].startswith(('functional', 'sequential')):
+            raise ValueError("Expect name in config being `functional` or `model`"
+                             " but got %s" % config['name'])
 
-    estimator = klass(config, **options)
-
-    with open(outfile, 'wb') as f:
-        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+        with open(outfile, 'w') as f:
+            json.dump(config, f)

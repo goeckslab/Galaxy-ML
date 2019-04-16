@@ -1,0 +1,481 @@
+<tool id="keras_model_structure" name="Keras Model Structure" version="@VERSION@">
+  <description>builds model structure and outputs config</description>
+  <macros>
+		<import>main_macros.xml</import>
+    <import>keras_macros.xml</import>
+  </macros>
+  <expand macro="python_requirements"/>
+  <expand macro="macro_stdio"/>
+  <version_command>echo "@VERSION@"</version_command>
+  <command>
+    <![CDATA[
+    python '$__tool_directory__/keras_deep_learning.py'
+					 '$inputs'
+					 'keras_model_structure'
+					 '$outfile'
+    ]]>
+  </command>
+  <configfiles>
+    <inputs name="inputs"/>
+  </configfiles>
+  <inputs>
+		<conditional name="model_selection">
+			<param name="model_type" type="select" label="Select keras model type">
+				<option value="sequential" selected="true">Sequential</option>
+				<option value="functional">Model (functional API)</option>
+			</param>
+			<when value="sequential">
+				<param argument="input_shape" type="text" value="(32, )" optional="true" label="input_shape" help="Tuple of integers or None. Required for the first layer."/>
+				<repeat name="layers" min="1" max="500" title="LAYER">
+					<conditional name="layer_selection">
+						<param name="layer_type" type="select" label="Choose the type of layer">
+							<expand macro="keras_layer_types_core"/>
+							<expand macro="keras_layer_types_Convolutional"/>
+							<expand macro="keras_layer_types_Pooling"/>
+							<expand macro="keras_layer_types_locally_connected"/>
+							<expand macro="keras_layer_types_recurrent"/>
+							<expand macro="keras_layer_types_embedding"/>
+							<expand macro="keras_layer_types_advanced_activations"/>
+							<expand macro="keras_layer_types_normalization"/>
+							<expand macro="keras_layer_types_noise"/>
+						</param>
+						<when value="Dense">
+							<expand macro="layer_Dense"/>
+						</when>
+						<when value="Activation">
+							<expand macro="keras_activations"/>
+						</when>
+						<when value="Dropout">
+							<expand macro="layer_Dropout"/>
+						</when>
+						<when value="Flatten">
+							<expand macro="layer_Flatten"/>
+						</when>
+						<when value="Reshape">
+							<expand macro="layer_Reshape"/>
+						</when>
+						<when value="Permute">
+							<expand macro="layer_Permute"/>
+						</when>
+						<when value="RepeatVector">
+							<expand macro="layer_RepeatVector"/>
+						</when>
+						<when value="ActivityRegularization">
+							<expand macro="layer_ActivityRegularization"/>
+						</when>
+						<when value="Masking">
+							<expand macro="layer_Masking"/>
+						</when>
+						<when value="SpatialDropout1D">
+							<expand macro="layer_SpatialDropout1D"/>
+						</when>
+						<when value="SpatialDropout2D">
+							<expand macro="layer_SpatialDropout2D"/>
+						</when>
+						<when value="SpatialDropout3D">
+							<expand macro="layer_SpatialDropout3D"/>
+						</when>
+						<when value="Conv1D">
+							<expand macro="layer_Conv1D"/>
+						</when>
+						<when value="Conv2D">
+							<expand macro="layer_Conv2D"/>
+						</when>
+						<when value="SeparableConv1D">
+							<expand macro="layer_SeparableConv1D"/>
+						</when>
+						<when value="SeparableConv2D">
+							<expand macro="layer_SeparableConv2D"/>
+						</when>
+						<when value="DepthwiseConv2D">
+							<expand macro="layer_DepthwiseConv2D"/>
+						</when>
+						<when value="Conv2DTranspose">
+							<expand macro="layer_Conv2DTranspose"/>
+						</when>
+						<when value="Conv3D">
+							<expand macro="layer_Conv3D"/>
+						</when>
+						<when value="Conv3DTranspose">
+							<expand macro="layer_Conv3DTranspose"/>
+						</when>
+						<when value="Cropping1D">
+							<expand macro="layer_Cropping1D"/>
+						</when>
+						<when value="Cropping2D">
+							<expand macro="layer_Cropping2D"/>
+						</when>
+						<when value="Cropping3D">
+							<expand macro="layer_Cropping3D"/>
+						</when>
+						<when value="UpSampling1D">
+							<expand macro="layer_UpSampling1D"/>
+						</when>
+						<when value="UpSampling2D">
+							<expand macro="layer_UpSampling2D"/>
+						</when>
+						<when value="UpSampling3D">
+							<expand macro="layer_UpSampling3D"/>
+						</when>
+						<when value="ZeroPadding1D">
+							<expand macro="layer_ZeroPadding1D"/>
+						</when>
+						<when value="ZeroPadding2D">
+							<expand macro="layer_ZeroPadding2D"/>
+						</when>
+						<when value="ZeroPadding3D">
+							<expand macro="layer_ZeroPadding3D"/>
+						</when>
+						<when value="MaxPooling1D">
+							<expand macro="layer_MaxPooling1D"/>
+						</when>
+						<when value="MaxPooling2D">
+							<expand macro="layer_MaxPooling2D"/>
+						</when>
+						<when value="MaxPooling3D">
+							<expand macro="layer_MaxPooling3D"/>
+						</when>
+						<when value="AveragePooling1D">
+							<expand macro="layer_AveragePooling1D"/>
+						</when>
+						<when value="AveragePooling2D">
+							<expand macro="layer_AveragePooling2D"/>
+						</when>
+						<when value="AveragePooling3D">
+							<expand macro="layer_AveragePooling3D"/>
+						</when>
+						<when value="GlobalMaxPooling1D">
+							<expand macro="layer_GlobalMaxPooling1D"/>
+						</when>
+						<when value="GlobalAveragePooling1D">
+							<expand macro="layer_GlobalAveragePooling1D"/>
+						</when>
+						<when value="GlobalMaxPooling2D">
+							<expand macro="layer_GlobalMaxPooling2D"/>
+						</when>
+						<when value="GlobalAveragePooling2D">
+							<expand macro="layer_GlobalAveragePooling2D"/>
+						</when>
+						<when value="GlobalMaxPooling3D">
+							<expand macro="layer_GlobalMaxPooling3D"/>
+						</when>
+						<when value="GlobalAveragePooling3D">
+							<expand macro="layer_GlobalAveragePooling3D"/>
+						</when>
+						<when value="LocallyConnected1D">
+							<expand macro="layer_LocallyConnected1D"/>
+						</when>
+						<when value="LocallyConnected2D">
+							<expand macro="layer_LocallyConnected2D"/>
+						</when>
+						<when value="RNN">
+						</when>
+						<when value="Masking">
+						</when>
+						<when value="SimpleRNN">
+						</when>
+						<when value="GRU">
+						</when>
+						<when value="LSTM">
+						</when>
+						<when value="ConvLSTM2D">
+						</when>
+						<when value="ConvLSTM2DCell">
+						</when>
+						<when value="SimpleRNNCell">
+						</when>
+						<when value="GRUCell">
+						</when>
+						<when value="LSTMCell">
+						</when>
+						<when value="CuDNNGRU">
+						</when>
+						<when value="CuDNNLSTM">
+						</when>
+						<when value="Embedding">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="LeakyReLU">
+							<expand macro="layer_LeakyReLU"/>
+						</when>
+						<when value="PReLU">
+							<expand macro="layer_PReLU"/>
+						</when>
+						<when value="ELU">
+							<expand macro="layer_ELU"/>
+						</when>
+						<when value="ThresholdedReLU">
+							<expand macro="layer_ThresholdedReLU"/>
+						</when>
+						<when value="Softmax">
+							<expand macro="layer_Softmax"/>
+						</when>
+						<when value="ReLU">
+							<expand macro="layer_ReLU"/>
+						</when>
+						<when value="BatchNormalization">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="GaussianNoise">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="GaussianDropout">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="AlphaDropout">
+							<expand macro="layer_Embedding"/>
+						</when>
+					</conditional>
+				</repeat>
+			</when>
+			<when value="functional">
+				<repeat name="layers" min="1" max="500" title="LAYER">
+					<conditional name="layer_selection">
+						<param name="layer_type" type="select" label="Choose the type of layer">
+							<option value="Input">Input</option>
+							<expand macro="keras_layer_types_core"/>
+							<expand macro="keras_layer_types_Convolutional"/>
+							<expand macro="keras_layer_types_Pooling"/>
+							<expand macro="keras_layer_types_locally_connected"/>
+							<expand macro="keras_layer_types_recurrent"/>
+							<expand macro="keras_layer_types_merge"/>
+							<expand macro="keras_layer_types_embedding"/>
+							<expand macro="keras_layer_types_advanced_activations"/>
+							<expand macro="keras_layer_types_normalization"/>
+							<expand macro="keras_layer_types_noise"/>
+						</param>
+						<when value="Input">
+							<expand macro="layer_Input"/>
+						</when>
+						<when value="Dense">
+							<expand macro="layer_Dense"/>
+						</when>
+						<when value="Activation">
+							<expand macro="keras_activations"/>
+						</when>
+						<when value="Dropout">
+							<expand macro="layer_Dropout"/>
+						</when>
+						<when value="Flatten">
+							<expand macro="layer_Flatten"/>
+						</when>
+						<when value="Reshape">
+							<expand macro="layer_Reshape"/>
+						</when>
+						<when value="Permute">
+							<expand macro="layer_Permute"/>
+						</when>
+						<when value="RepeatVector">
+							<expand macro="layer_RepeatVector"/>
+						</when>
+						<when value="ActivityRegularization">
+							<expand macro="layer_ActivityRegularization"/>
+						</when>
+						<when value="Masking">
+							<expand macro="layer_Masking"/>
+						</when>
+						<when value="SpatialDropout1D">
+							<expand macro="layer_SpatialDropout1D"/>
+						</when>
+						<when value="SpatialDropout2D">
+							<expand macro="layer_SpatialDropout2D"/>
+						</when>
+						<when value="SpatialDropout3D">
+							<expand macro="layer_SpatialDropout3D"/>
+						</when>
+						<when value="Conv1D">
+							<expand macro="layer_Conv1D"/>
+						</when>
+						<when value="Conv2D">
+							<expand macro="layer_Conv2D"/>
+						</when>
+						<when value="SeparableConv1D">
+							<expand macro="layer_SeparableConv1D"/>
+						</when>
+						<when value="SeparableConv2D">
+							<expand macro="layer_SeparableConv2D"/>
+						</when>
+						<when value="DepthwiseConv2D">
+							<expand macro="layer_DepthwiseConv2D"/>
+						</when>
+						<when value="Conv2DTranspose">
+							<expand macro="layer_Conv2DTranspose"/>
+						</when>
+						<when value="Conv3D">
+							<expand macro="layer_Conv3D"/>
+						</when>
+						<when value="Conv3DTranspose">
+							<expand macro="layer_Conv3DTranspose"/>
+						</when>
+						<when value="Cropping1D">
+							<expand macro="layer_Cropping1D"/>
+						</when>
+						<when value="Cropping2D">
+							<expand macro="layer_Cropping2D"/>
+						</when>
+						<when value="Cropping3D">
+							<expand macro="layer_Cropping3D"/>
+						</when>
+						<when value="UpSampling1D">
+							<expand macro="layer_UpSampling1D"/>
+						</when>
+						<when value="UpSampling2D">
+							<expand macro="layer_UpSampling2D"/>
+						</when>
+						<when value="UpSampling3D">
+							<expand macro="layer_UpSampling3D"/>
+						</when>
+						<when value="ZeroPadding1D">
+							<expand macro="layer_ZeroPadding1D"/>
+						</when>
+						<when value="ZeroPadding2D">
+							<expand macro="layer_ZeroPadding2D"/>
+						</when>
+						<when value="ZeroPadding3D">
+							<expand macro="layer_ZeroPadding3D"/>
+						</when>
+						<when value="MaxPooling1D">
+							<expand macro="layer_MaxPooling1D"/>
+						</when>
+						<when value="MaxPooling2D">
+							<expand macro="layer_MaxPooling2D"/>
+						</when>
+						<when value="MaxPooling3D">
+							<expand macro="layer_MaxPooling3D"/>
+						</when>
+						<when value="AveragePooling1D">
+							<expand macro="layer_AveragePooling1D"/>
+						</when>
+						<when value="AveragePooling2D">
+							<expand macro="layer_AveragePooling2D"/>
+						</when>
+						<when value="AveragePooling3D">
+							<expand macro="layer_AveragePooling3D"/>
+						</when>
+						<when value="GlobalMaxPooling1D">
+							<expand macro="layer_GlobalMaxPooling1D"/>
+						</when>
+						<when value="GlobalAveragePooling1D">
+							<expand macro="layer_GlobalAveragePooling1D"/>
+						</when>
+						<when value="GlobalMaxPooling2D">
+							<expand macro="layer_GlobalMaxPooling2D"/>
+						</when>
+						<when value="GlobalAveragePooling2D">
+							<expand macro="layer_GlobalAveragePooling2D"/>
+						</when>
+						<when value="GlobalMaxPooling3D">
+							<expand macro="layer_GlobalMaxPooling3D"/>
+						</when>
+						<when value="GlobalAveragePooling3D">
+							<expand macro="layer_GlobalAveragePooling3D"/>
+						</when>
+						<when value="LocallyConnected1D">
+							<expand macro="layer_LocallyConnected1D"/>
+						</when>
+						<when value="LocallyConnected2D">
+							<expand macro="layer_LocallyConnected2D"/>
+						</when>
+						<when value="RNN">
+						</when>
+						<when value="Masking">
+						</when>
+						<when value="SimpleRNN">
+						</when>
+						<when value="GRU">
+						</when>
+						<when value="LSTM">
+						</when>
+						<when value="ConvLSTM2D">
+						</when>
+						<when value="ConvLSTM2DCell">
+						</when>
+						<when value="SimpleRNNCell">
+						</when>
+						<when value="GRUCell">
+						</when>
+						<when value="LSTMCell">
+						</when>
+						<when value="CuDNNGRU">
+						</when>
+						<when value="CuDNNLSTM">
+						</when>
+						<when value="Embedding">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="LeakyReLU">
+							<expand macro="layer_LeakyReLU"/>
+						</when>
+						<when value="PReLU">
+							<expand macro="layer_PReLU"/>
+						</when>
+						<when value="ELU">
+							<expand macro="layer_ELU"/>
+						</when>
+						<when value="ThresholdedReLU">
+							<expand macro="layer_ThresholdedReLU"/>
+						</when>
+						<when value="Softmax">
+							<expand macro="layer_Softmax"/>
+						</when>
+						<when value="ReLU">
+							<expand macro="layer_ReLU"/>
+						</when>
+						<when value="BatchNormalization">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="GaussianNoise">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="GaussianDropout">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="AlphaDropout">
+							<expand macro="layer_Embedding"/>
+						</when>
+						<when value="Add">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Subtract">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Multiply">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Average">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Maximum">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Minimum">
+							<expand macro="layer_merge"/>
+						</when>
+						<when value="Concatenate">
+							<expand macro="layer_Concatenate"/>
+						</when>
+						<when value="Dot">
+							<expand macro="layer_Dot"/>
+						</when>
+					</conditional>
+				</repeat>
+			</when>
+		</conditional>
+	</inputs>
+  <outputs>
+    <data format="json" name="outfile" label="Keras Model Stucture"/>
+  </outputs>
+  <tests>
+    <test>
+      <param name="layer_type" value="Dense"/>
+      <output name="outfile" file="best_score_.tabular"/>
+    </test>
+  </tests>
+  <help>
+      <![CDATA[
+**Help**
+      ]]>
+  </help>
+  <citations>
+  </citations>
+</tool>

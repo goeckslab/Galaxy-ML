@@ -108,6 +108,111 @@
 		</conditional>
   </xml>
 
+  <xml name="keras_layer_types_core">
+    <option value="Dense">Dense</option>
+    <option value="Activation">Activation</option>
+    <option value="Dropout">Dropout</option>
+    <option value="Flatten">Flatten</option>
+    <option value="Reshape">Reshape</option>
+    <option value="Permute">Permute</option>
+    <option value="RepeatVector">RepeatVector</option>
+    <!--option value="Lambda">Lambda - Not supported</option-->
+    <option value="ActivityRegularization">ActivityRegularization</option>
+    <option value="Masking">Masking</option>
+    <option value="SpatialDropout1D">SpatialDropout1D</option>
+    <option value="SpatialDropout2D">SpatialDropout2D</option>
+    <option value="SpatialDropout3D">SpatialDropout3D</option>
+  </xml>
+
+  <xml name="keras_layer_types_Convolutional">
+    <option value="Conv1D">Conv1D</option>
+    <option value="Conv2D">Conv2D</option>
+    <option value="SeparableConv1D">SeparableConv1D</option>
+    <option value="SeparableConv2D">SeparableConv2D</option>
+    <option value="DepthwiseConv2D">DepthwiseConv2D</option>
+    <option value="Conv2DTranspose">Conv2DTranspose</option>
+    <option value="Conv3D">Conv3D</option>
+    <option value="Conv3DTranspose">Conv3DTranspose</option>
+    <option value="Cropping1D">Cropping1D</option>
+    <option value="Cropping2D">Cropping2D</option>
+    <option value="Cropping3D">Cropping3D</option>
+    <option value="UpSampling1D">UpSampling1D</option>
+    <option value="UpSampling2D">UpSampling2D</option>
+    <option value="UpSampling3D">UpSampling3D</option>
+    <option value="ZeroPadding1D">ZeroPadding1D</option>
+    <option value="ZeroPadding2D">ZeroPadding2D</option>
+    <option value="ZeroPadding3D">ZeroPadding3D</option>
+  </xml>
+
+  <xml name="keras_layer_types_Pooling">
+    <option value="MaxPooling1D">MaxPooling1D</option>
+    <option value="MaxPooling2D">MaxPooling2D</option>
+    <option value="MaxPooling3D">MaxPooling3D</option>
+    <option value="AveragePooling1D">AveragePooling1D</option>
+    <option value="AveragePooling2D">AveragePooling2D</option>
+    <option value="AveragePooling3D">AveragePooling3D</option>
+    <option value="GlobalMaxPooling1D">GlobalMaxPooling1D</option>
+    <option value="GlobalAveragePooling1D">GlobalAveragePooling1D</option>
+    <option value="GlobalMaxPooling2D">GlobalMaxPooling2D</option>
+    <option value="GlobalAveragePooling2D">GlobalAveragePooling2D</option>
+    <option value="GlobalMaxPooling3D">GlobalMaxPooling3D</option>
+    <option value="GlobalAveragePooling3D">GlobalAveragePooling3D</option>
+  </xml>
+
+  <xml name="keras_layer_types_locally_connected">
+    <option value="LocallyConnected1D">LocallyConnected1D</option>
+    <option value="LocallyConnected2D">LocallyConnected2D</option>
+  </xml>
+
+  <xml name="keras_layer_types_recurrent">
+    <option value="RNN">RNN</option>
+    <option value="Masking">Masking</option>
+    <option value="SimpleRNN">SimpleRNN</option>
+    <option value="GRU">GRU</option>
+    <option value="LSTM">LSTM</option>
+    <option value="ConvLSTM2D">ConvLSTM2D</option>
+    <option value="ConvLSTM2DCell">ConvLSTM2DCell</option>
+    <option value="SimpleRNNCell">SimpleRNNCell</option>
+    <option value="GRUCell">GRUCell</option>
+    <option value="LSTMCell">LSTMCell</option>
+    <option value="CuDNNGRU">CuDNNGRU</option>
+    <option value="CuDNNLSTM">Dense</option>
+  </xml>
+
+  <xml name="keras_layer_types_embedding">
+    <option value="Embedding">Embedding</option>
+  </xml>
+
+  <xml name="keras_layer_types_advanced_activations">
+    <option value="LeakyReLU">LeakyReLU</option>
+    <option value="PReLU">PReLU</option>
+    <option value="ELU">ELU</option>
+    <option value="ThresholdedReLU">ThresholdedReLU</option>
+    <option value="Softmax">Softmax</option>
+    <option value="ReLU">ReLU</option>
+  </xml>
+
+  <xml name="keras_layer_types_normalization">
+    <option value="BatchNormalization">BatchNormalization</option>
+  </xml>
+
+  <xml name="keras_layer_types_noise">
+    <option value="GaussianNoise">GaussianNoise</option>
+    <option value="GaussianDropout">GaussianDropout</option>
+    <option value="AlphaDropout">AlphaDropout</option>    
+  </xml>
+
+  <xml name="keras_layer_types_merge">
+    <option value="Add">Add</option>
+    <option value="Subtract">Subtract</option>
+    <option value="Multiply">Multiply</option>
+    <option value="Average">Average</option>
+    <option value="Maximum">Maximum</option>
+    <option value="Minimum">Minimum</option>
+    <option value="Concatenate">Concatenate</option>
+    <option value="Dot">Dot</option>
+  </xml>
+
 	<!--Core Layers-->
 
 	<xml name="layer_Dense">
