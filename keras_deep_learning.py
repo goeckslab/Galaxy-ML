@@ -80,6 +80,35 @@ def _handle_lambda(literal):
     return None
 
 
+def _handle_layer_parameters(params):
+    """Access to handle all kinds of parameters
+    """
+    for key, value in six.iteritems(params):
+        if value == 'None':
+            params[key] = None
+            continue
+
+        if type(value) in [int, float, bool]\
+            or (type(value) is str and value.isalpha()):
+            continue
+
+        if key in ['input_shape', 'noise_shape', 'shape', 'batch_shape','target_shape',
+                    'dims', 'kernel_size', 'strides', 'dilation_rate', 'output_padding'
+                    'cropping', 'size', 'padding', 'pool_size', 'axis', 'shared_axes']:
+            params[key] = _handle_shape(value)
+
+        elif key.endswith('_regularizer'):
+            params[key] = _handle_regularizer(value)
+
+        elif key.endswith('_constraint'):
+            params[key] = _handle_constraint(value)
+
+        elif key == 'function': # No support for lambda/function eval
+            params.pop(key)
+
+    return params
+
+
 def get_sequential_model(config):
     """Construct keras Sequential model from Galaxy tool parameters
 
@@ -96,31 +125,9 @@ def get_sequential_model(config):
         klass = getattr(keras.layers, layer_type)
         other_options = options.pop('layer_options', {})
         options.update(other_options)
+
         ## parameters needs special care
-        for key, value in six.iteritems(options):
-            if value == 'None':
-                options[key] = None
-                continue
-
-            if type(value) in [int, float, bool]\
-                or (type(value) is str and value.isalpha()):
-                continue
-
-            if key in ['input_shape', 'noise_shape', 'shape', 'batch_shape','target_shape',
-                        'dims', 'kernel_size', 'strides', 'dilation_rate', 'output_padding'
-                        'cropping', 'size', 'padding', 'pool_size', 'axis', 'shared_axes']:
-                options[key] = _handle_shape(value)
-            elif key.endswith('_regularizer'):
-                options[key] = _handle_regularizer(value)
-            elif key.endswith('_constraint'):
-                options[key] = _handle_constraint(value)
-            elif key == 'function': # No support for lambda/function eval
-                options.pop(key)
-            elif key == 'merging_layers':
-                raise ValueError("Merge layers are not supported in Sequential model. Please "
-                                 "Please consider using the functional model!")
-                idxs = literal_eval(value)
-                options[key] = [all_layers[i-1] for i in idxs]
+        options = _handle_layer_parameters(options)
 
         # add input_shape to the first layer only
         if not getattr(model, '_layers') and input_shape is not None:
@@ -131,14 +138,46 @@ def get_sequential_model(config):
     return model
 
 
-def get_functional_model(layers):
+def get_functional_model(config):
     """Construct keras functional model from Galaxy tool parameters
 
-    Parameters:
+    Parameters
     -----------
-    layers : dictionary, galaxy tool parameters loaded by JSON
+    config : dictionary, galaxy tool parameters loaded by JSON
     """
-    return layers
+    layers = config['layers']
+    all_layers = []
+    for layer in layers:
+        options = layer['layer_selection']
+        layer_type = options.pop('layer_type')
+        klass = getattr(keras.layers, layer_type)
+        inbound_nodes = options.pop('inbound_nodes', None)
+        other_options = options.pop('layer_options', {})
+        options.update(other_options)
+
+        ## parameters needs special care
+        options = _handle_layer_parameters(options)
+        # merge layers
+        if 'merging_layers' in options:
+            idxs = literal_eval(options.pop('merging_layers'))
+            merging_layers = [all_layers[i-1] for i in idxs]
+            new_layer = klass(**options)(merging_layers)
+        # non-input layers
+        elif inbound_nodes is not None:
+            new_layer = klass(**options)(all_layers[inbound_nodes-1])
+        # input layers
+        else:
+            new_layer = klass(**options)
+
+        all_layers.append(new_layer)
+
+    input_indexes = _handle_shape(config['input_layers'])
+    input_layers = [all_layers[i-1] for i in input_indexes]
+
+    output_indexes = _handle_shape(config['output_layers'])
+    output_layers = [all_layers[i-1] for i in output_indexes]
+
+    return Model(inputs=input_layers, outputs=output_layers)
 
 
 if __name__ == '__main__':
@@ -158,6 +197,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 4:
         infile_config = sys.argv[4]
 
+    # for keras_model_builder tool
     if tool_id == 'keras_model_builder':
         if inputs['learning_type'] == 'keras_classifier':
             klass = KerasGClassifier
@@ -182,7 +222,8 @@ if __name__ == '__main__':
 
         with open(outfile, 'wb') as f:
             pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
-        
+
+    # for keras_model_config tool
     else:
         model_type = inputs['model_selection']['model_type']
         layers_config = inputs['model_selection']
@@ -195,8 +236,8 @@ if __name__ == '__main__':
         config = model.get_config()
 
         ## model type check
-        if not config['name'].startswith(('functional', 'sequential')):
-            raise ValueError("Expect name in config being `functional` or `model`"
+        if not config['name'].startswith(('model', 'sequential')):
+            raise ValueError("Expect name in config being `sequential` or `model`"
                              " but got %s" % config['name'])
 
         with open(outfile, 'w') as f:

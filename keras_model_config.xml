@@ -248,133 +248,219 @@
 							<expand macro="layer_Input"/>
 						</when>
 						<when value="Dense">
-							<expand macro="layer_Dense"/>
+							<expand macro="layer_Dense">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Activation">
-							<expand macro="keras_activations"/>
+							<expand macro="keras_activations">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Dropout">
-							<expand macro="layer_Dropout"/>
+							<expand macro="layer_Dropout">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Flatten">
-							<expand macro="layer_Flatten"/>
+							<expand macro="layer_Flatten">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Reshape">
-							<expand macro="layer_Reshape"/>
+							<expand macro="layer_Reshape">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Permute">
-							<expand macro="layer_Permute"/>
+							<expand macro="layer_Permute">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="RepeatVector">
-							<expand macro="layer_RepeatVector"/>
+							<expand macro="layer_RepeatVector">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="ActivityRegularization">
-							<expand macro="layer_ActivityRegularization"/>
+							<expand macro="layer_ActivityRegularization">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Masking">
-							<expand macro="layer_Masking"/>
+							<expand macro="layer_Masking">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="SpatialDropout1D">
-							<expand macro="layer_SpatialDropout1D"/>
+							<expand macro="layer_SpatialDropout1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="SpatialDropout2D">
-							<expand macro="layer_SpatialDropout2D"/>
+							<expand macro="layer_SpatialDropout2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="SpatialDropout3D">
-							<expand macro="layer_SpatialDropout3D"/>
+							<expand macro="layer_SpatialDropout3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Conv1D">
-							<expand macro="layer_Conv1D"/>
+							<expand macro="layer_Conv1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Conv2D">
-							<expand macro="layer_Conv2D"/>
+							<expand macro="layer_Conv2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="SeparableConv1D">
-							<expand macro="layer_SeparableConv1D"/>
+							<expand macro="layer_SeparableConv1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="SeparableConv2D">
-							<expand macro="layer_SeparableConv2D"/>
+							<expand macro="layer_SeparableConv2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="DepthwiseConv2D">
-							<expand macro="layer_DepthwiseConv2D"/>
+							<expand macro="layer_DepthwiseConv2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Conv2DTranspose">
-							<expand macro="layer_Conv2DTranspose"/>
+							<expand macro="layer_Conv2DTranspose">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Conv3D">
-							<expand macro="layer_Conv3D"/>
+							<expand macro="layer_Conv3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Conv3DTranspose">
-							<expand macro="layer_Conv3DTranspose"/>
+							<expand macro="layer_Conv3DTranspose">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Cropping1D">
-							<expand macro="layer_Cropping1D"/>
+							<expand macro="layer_Cropping1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Cropping2D">
-							<expand macro="layer_Cropping2D"/>
+							<expand macro="layer_Cropping2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="Cropping3D">
-							<expand macro="layer_Cropping3D"/>
+							<expand macro="layer_Cropping3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="UpSampling1D">
-							<expand macro="layer_UpSampling1D"/>
+							<expand macro="layer_UpSampling1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="UpSampling2D">
-							<expand macro="layer_UpSampling2D"/>
+							<expand macro="layer_UpSampling2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="UpSampling3D">
-							<expand macro="layer_UpSampling3D"/>
+							<expand macro="layer_UpSampling3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="ZeroPadding1D">
-							<expand macro="layer_ZeroPadding1D"/>
+							<expand macro="layer_ZeroPadding1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="ZeroPadding2D">
-							<expand macro="layer_ZeroPadding2D"/>
+							<expand macro="layer_ZeroPadding2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="ZeroPadding3D">
-							<expand macro="layer_ZeroPadding3D"/>
+							<expand macro="layer_ZeroPadding3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="MaxPooling1D">
-							<expand macro="layer_MaxPooling1D"/>
+							<expand macro="layer_MaxPooling1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="MaxPooling2D">
-							<expand macro="layer_MaxPooling2D"/>
+							<expand macro="layer_MaxPooling2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="MaxPooling3D">
-							<expand macro="layer_MaxPooling3D"/>
+							<expand macro="layer_MaxPooling3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="AveragePooling1D">
-							<expand macro="layer_AveragePooling1D"/>
+							<expand macro="layer_AveragePooling1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="AveragePooling2D">
-							<expand macro="layer_AveragePooling2D"/>
+							<expand macro="layer_AveragePooling2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="AveragePooling3D">
-							<expand macro="layer_AveragePooling3D"/>
+							<expand macro="layer_AveragePooling3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalMaxPooling1D">
-							<expand macro="layer_GlobalMaxPooling1D"/>
+							<expand macro="layer_GlobalMaxPooling1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalAveragePooling1D">
-							<expand macro="layer_GlobalAveragePooling1D"/>
+							<expand macro="layer_GlobalAveragePooling1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalMaxPooling2D">
-							<expand macro="layer_GlobalMaxPooling2D"/>
+							<expand macro="layer_GlobalMaxPooling2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalAveragePooling2D">
-							<expand macro="layer_GlobalAveragePooling2D"/>
+							<expand macro="layer_GlobalAveragePooling2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalMaxPooling3D">
-							<expand macro="layer_GlobalMaxPooling3D"/>
+							<expand macro="layer_GlobalMaxPooling3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="GlobalAveragePooling3D">
-							<expand macro="layer_GlobalAveragePooling3D"/>
+							<expand macro="layer_GlobalAveragePooling3D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="LocallyConnected1D">
-							<expand macro="layer_LocallyConnected1D"/>
+							<expand macro="layer_LocallyConnected1D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="LocallyConnected2D">
-							<expand macro="layer_LocallyConnected2D"/>
+							<expand macro="layer_LocallyConnected2D">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
 						</when>
 						<when value="RNN">
 						</when>
@@ -400,39 +486,6 @@
 						</when>
 						<when value="CuDNNLSTM">
 						</when>
-						<when value="Embedding">
-							<expand macro="layer_Embedding"/>
-						</when>
-						<when value="LeakyReLU">
-							<expand macro="layer_LeakyReLU"/>
-						</when>
-						<when value="PReLU">
-							<expand macro="layer_PReLU"/>
-						</when>
-						<when value="ELU">
-							<expand macro="layer_ELU"/>
-						</when>
-						<when value="ThresholdedReLU">
-							<expand macro="layer_ThresholdedReLU"/>
-						</when>
-						<when value="Softmax">
-							<expand macro="layer_Softmax"/>
-						</when>
-						<when value="ReLU">
-							<expand macro="layer_ReLU"/>
-						</when>
-						<when value="BatchNormalization">
-							<expand macro="layer_Embedding"/>
-						</when>
-						<when value="GaussianNoise">
-							<expand macro="layer_Embedding"/>
-						</when>
-						<when value="GaussianDropout">
-							<expand macro="layer_Embedding"/>
-						</when>
-						<when value="AlphaDropout">
-							<expand macro="layer_Embedding"/>
-						</when>
 						<when value="Add">
 							<expand macro="layer_merge"/>
 						</when>
@@ -457,8 +510,81 @@
 						<when value="Dot">
 							<expand macro="layer_Dot"/>
 						</when>
+						<when value="Embedding">
+							<expand macro="layer_Embedding">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="LeakyReLU">
+							<expand macro="layer_LeakyReLU">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="PReLU">
+							<expand macro="layer_PReLU">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="ELU">
+							<expand macro="layer_ELU">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="ThresholdedReLU">
+							<expand macro="layer_ThresholdedReLU">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="Softmax">
+							<expand macro="layer_Softmax">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="ReLU">
+							<expand macro="layer_ReLU">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="BatchNormalization">
+							<expand macro="layer_Embedding">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="GaussianNoise">
+							<expand macro="layer_Embedding">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="GaussianDropout">
+							<expand macro="layer_Embedding">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
+						<when value="AlphaDropout">
+							<expand macro="layer_Embedding">
+								<expand macro="inbound_nodes_index"/>
+							</expand>
+						</when>
 					</conditional>
 				</repeat>
+				<param name="input_layers" type="text" value="[]" label="Type the list of input layer indexes"
+								help="List of integers. Find index number at the left top corner of layer configuration box.">
+					<sanitizer>
+						<valid initial="default">
+							<add value="["/>
+							<add value="]"/>
+						</valid>
+					</sanitizer>
+				</param>
+				<param name="output_layers" type="text" value="[]" label="Type the list of output layer indexes"
+								help="List of integers. Find index number at the left top corner of layer configuration box.">
+					<sanitizer>
+						<valid initial="default">
+							<add value="["/>
+							<add value="]"/>
+						</valid>
+					</sanitizer>
+				</param>
 			</when>
 		</conditional>
 	</inputs>
