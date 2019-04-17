@@ -265,13 +265,9 @@ def test_get_params_base_keras_model():
             got[key] = value
 
     expect = {
-        'amsgrad': None,
         'batch_size': None,
-        'beta_1': None,
-        'beta_2': None,
         'decay': 0,
         'epochs': 1,
-        'epsilon': None,
         'loss': 'binary_crossentropy',
         'lr': 0.01,
         'metrics': [],
@@ -279,8 +275,6 @@ def test_get_params_base_keras_model():
         'momentum': 0,
         'nesterov': False,
         'optimizer': 'sgd',
-        'rho': None,
-        'schedule_decay': None,
         'seed': 0
     }
 
@@ -317,8 +311,7 @@ def test_get_params_keras_g_classifier():
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
     expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay', 'epochs',
-              'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov',
-              'optimizer', 'rho', 'schedule_decay', 'seed',
+              'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'optimizer', 'seed',
               'layers_0_Dense__config__kernel_initializer__config__seed',
               'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -363,9 +356,8 @@ def test_get_params_keras_g_regressor():
     got = list(regressor.get_params().keys())
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
-    expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay', 'epochs',
-              'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'momentum', 'nesterov',
-              'optimizer', 'rho', 'schedule_decay', 'seed',
+    expect = ['batch_size', 'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
+              'model_type', 'momentum', 'nesterov', 'optimizer', 'seed',
               'layers_0_Dense__config__kernel_initializer__config__seed',
               'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -443,13 +435,9 @@ def test_funtional_model_get_params():
             got[key] = value
 
     expect = {
-        'amsgrad': None,
         'batch_size': None,
-        'beta_1': None,
-        'beta_2': None,
         'decay': 0,
         'epochs': 1,
-        'epsilon': None,
         'loss': 'binary_crossentropy',
         'lr': 0.01,
         'metrics': [],
@@ -457,8 +445,6 @@ def test_funtional_model_get_params():
         'momentum': 0,
         'nesterov': False,
         'optimizer': 'sgd',
-        'rho': None,
-        'schedule_decay': None,
         'seed': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',

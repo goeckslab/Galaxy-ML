@@ -223,6 +223,7 @@ if __name__ == '__main__':
         options.update(inputs['fit_params'])
 
         estimator = klass(config, **options)
+        print(repr(estimator))
 
         with open(outfile, 'wb') as f:
             pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)

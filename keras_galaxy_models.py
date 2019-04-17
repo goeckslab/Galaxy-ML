@@ -453,6 +453,12 @@ class BaseKerasModel(BaseEstimator):
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
         out = super(BaseKerasModel, self).get_params(deep=False)
+        # call self._optimizer to activate hidden attributes
+        self._optimizer
+        params = list(six.iterkeys(out))
+        for key in params:
+            if not hasattr(self, key):
+                out.pop(key)
 
         if not deep:
             return out
