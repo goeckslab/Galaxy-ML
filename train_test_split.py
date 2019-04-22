@@ -1,186 +1,62 @@
-import numpy as np
-import warnings
 
-from itertools import chain
-from math import ceil, floor
-from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit, StratifiedShuffleSplit
-from sklearn.utils import indexable, safe_indexing
-from sklearn.utils.validation import _num_samples, check_array
+if __name__ == '__main__':
+    import json
+    import pandas as pd
+    import sys
+    import warnings
+    from model_validations import train_test_split
+    from utils import read_columns
 
+    warnings.simplefilter('ignore')
 
-def _validate_shuffle_split(n_samples, test_size, train_size,
-                            default_test_size=None):
-    """
-    Validation helper to check if the test/test sizes are meaningful wrt to the
-    size of the data (n_samples)
-    """
-    if test_size is None and train_size is None:
-        test_size = default_test_size
+    infiles = sys.argv[1].split(',')
+    inputs_path = sys.argv[2]
+    if len(sys.argv) > 3:
+        labels_file = sys.argv[3]
 
-    test_size_type = np.asarray(test_size).dtype.kind
-    train_size_type = np.asarray(train_size).dtype.kind
+    with open(inputs_path, 'r') as f:
+        params = json.load(f)
 
-    if (test_size_type == 'i' and (test_size >= n_samples or test_size <= 0)
-       or test_size_type == 'f' and (test_size <= 0 or test_size >= 1)):
-        raise ValueError('test_size={0} should be either positive and smaller'
-                         ' than the number of samples {1} or a float in the '
-                         '(0, 1) range'.format(test_size, n_samples))
+    headers = []
+    arrays = []
+    for i, infile_path in enumerate(infiles):
+        header = 'infer' if params['infile_arrays'][i]['header'] else None
+        df = pd.read_csv(infile_path, sep='\t', header=header)
+        headers.append(df.columns)
+        arrays.append(df.values)
 
-    if (train_size_type == 'i' and (train_size >= n_samples or train_size <= 0)
-       or train_size_type == 'f' and (train_size <= 0 or train_size >= 1)):
-        raise ValueError('train_size={0} should be either positive and smaller'
-                         ' than the number of samples {1} or a float in the '
-                         '(0, 1) range'.format(train_size, n_samples))
+    options = params['options']
+    shuffle_selection = options.pop('shuffle_selection')
+    options['shuffle'] = shuffle_selection['shuffle']
+    if options['shuffle'] == 'None':
+        options['shuffle'] = None
 
-    if train_size is not None and train_size_type not in ('i', 'f'):
-        raise ValueError("Invalid value for train_size: {}".format(train_size))
-    if test_size is not None and test_size_type not in ('i', 'f'):
-        raise ValueError("Invalid value for test_size: {}".format(test_size))
-
-    if (train_size_type == 'f' and test_size_type == 'f' and
-            train_size + test_size > 1):
-        raise ValueError(
-            'The sum of test_size and train_size = {}, should be in the (0, 1)'
-            ' range. Reduce test_size and/or train_size.'
-            .format(train_size + test_size))
-
-    if test_size_type == 'f':
-        n_test = ceil(test_size * n_samples)
-    elif test_size_type == 'i':
-        n_test = float(test_size)
-
-    if train_size_type == 'f':
-        n_train = floor(train_size * n_samples)
-    elif train_size_type == 'i':
-        n_train = float(train_size)
-
-    if train_size is None:
-        n_train = n_samples - n_test
-    elif test_size is None:
-        n_test = n_samples - n_train
-
-    if n_train + n_test > n_samples:
-        raise ValueError('The sum of train_size and test_size = %d, '
-                         'should be smaller than the number of '
-                         'samples %d. Reduce test_size and/or '
-                         'train_size.' % (n_train + n_test, n_samples))
-
-    n_train, n_test = int(n_train), int(n_test)
-
-    if n_train == 0:
-        raise ValueError(
-            'With n_samples={}, test_size={} and train_size={}, the '
-            'resulting train set will be empty. Adjust any of the '
-            'aforementioned parameters.'.format(n_samples, test_size,
-                                                train_size)
-        )
-
-    return n_train, n_test
-
-
-def train_test_split(*arrays, **options):
-    """Extend sklearn.model_selection.train_test_slit to have group split.
-
-    Parameters
-    ----------
-    *arrays : sequence of indexables with same length / shape[0]
-        Allowed inputs are lists, numpy arrays, scipy-sparse
-        matrices or pandas dataframes.
-
-    test_size : float, int or None, optional (default=None)
-        If float, should be between 0.0 and 1.0 and represent the proportion
-        of the dataset to include in the test split. If int, represents the
-        absolute number of test samples. If None, the value is set to the
-        complement of the train size. If ``train_size`` is also None, it will
-        be set to 0.25.
-
-    train_size : float, int, or None, (default=None)
-        If float, should be between 0.0 and 1.0 and represent the
-        proportion of the dataset to include in the train split. If
-        int, represents the absolute number of train samples. If None,
-        the value is automatically set to the complement of the test size.
-
-    random_state : int, RandomState instance or None, optional (default=None)
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`.
-
-    shuffle : None or str (default='simple')
-        How to shuffle the data before splitting.
-        None, no shuffle.
-        For str, one of 'simple', 'stratified' and 'group', corresponding to
-        `ShuffleSplit`, `StratifiedShuffleSplit` and `GroupShuffleSplit`,
-        respectively.
-
-    labels : array-like or None (default=None)
-        Ignored if shuffle is None or 'simple'.
-        When shuffle='stratified', this array is used as class labels.
-        When shuffle='group', this array is used as groups.
-
-    Returns
-    -------
-    splitting : list, length=2 * len(arrays)
-        List containing train-test split of inputs.
-
-    """
-    n_arrays = len(arrays)
-    if n_arrays == 0:
-        raise ValueError("At least one array required as input")
-    test_size = options.pop('test_size', None)
-    train_size = options.pop('train_size', None)
-    random_state = options.pop('random_state', None)
-    shuffle = options.pop('shuffle', 'simple')
-    labels = options.pop('labels', None)
-
-    if options:
-        raise TypeError("Invalid parameters passed: %s" % str(options))
-
-    arrays = indexable(*arrays)
-
-    n_samples = _num_samples(arrays[0])
-    if shuffle == 'group':
-        if labels is None:
-            raise ValueError("When shuffle='group', "
-                             "labels should not be None!")
-        labels = check_array(labels, ensure_2d=False, dtype=None)
-        uniques = np.unique(labels)
-        n_samples = uniques.size
-
-    n_train, n_test = _validate_shuffle_split(n_samples, test_size, train_size,
-																							default_test_size=0.25)
-
-    shuffle_options = dict(test_size=n_test,
-                           train_size=n_train,
-                           random_state=random_state)
-
-    if shuffle is None:
-        if labels is not None:
-            warnings.warn("The `labels` is ignored for "
-                          "shuffle being None!")
-
-        train = np.arange(n_train)
-        test = np.arange(n_train, n_train + n_test)
-
-    elif shuffle == 'simple':
-        if labels is not None:
-            warnings.warn("The `labels` is not needed and therefore "
-                            "ignored for ShuffleSplit, as shuffle='simple'!")
-
-        cv = ShuffleSplit(**shuffle_options)
-        train, test = next(cv.split(X=arrays[0], y=None))
-
-    elif shuffle == 'stratified':
-        cv = StratifiedShuffleSplit(**shuffle_options)
-        train, test = next(cv.split(X=arrays[0], y=labels))
-
-    elif shuffle == 'group':
-        cv = GroupShuffleSplit(**shuffle_options)
-        train, test = next(cv.split(X=arrays[0], y=None, groups=labels))
+    if options['shuffle'] in [None, 'simple']:
+        splits = train_test_split(*arrays, **options)
 
     else:
-        raise ValueError("The argument `shuffle` only supports None, 'simple', "
-                            "'stratified' and 'group', but got `%s`!" % shuffle)
+        header = 'infer' if shuffle_selection['header'] else None
+        col = shuffle_selection['col']
+        labels = read_columns(
+                 labels_file,
+                 c = col,
+                 sep='\t',
+                 header=header,
+                 parse_dates=True)
+        labels = labels.ravel()
+        options['labels'] = labels
+        print(labels)
 
-    return list(chain.from_iterable((safe_indexing(a, train),
-                                     safe_indexing(a, test)) for a in arrays))
+        splits = train_test_split(*arrays, **options)
+
+    for i, arr in enumerate(splits):
+        arr_index = i // 2
+        df = pd.DataFrame(arr, columns=headers[arr_index])
+        if i % 2 == 0:
+            df.to_csv('./file%d_train.tabular' % (arr_index + 1),
+                      sep='\t', index=False,
+                      header=True if params['infile_arrays'][arr_index]['header'] else False)
+        else:
+            df.to_csv('./file%d_test.tabular' % (arr_index + 1),
+                      sep='\t', index=False,
+                      header=True if params['infile_arrays'][arr_index]['header'] else False)
