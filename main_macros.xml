@@ -816,7 +816,6 @@
 
   <xml name="cv_splitter">
     <option value="default" selected="true">default splitter</option>
-    <option value="OrderedKFold">OrderedKFold</option>
     <option value="KFold">KFold</option>
     <option value="StratifiedKFold">StratifiedKFold</option>
     <option value="LeaveOneOut">LeaveOneOut</option>
@@ -827,17 +826,14 @@
     <option value="StratifiedShuffleSplit">StratifiedShuffleSplit</option>
     <option value="TimeSeriesSplit">TimeSeriesSplit</option>
     <option value="PredefinedSplit">PredefinedSplit</option>
+    <option value="OrderedKFold">OrderedKFold</option>
+    <option value="RepeatedOrderedKFold">RepeatedOrderedKFold</option>
     <yield/>
   </xml>
 
   <xml name="cv_splitter_options">
     <when value="default">
       <expand macro="cv_n_splits"/>
-    </when>
-    <when value="OrderedKFold">
-      <expand macro="cv_n_splits"/>
-      <expand macro="cv_shuffle"/>
-      <expand macro="random_state"/>
     </when>
     <when value="KFold">
       <expand macro="cv_n_splits"/>
@@ -880,6 +876,16 @@
     </when>
     <when value="PredefinedSplit">
       <param argument="test_fold" type="text" value="" area="true" label="test_fold" help="List, e.g., [0, 1, -1, 1], represents two test sets, [X[0]] and [X[1], X[3]], X[2] is excluded from any test set due to '-1'."/>
+    </when>
+    <when value="OrderedKFold">
+      <expand macro="cv_n_splits"/>
+      <expand macro="cv_shuffle"/>
+      <expand macro="random_state"/>
+    </when>
+    <when value="RepeatedOrderedKFold">
+      <expand macro="cv_n_splits"/>
+      <param argument="n_repeats" type="integer" value="5"/>
+      <expand macro="random_state"/>
     </when>
     <yield/>
   </xml>
