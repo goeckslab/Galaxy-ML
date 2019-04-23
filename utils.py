@@ -33,10 +33,19 @@ try:
     IRAPSClassifier
 except NameError:
     try:
-        from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
+        from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
     except ImportError:
         pass
+
+try:
+    OrderedKFold
+except NameError:
+    try:
+        from model_validations import OrderedKFold
+    except ImportError:
+        pass
+
 
 try:
     DyRFECV
