@@ -1,3 +1,5 @@
+import argparse
+import collections
 import imblearn
 import json
 import numpy as np
@@ -9,6 +11,7 @@ import sklearn
 import sys
 import xgboost
 import warnings
+from ast import literal_eval
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn import (cluster, compose, decomposition, ensemble, feature_extraction,
@@ -17,11 +20,14 @@ from sklearn import (cluster, compose, decomposition, ensemble, feature_extracti
                     svm, linear_model, tree, discriminant_analysis)
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
-from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
+from sklearn.model_selection._validation import _score
+from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
+from model_validations import OrderedKFold, RepeatedOrderedKFold
 from preprocessors import Z_RandomOverSampler
 from feature_selectors import DyRFE, DyRFECV, MyPipeline, MyimbPipeline
 from utils import SafeEval, get_cv, get_scoring, get_X_y, load_model, read_columns
+from model_validations import train_test_split
 
 try:
     from mlxtend import regressor
@@ -133,25 +139,33 @@ def get_search_params(params_builder):
     return search_params
 
 
-if __name__ == '__main__':
+def main(inputs, infile_estimator, infile1, infile2,
+         outfile_result, outfile_object=None, groups=None):
+    """
+    Parameter
+    ---------
+    inputs : str
+        File path to galaxy tool parameter
+    infile_estimator : str
+        File path to estimator
+    infile1 : str
+        File path to dataset containing features
+    infile2 : str
+        File path to dataset containing target values
+    outfile_result : str
+        File path to save the results, either cv_results or test result
+    outfile_object : str, optional
+        File path to save searchCV object
+    groups : str
+        File path to dataset containing groups labels
+    """
 
     warnings.simplefilter('ignore')
 
-    inputs = sys.argv[1].split(',')
-    input_json_path = inputs[0]
-    with open(input_json_path, 'r') as param_handler:
+    with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
-    if len(inputs) > 1:
-        params['search_schemes']['options']['cv_selector']['groups_selector']['infile_g'] = inputs[1]
-
-    infile_estimator = sys.argv[2]
-    infile1 = sys.argv[3]
-    infile2 = sys.argv[4]
-    outfile_result = sys.argv[5]
-    if len(sys.argv) > 6:
-        outfile_object = sys.argv[6]
-    else:
-        outfile_object = None
+    if groups:
+        params['search_schemes']['options']['cv_selector']['groups_selector']['infile_g'] = groups
 
     params_builder = params['search_schemes']['search_params_builder']
 
@@ -227,9 +241,34 @@ if __name__ == '__main__':
             elif p.endswith('n_jobs'):
                 new_params = {p: 1}
                 estimator.set_params( **new_params )
-
+            
     param_grid = get_search_params(params_builder)
     searcher = optimizer(estimator, param_grid, **options)
+
+    ## do train_test_split
+    do_train_test_split = params['train_test_split'].pop('do_split')
+    if do_train_test_split == 'yes':
+        # make sure refit is choosen
+        if not options['refit']:
+            raise ValueError("Refit must be `True` for shuffle splitting!")
+        split_options = params['train_test_split']
+
+        # splits
+        if split_options['shuffle'] == 'stratified':
+            split_options['labels'] = y
+            X, X_test, y, y_test  = train_test_split(X, y, **split_options)
+        elif split_options['shuffle'] == 'group':
+            if not groups:
+                raise ValueError("No group based CV option was "
+                                 "choosen for group shuffle!")
+            split_options['labels'] = groups
+            X, X_test, y, y_test, groups, _ =\
+                        train_test_split(X, y, **split_options)
+        else:
+            if split_options['shuffle'] == 'None':
+                split_options['shuffle'] = None
+            X, X_test, y, y_test = train_test_split(X, y, **split_options)
+    ## end train_test_split
 
     if options['error_score'] == 'raise':
         searcher.fit(X, y, groups=groups)
@@ -243,17 +282,53 @@ if __name__ == '__main__':
             for warning in w:
                 print(repr(warning.message))
 
-    memory.clear(warn=False)
+    if do_train_test_split == 'no':
+        ## save results
+        cv_result = pandas.DataFrame(searcher.cv_results_)
+        col_rename = {}
+        for col in cv_result.columns:
+            if col.endswith('_primary'):
+                col_rename[col] = col[:-7] + primary_scoring
+        cv_result.rename(inplace=True, columns=col_rename)
+        cv_result = cv_result[sorted(cv_result.columns)]
+        cv_result.to_csv(path_or_buf=outfile_result, sep='\t', header=True, index=False)
 
-    cv_result = pandas.DataFrame(searcher.cv_results_)
-    col_rename = {}
-    for col in cv_result.columns:
-        if col.endswith('_primary'):
-            col_rename[col] = col[:-7] + primary_scoring
-    cv_result.rename(inplace=True, columns=col_rename)
-    cv_result = cv_result[sorted(cv_result.columns)]
-    cv_result.to_csv(path_or_buf=outfile_result, sep='\t', header=True, index=False)
+    # output test result using best_estimator_
+    else:
+        best_estimator_ = searcher.best_estimator_
+        if isinstance(options['scoring'], collections.Mapping):
+            is_multimetric = True
+            options['scoring'][primary_scoring] = options['scoring'].pop('primary')
+        else:
+            is_multimetric = False
+
+        test_score = _score(best_estimator_, X_test, y_test,
+                            options['scoring'], is_multimetric=is_multimetric)
+        if not is_multimetric:
+            test_score = {primary_scoring: test_score}
+        for key, value in test_score.items():
+            test_score[key] = [value]
+        result_df = pandas.DataFrame(test_score)
+        result_df.to_csv(path_or_buf=outfile_result, sep='\t', header=True, index=False)
+
+    memory.clear(warn=False)
 
     if outfile_object:
         with open(outfile_object, 'wb') as output_handler:
             pickle.dump(searcher, output_handler, pickle.HIGHEST_PROTOCOL)
+
+    
+if __name__ == '__main__':
+    aparser = argparse.ArgumentParser()
+    aparser.add_argument( "-i", "--inputs", dest="inputs", required=True)
+    aparser.add_argument( "-e", "--estimator", dest="infile_estimator")
+    aparser.add_argument( "-X", "--infile1", dest="infile1")
+    aparser.add_argument( "-y", "--infile2", dest="infile2")
+    aparser.add_argument( "-r", "--outfile_result", dest="outfile_result")
+    aparser.add_argument( "-o", "--outfile_object", dest="outfile_object")
+    aparser.add_argument( "-g", "--groups", dest="groups")
+    args = aparser.parse_args()
+
+    main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
+         args.outfile_result, outfile_object=args.outfile_object,
+         groups=args.groups)

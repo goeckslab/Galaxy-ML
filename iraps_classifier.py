@@ -5,7 +5,6 @@ class BinarizeTargetClassifier
 class BinarizeTargetRegressor
 class _BinarizeTargetScorer
 class _BinarizeTargetProbaScorer
-class OrderedKFold
 
 binarize_auc_scorer
 binarize_average_precision_scorer
@@ -28,11 +27,10 @@ from sklearn.base import BaseEstimator, clone, RegressorMixin
 from sklearn.externals import joblib, six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
-from sklearn.model_selection._split import _BaseKFold
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_random_state, check_X_y
 from sklearn.utils._joblib import Parallel, delayed
-from sklearn.utils.validation import (_num_samples, check_array, check_is_fitted,
+from sklearn.utils.validation import (check_array, check_is_fitted,
                                       check_memory, column_or_1d)
 
 
@@ -66,7 +64,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
               spawned
             - A string, giving an expression as a function of n_jobs,
               as in '2*n_jobs'
-    random_state : int, random seed number
+    random_state : int or None
     """
 
     def __init__(self, n_iter=1000, positive_thres=-1,
@@ -304,50 +302,6 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
     def predict_label(self, X, clf_cutoff=0.4):
         return self.predict(X) >= clf_cutoff
-
-
-class OrderedKFold(_BaseKFold):
-    """
-    Split into K fold based on ordered target value
-
-    Parameters
-    ----------
-    n_splits : int, default=3
-        Number of folds. Must be at least 2.
-    shuffle: bool
-    random_state: None or int
-    """
-
-    def __init__(self, n_splits=3, shuffle=False, random_state=None):
-        super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
-
-    def _iter_test_indices(self, X, y, groups=None):
-        n_samples = _num_samples(X)
-        n_splits = self.n_splits
-        y = np.asarray(y)
-        sorted_index = np.argsort(y)
-        if self.shuffle:
-            current = 0
-            seed = self.random_state
-            if seed is None:
-                for i in range(n_samples // int(n_splits)):
-                    start, stop = current, current + n_splits
-                    random.shuffle(sorted_index[start:stop])
-                    current = stop
-                random.shuffle(sorted_index[current:])
-            elif type(seed) is int:
-                for i in range(n_samples // int(n_splits)):
-                    start, stop = current, current + n_splits
-                    random.Random(seed).shuffle(sorted_index[start:stop])
-                    current = stop
-                    seed += 1
-                random.Random(seed).shuffle(sorted_index[current:])
-            else:
-                raise Exception("Invalid random_state for OrderedKFold, "
-                                "only None and int are supported!")
-
-        for i in range(n_splits):
-            yield sorted_index[i:n_samples:n_splits]
 
 
 class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
