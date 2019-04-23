@@ -3,6 +3,7 @@
 
 #### New Features
 
+- Makes `RepeatedOrderedKFold`
 - Makes `train_test_split` tool and adds `train_test_split` to searchcv tool.
 - Adds `jpickle` to persist sklearn objects.
 - Makes `TDMScaler`.
