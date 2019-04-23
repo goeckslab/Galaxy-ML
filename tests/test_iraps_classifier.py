@@ -1,12 +1,13 @@
 # test for irpas_classifier
-# Author: Qiang Gu <guqiang01@gmail.com>
 
 import pandas as pd
 import time
 import warnings
 from sklearn.model_selection import cross_validate
-from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
-                    BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
+from model_validations import OrderedKFold
+from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
+                              BinarizeTargetRegressor, binarize_auc_scorer,
+                              binarize_average_precision_scorer)
 from nose.tools import raises
 
 
@@ -21,13 +22,13 @@ def test_iraps_classifier_1():
         AUC = binarize_auc_scorer,
         AP = binarize_average_precision_scorer
     )
-    iraps_core = IRAPSCore(n_iter=100, n_jobs=3, random_state=10, verbose=0)
+    iraps_core = IRAPSCore(n_iter=100, n_jobs=3, random_state=10, verbose=10)
     iraps = IRAPSClassifier(iraps_core, p_thres=0.01, occurrence=0.7)
     start_time = time.time()
-    result_clf = cross_validate(iraps, X, y, cv=cv, scoring=scoring, verbose=1)
+    result_clf = cross_validate(iraps, X, y, cv=cv, scoring=scoring, verbose=10)
     stop_time = time.time()
     print("Time: %f " %(stop_time - start_time))
     ap_mean = result_clf['test_AP'].mean()
     assert round(ap_mean, 4) == 0.2490, ap_mean
     roc_mean = result_clf['test_AUC'].mean()
-    assert round(roc_mean, 4) == 0.7129, roc_mean
+    assert round(roc_mean, 4) == 0.6961, roc_mean
