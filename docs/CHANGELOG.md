@@ -3,6 +3,8 @@
 
 #### New Features
 
+- Makes `train_test_split` tool and adds `train_test_split` to searchcv tool.
+- Adds `jpickle` to persist sklearn objects.
 - Makes `TDMScaler`.
 - Makes search parameter `options` in `search_model_validation` tool using `from_dataset`, the `get_params` output of 
 `estimator_attributes` tool.
@@ -10,12 +12,13 @@
 
 #### Changes
 
+- Separate `OrderedKFold` into `model_validations` module
 - Refactors `SafePickler` class and pickle white list loading system for better CPU and Memory efficiency.
 - Separates `feature_selector` module out from `utils`
 
 #### Bug Fixes
 
-- 
+- Fix safepickler classobj issue
 
 
 ### Version 0.2.0 (03-24-2019)

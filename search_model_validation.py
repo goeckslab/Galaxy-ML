@@ -21,8 +21,9 @@ from sklearn import (cluster, compose, decomposition, ensemble, feature_extracti
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score
-from iraps_classifier import (IRAPSCore, IRAPSClassifier, OrderedKFold, BinarizeTargetClassifier,
+from iraps_classifier import (IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
                     BinarizeTargetRegressor, binarize_auc_scorer, binarize_average_precision_scorer)
+from model_validations import OrderedKFold
 from preprocessors import Z_RandomOverSampler
 from feature_selectors import DyRFE, DyRFECV, MyPipeline, MyimbPipeline
 from utils import SafeEval, get_cv, get_scoring, get_X_y, load_model, read_columns
