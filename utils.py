@@ -42,7 +42,7 @@ try:
     OrderedKFold
 except NameError:
     try:
-        from model_validations import OrderedKFold
+        from model_validations import OrderedKFold, RepeatedOrderedKFold
     except ImportError:
         pass
 
@@ -87,13 +87,15 @@ class SafePickler(pickle.Unpickler, object):
         pk_whitelist = self.pk_whitelist
 
         # custom estimators
-        if module == '__main__':
+        if module in ['__main__', 'keras_galaxy_models', 'feature_selectors',
+                      'preprocessors', 'iraps_classifier', 'model_validations']:
             custom_classes = {
                 'IRAPSCore': IRAPSCore,
                 'IRAPSClassifier': IRAPSClassifier,
                 'BinarizeTargetClassifier': BinarizeTargetClassifier,
                 'BinarizeTargetRegressor': BinarizeTargetRegressor,
                 'OrderedKFold': OrderedKFold,
+                'OrderedKFold': RepeatedOrderedKFold,
                 'Z_RandomOverSampler': Z_RandomOverSampler,
                 'DyRFECV': DyRFECV,
                 'DyRFE': DyRFE
@@ -452,6 +454,8 @@ def get_cv(cv_json):
 
     if cv == 'OrderedKFold':
         cv_class = OrderedKFold
+    elif cv == 'RepeatedOrderedKFold':
+        cv_class = RepeatedOrderedKFold
     else:
         cv_class = getattr(model_selection, cv)
     splitter = cv_class(**cv_json)

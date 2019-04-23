@@ -2,6 +2,7 @@
 class
 -----
 OrderedKFold
+RepeatedOrderedKold
 
 
 function
@@ -16,7 +17,7 @@ import warnings
 from itertools import chain
 from math import ceil, floor
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit, StratifiedShuffleSplit
-from sklearn.model_selection._split import _BaseKFold
+from sklearn.model_selection._split import _BaseKFold, _RepeatedSplits
 from sklearn.utils import check_random_state, indexable, safe_indexing
 from sklearn.utils.validation import _num_samples, check_array
 
@@ -230,3 +231,21 @@ class OrderedKFold(_BaseKFold):
 
         for i in range(n_splits):
             yield sorted_index[i:n_samples:n_splits]
+
+
+class RepeatedOrderedKFold(_RepeatedSplits):
+    """ Repeated OrderedKFold runs mutiple times with different randomization.
+
+    Parameters
+    ----------
+    n_splits : int, default=5
+        Number of folds. Must be at least 2.
+
+    n_repeats : int, default=5
+        Number of times cross-validator to be repeated.
+
+    random_state: int, RandomState instance or None. Optional
+    """
+    def __init__(self, n_splits=5, n_repeats=5, random_state=None):
+        super(RepeatedOrderedKFold, self).__init__(
+            OrderedKFold, n_repeats, random_state, n_splits=n_splits)

@@ -12,10 +12,7 @@ from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import ignore_warnings
 
-from model_validations import OrderedKFold
-
-from model_validations import train_test_split, OrderedKFold
-
+from model_validations import train_test_split, OrderedKFold, RepeatedOrderedKFold
 
 
 train_test_split.__test__ = False
@@ -189,7 +186,7 @@ def test_train_test_split_list_input():
         np.testing.assert_equal(y_test3, y_test2)
 
 
-def test_orderkfold():
+def test_ordered_kfold():
     y = list(range(12))
     got1 = []
     cv = OrderedKFold(3)
@@ -223,3 +220,38 @@ def test_orderkfold():
                [1, 3, 6, 9]]
 
     assert got3 == expect3, got3
+
+
+def test_repeated_ordered_kfold():
+    y = list(range(12))
+    got1 = []
+    cv = RepeatedOrderedKFold(n_splits=4, n_repeats=2, random_state=42)
+    for _, test_index in cv.split(y, y):
+        got1.append(test_index.tolist())
+
+    expect1 = [[1, 5, 11],
+               [3, 7, 8],
+               [0, 4, 9],
+               [2, 6, 10],
+               [1, 6, 8],
+               [0, 5, 9],
+               [3, 4, 10],
+               [2, 7, 11]]
+
+    assert got1 == expect1, got1
+
+    got2 = []
+    cv = RepeatedOrderedKFold(n_splits=4, n_repeats=2, random_state=999)
+    for _, test_index in cv.split(y, y):
+        got2.append(test_index.tolist())
+
+    expect2 = [[2, 6, 8],
+               [1, 7, 10],
+               [3, 4, 9],
+               [0, 5, 11],
+               [3, 5, 8],
+               [2, 6, 11],
+               [1, 7, 10],
+               [0, 4, 9]]
+
+    assert got2 == expect2, got2
