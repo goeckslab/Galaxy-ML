@@ -15,6 +15,9 @@ from sklearn.utils.testing import ignore_warnings
 from model_validations import train_test_split, OrderedKFold, RepeatedOrderedKFold
 
 
+train_test_split.__test__ = False
+
+
 X = np.ones(10)
 
 

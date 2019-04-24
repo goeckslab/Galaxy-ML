@@ -16,7 +16,10 @@ import warnings
 
 from itertools import chain
 from math import ceil, floor
+<<<<<<< HEAD
 from nose.tools import nottest
+=======
+>>>>>>> master
 from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit, StratifiedShuffleSplit
 from sklearn.model_selection._split import _BaseKFold, _RepeatedSplits
 from sklearn.utils import check_random_state, indexable, safe_indexing
@@ -93,7 +96,6 @@ def _validate_shuffle_split(n_samples, test_size, train_size,
     return n_train, n_test
 
 
-@nottest
 def train_test_split(*arrays, **options):
     """Extend sklearn.model_selection.train_test_slit to have group split.
 
