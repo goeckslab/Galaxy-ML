@@ -1,9 +1,9 @@
 
-### Version 0.3.0.dev
+### Version 0.3.0/ tool_main: 1.0.0.2
 
 #### New Features
 
-- Makes `RepeatedOrderedKFold`
+- Makes `RepeatedOrderedKFold`.
 - Makes `train_test_split` tool and adds `train_test_split` to searchcv tool.
 - Adds `jpickle` to persist sklearn objects.
 - Makes `TDMScaler`.
