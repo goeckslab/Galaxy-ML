@@ -2,7 +2,7 @@
 
 #### New Features
 
--
+- Adds `.gitattributes` and `.gitignore`.
 
 #### Changes
 

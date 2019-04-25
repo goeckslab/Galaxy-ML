@@ -1,0 +1,12 @@
+# Python bytecode
+*.pyc
+Galaxy-ML/*.pyc
+Galaxy-ML/tests/*.pyc
+
+# Notebook
+*.ipynb
+
+#
+.DS_Store
+
+
