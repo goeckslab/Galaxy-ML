@@ -1,3 +1,17 @@
+### Version 0.4.0 - dev / tool_main: 1.0.0.2
+
+#### New Features
+
+-
+
+#### Changes
+
+- Moves src to subfolder `Galaxy-ML`
+
+#### Bug Fixes
+
+- Fix safepickler classobj issue
+
 
 ### Version 0.3.0/ tool_main: 1.0.0.2
 
@@ -26,6 +40,7 @@
 
 ##### New Features
 
+- SearchCV tool selects param from `get_params()` dataset.
 - Adds `extended_ensemble_ml` tool which wraps `StackingCVRegressor` to ensemble machine learning.
 - Extends `estimator_attributes` tool to output `get_params()`
 - Adds support of multipleprocessing in `IRAPSCore`
