@@ -12,11 +12,13 @@ from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import ignore_warnings
 
-from model_validations import train_test_split, OrderedKFold, RepeatedOrderedKFold
+from model_validations import (train_test_split, OrderedKFold,
+                               RepeatedOrderedKFold)
 
+
+warnings.simplefilter('ignore')
 
 train_test_split.__test__ = False
-
 
 X = np.ones(10)
 
@@ -84,7 +86,7 @@ def test_train_test_split():
     for test_size, exp_test_size in zip([2, 4, 0.25, 0.5, 0.75],
                                         [2, 4, 2, 4, 6]):
         train, test = train_test_split(y, test_size=test_size,
-                                       shuffle='stratified', 
+                                       shuffle='stratified',
                                        labels=y,
                                        random_state=0)
         assert_equal(len(test), exp_test_size)
@@ -97,7 +99,7 @@ def test_train_test_split():
     for test_size, exp_test_size in zip([1, 2, 0.25, 0.5, 0.75],
                                         [3, 6, 3, 6, 9]):
         train, test = train_test_split(y, test_size=test_size,
-                                       shuffle='group', 
+                                       shuffle='group',
                                        labels=y,
                                        random_state=0)
         assert_equal(len(test), exp_test_size)
@@ -110,7 +112,7 @@ def test_train_test_split():
     for test_size, exp_test_size in zip([2, 4, 0.25, 0.5, 0.75],
                                         [2, 4, 2, 4, 6]):
         train, test = train_test_split(y, test_size=test_size,
-                                       shuffle='simple', 
+                                       shuffle='simple',
                                        labels=y,
                                        random_state=42)
         assert_equal(len(test), exp_test_size)
@@ -171,14 +173,14 @@ def test_train_test_split_list_input():
 
     for shuffle in (None, 'simple', 'stratified', 'group'):
         X_train1, X_test1, y_train1, y_test1 = train_test_split(
-            X, y1, labels=y1 if shuffle in ('stratified', 'group')
-                else None, random_state=0)
+            X, y1, random_state=0,
+            labels=y1 if shuffle in ('stratified', 'group') else None)
         X_train2, X_test2, y_train2, y_test2 = train_test_split(
-            X, y2, labels=y2 if shuffle in ('stratified', 'group')
-                else None, random_state=0)
+            X, y2, random_state=0,
+            labels=y2 if shuffle in ('stratified', 'group') else None)
         X_train3, X_test3, y_train3, y_test3 = train_test_split(
-            X, y3, labels=y3 if shuffle in ('stratified', 'group')
-                else None, random_state=0)
+            X, y3, random_state=0,
+            labels=y3 if shuffle in ('stratified', 'group') else None)
 
         np.testing.assert_equal(X_train1, X_train2)
         np.testing.assert_equal(y_train2, y_train3)
@@ -192,7 +194,7 @@ def test_ordered_kfold():
     cv = OrderedKFold(3)
     for _, test_index in cv.split(y, y):
         got1.append(test_index.tolist())
-    
+
     expect1 = [[0, 3, 6, 9],
                [1, 4, 7, 10],
                [2, 5, 8, 11]]
@@ -203,7 +205,7 @@ def test_ordered_kfold():
     cv = OrderedKFold(3, shuffle=True, random_state=0)
     for _, test_index in cv.split(y, y):
         got2.append(test_index.tolist())
-    
+
     expect2 = [[2, 5, 6, 11],
                [1, 3, 8, 9],
                [0, 4, 7, 10]]
@@ -214,7 +216,7 @@ def test_ordered_kfold():
     cv = OrderedKFold(3, shuffle=True, random_state=10)
     for _, test_index in cv.split(y, y):
         got3.append(test_index.tolist())
-    
+
     expect3 = [[0, 5, 8, 11],
                [2, 4, 7, 10],
                [1, 3, 6, 9]]

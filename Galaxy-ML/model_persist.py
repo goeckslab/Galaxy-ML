@@ -47,8 +47,10 @@ _UNICODE = '-unicode-'
 
 PY_VERSION = sys.version.split(' ')[0]
 
+
 class JPicklerError(Exception):
     pass
+
 
 class ModelToDict:
     """
@@ -59,11 +61,10 @@ class ModelToDict:
         self.memo = {}
 
     def clear_memo(self):
-        """
-        Clears the `memo`
+        """Clears the `memo`
         """
         self.memo.clear()
-    
+
     def memoize(self, obj):
         """
         Store an object id in the `memo`
@@ -115,12 +116,15 @@ class ModelToDict:
         if reduce:
             rv = reduce()
         else:
-            raise JPicklerError("Can't reduce %r object: %r" %(t.__name__, obj))
+            raise JPicklerError(
+                "Can't reduce %r object: %r" % (type(obj).__name__, obj))
         assert (type(rv) is tuple),\
             "%s must return a tuple, but got %s" % (reduce, type(rv))
-        l = len(rv)
-        assert (l in [2, 3]),\
-            "Reduce tuple is expected to return 2- 3 elements, but got %d elements" % l
+
+        lenth = len(rv)
+        assert (lenth in [2, 3]),\
+            ("Reduce tuple is expected to return 2- 3 elements, "
+             "but got %d elements" % lenth)
 
         save = self.save
 
@@ -132,20 +136,20 @@ class ModelToDict:
 
         args = rv[1]
         assert (type(args) is tuple)
-        retv[_ARGS] = {_TUPLE: save(list(args)) }
+        retv[_ARGS] = {_TUPLE: save(list(args))}
 
-        if l == 3:
+        if lenth == 3:
             state = rv[2]
             retv[_STATE] = save(state)
 
         self.memoize(obj)
         return {_REDUCE: retv}
-    
+
     dispatch = {}
 
     def save_primitive(self, obj):
         return obj
-    
+
     dispatch[type(None)] = save_primitive
     dispatch[bool] = save_primitive
     dispatch[int] = save_primitive
@@ -155,7 +159,7 @@ class ModelToDict:
     dispatch[complex] = save_primitive
 
     def save_bytes(self, obj):
-        print("save_bytes: %s" %type(obj))
+        print("save_bytes: %s" % type(obj))
         self.memoize(obj)
         return {_BYTES: obj.decode('utf-8')}
 
@@ -173,7 +177,7 @@ class ModelToDict:
 
     if six.PY2:
         dispatch[unicode] = save_unicode
-    #dispatch[bytearray] = save_primitive
+    # dispatch[bytearray] = save_primitive
 
     def save_list(self, obj):
         return [self.save(e) for e in obj]
@@ -193,7 +197,7 @@ class ModelToDict:
     dispatch[set] = save_set
 
     def save_dict(self, obj):
-        if len(obj) == 0 :
+        if len(obj) == 0:
             return {}
         newdict = {}
         _keys = list(obj.keys())
@@ -201,7 +205,7 @@ class ModelToDict:
         newdict[_KEYS] = _keys
         for k in _keys:
             newdict[k] = self.save(obj[k])
-        #self.memoize(obj)
+        # self.memoize(obj)
         return newdict
 
     dispatch[dict] = save_dict
@@ -209,10 +213,12 @@ class ModelToDict:
     def save_global(self, obj):
         name = getattr(obj, '__name__', None)
         if name is None:
-            raise JPicklerError("Can't get global name for object %r" % obj)
+            raise JPicklerError("Can't get global name for object %r"
+                                % obj)
         module_name = getattr(obj, '__module__', None)
         if module_name is None:
-            raise JPicklerError("Can't get global module name for object %r" % obj)
+            raise JPicklerError("Can't get global module name for "
+                                "object %r" % obj)
 
         newdict = {_GLOBAL: [module_name, name]}
         self.memoize(obj)
@@ -225,16 +231,16 @@ class ModelToDict:
         newdict = {}
         newdict[_DTYPE] = self.save(obj.dtype)
         newdict[_VALUES] = self.save(obj.tolist())
-        #self.memoize(obj)
+        # self.memoize(obj)
         return {_NP_NDARRAY: newdict}
 
     dispatch[numpy.ndarray] = save_np_ndarray
 
     def save_np_datatype(self, obj):
         newdict = {}
-        newdict[_DATATYPE] = self.save( type(obj) )
+        newdict[_DATATYPE] = self.save(type(obj))
         newdict[_VALUE] = self.save(obj.item())
-        #self.memoize(obj)
+        # self.memoize(obj)
         return {_NP_DATATYPE: newdict}
 
     dispatch[numpy.bool_] = save_np_datatype
@@ -268,15 +274,15 @@ class DictToModel:
         self.memo = {}
 
     def memoize(self, obj):
-        l = len(self.memo)
-        self.memo[l] = obj
+        lenth = len(self.memo)
+        self.memo[lenth] = obj
 
     def load(self, data):
         if data[_PY_VERSION] != PY_VERSION:
             warnings.warn("Trying to load an object from python %s "
-                "when using python %s. This might lead to breaking code or "
-                "invalid results. Use at your own risk."\
-                %(data[_PY_VERSION], PY_VERSION))
+                          "when using python %s. This might lead to "
+                          "breaking code or invalid results. Use at "
+                          "your own risk." % (data[_PY_VERSION], PY_VERSION))
         return self.load_all(data[_OBJ])
 
     def load_all(self, data):
@@ -310,7 +316,7 @@ class DictToModel:
         if f:
             return f(self, data)
         else:
-            raise JPicklerError("Unsupported data found: %s" %str(data))
+            raise JPicklerError("Unsupported data found: %s" % str(data))
 
     dispatch = {}
 
@@ -358,13 +364,13 @@ class DictToModel:
     dispatch[list] = load_list
 
     def load_tuple(self, data):
-        obj = self.load_all( data )
-        #self.memoize(obj)
+        obj = self.load_all(data)
+        # self.memoize(obj)
         return tuple(obj)
 
     def load_set(self, data):
-        obj = self.load_all( data )
-        #self.memoize(obj)
+        obj = self.load_all(data)
+        # self.memoize(obj)
         return set(obj)
 
     def load_dict(self, data):
@@ -379,7 +385,7 @@ class DictToModel:
             except KeyError:
                 v = data[str(k)]
             newdict[k] = self.load_all(v)
-        #self.memoize( newdict )
+        # self.memoize( newdict )
         return newdict
 
     def find_class(self, module, name):
@@ -403,11 +409,11 @@ class DictToModel:
         Build object
         """
         _func = data[_FUNC]
-        func = self.load_all( _func)
+        func = self.load_all(_func)
         assert callable(func), "%r" % func
 
         _args = data[_ARGS][_TUPLE]
-        args = tuple( self.load_all( _args) )
+        args = tuple(self.load_all(_args))
 
         try:
             obj = args[0].__new__(args[0], * args)
@@ -416,7 +422,7 @@ class DictToModel:
 
         _state = data.get(_STATE)
         if _state:
-            state = self.load_all( _state)
+            state = self.load_all(_state)
             setstate = getattr(obj, "__setstate__", None)
             if setstate:
                 setstate(state)
@@ -429,22 +435,23 @@ class DictToModel:
         return obj
 
     def load_np_ndarray(self, data):
-        _dtype = self.load_all( data[_DTYPE] )
-        _values = self.load_all( data[_VALUES] )
+        _dtype = self.load_all(data[_DTYPE])
+        _values = self.load_all(data[_VALUES])
         obj = numpy.array(_values, dtype=_dtype)
-        #self.memoize(obj)
+        # self.memoize(obj)
         return obj
 
     def load_np_datatype(self, data):
-        _datatype = self.load_all( data[_DATATYPE] )
-        _value = self.load_all( data[_VALUE] )
+        _datatype = self.load_all(data[_DATATYPE])
+        _value = self.load_all(data[_VALUE])
         obj = _datatype(_value)
-        #self.memoize(obj)
+        # self.memoize(obj)
         return obj
 
 
 def dumpc(obj):
-    return  ModelToDict().dump(obj)
+    return ModelToDict().dump(obj)
+
 
 def loadc(data):
     return DictToModel().load(data)

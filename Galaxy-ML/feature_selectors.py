@@ -5,13 +5,16 @@ MyPipeline
 MyimbPipeline
 check_feature_importances
 """
+import numpy as np
 
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
-from sklearn import (cluster, compose, decomposition, ensemble, feature_extraction,
-                    feature_selection, gaussian_process, kernel_approximation, metrics,
-                    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
-                    svm, linear_model, tree, discriminant_analysis)
+from sklearn import (cluster, compose, decomposition, ensemble,
+                     feature_extraction, feature_selection,
+                     gaussian_process, kernel_approximation,
+                     metrics, model_selection, naive_bayes,
+                     neighbors, pipeline, preprocessing,
+                     svm, linear_model, tree, discriminant_analysis)
 
 from sklearn.base import BaseEstimator
 from sklearn.base import MetaEstimatorMixin, clone, is_classifier
@@ -20,7 +23,6 @@ from sklearn.model_selection import check_cv
 from sklearn.metrics.scorer import check_scoring
 from sklearn.utils import check_X_y, safe_indexing, safe_sqr
 from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
-
 
 
 class DyRFE(RFE):
@@ -49,8 +51,8 @@ class DyRFE(RFE):
     """
     def __init__(self, estimator, n_features_to_select=None, step=1,
                  verbose=0):
-        super(DyRFE, self).__init__(estimator, n_features_to_select, step, verbose)
-
+        super(DyRFE, self).__init__(estimator, n_features_to_select,
+                                    step, verbose)
 
     def _fit(self, X, y, step_score=None):
 
@@ -69,9 +71,9 @@ class DyRFE(RFE):
         step = []
         for s in self.step:
             if 0.0 < s < 1.0:
-                step.append( int(max(1, s * n_features)) )
+                step.append(int(max(1, s * n_features)))
             else:
-                step.append( int(s) )
+                step.append(int(s))
             if s <= 0:
                 raise ValueError("Step must be >0")
 
@@ -119,7 +121,8 @@ class DyRFE(RFE):
             ranks = np.ravel(ranks)
 
             # Eliminate the worse features
-            threshold = min(step[step_i], np.sum(support_) - n_features_to_select)
+            threshold =\
+                min(step[step_i], np.sum(support_) - n_features_to_select)
 
             # Compute step score on the previous selection iteration
             # because 'estimator' must use features
@@ -148,7 +151,7 @@ class DyRFE(RFE):
 
 class DyRFECV(RFECV, MetaEstimatorMixin):
     """
-    Compared with RFECV, DyRFECV offers flexiable `step` to eleminate 
+    Compared with RFECV, DyRFECV offers flexiable `step` to eleminate
     features, in the format of list, while RFECV supports only fixed number
     of `step`.
 
@@ -202,10 +205,11 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
     """
     def __init__(self, estimator, step=1, min_features_to_select=1, cv='warn',
                  scoring=None, verbose=0, n_jobs=None):
-        super(DyRFECV, self).__init__(estimator, step=step,
-                        min_features_to_select=min_features_to_select,
-                        cv=cv, scoring=scoring, verbose=verbose,
-                        n_jobs=n_jobs)
+        super(DyRFECV, self).__init__(
+            estimator, step=step,
+            min_features_to_select=min_features_to_select,
+            cv=cv, scoring=scoring, verbose=verbose,
+            n_jobs=n_jobs)
 
     def fit(self, X, y, groups=None):
         """Fit the RFE model and automatically tune the number of selected
@@ -235,17 +239,17 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
         step = []
         for s in self.step:
             if 0.0 < s < 1.0:
-                step.append( int(max(1, s * n_features)) )
+                step.append(int(max(1, s * n_features)))
             else:
-                step.append( int(s) )
+                step.append(int(s))
             if s <= 0:
                 raise ValueError("Step must be >0")
 
         # Build an RFE object, which will evaluate and score each possible
         # feature count, down to self.min_features_to_select
         rfe = DyRFE(estimator=self.estimator,
-                  n_features_to_select=self.min_features_to_select,
-                  step=self.step, verbose=self.verbose)
+                    n_features_to_select=self.min_features_to_select,
+                    step=self.step, verbose=self.verbose)
 
         # Determine the number of subsets of features by fitting across
         # the train folds and choosing the "features_to_select" parameter
@@ -281,8 +285,8 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
 
         # Re-execute an elimination with best_k over the whole set
         rfe = DyRFE(estimator=self.estimator,
-                  n_features_to_select=n_features_to_select, step=self.step,
-                  verbose=self.verbose)
+                    n_features_to_select=n_features_to_select, step=self.step,
+                    verbose=self.verbose)
 
         rfe.fit(X, y)
 
@@ -312,11 +316,10 @@ class MyPipeline(pipeline.Pipeline):
             coefs = getattr(estimator, 'feature_importances_', None)
         if coefs is None:
             raise RuntimeError('The estimator in the pipeline does not expose '
-                                '"coef_" or "feature_importances_" '
-                                'attributes')
+                               '"coef_" or "feature_importances_" '
+                               'attributes')
         self.feature_importances_ = coefs
         return self
-
 
 
 class MyimbPipeline(imbPipeline):
@@ -332,8 +335,8 @@ class MyimbPipeline(imbPipeline):
             coefs = getattr(estimator, 'feature_importances_', None)
         if coefs is None:
             raise RuntimeError('The estimator in the pipeline does not expose '
-                                '"coef_" or "feature_importances_" '
-                                'attributes')
+                               '"coef_" or "feature_importances_" '
+                               'attributes')
         self.feature_importances_ = coefs
         return self
 
