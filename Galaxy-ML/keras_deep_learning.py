@@ -89,12 +89,13 @@ def _handle_layer_parameters(params):
             continue
 
         if type(value) in [int, float, bool]\
-            or (type(value) is str and value.isalpha()):
+                or (type(value) is str and value.isalpha()):
             continue
 
-        if key in ['input_shape', 'noise_shape', 'shape', 'batch_shape','target_shape',
-                    'dims', 'kernel_size', 'strides', 'dilation_rate', 'output_padding'
-                    'cropping', 'size', 'padding', 'pool_size', 'axis', 'shared_axes']:
+        if key in ['input_shape', 'noise_shape', 'shape', 'batch_shape',
+                   'target_shape', 'dims', 'kernel_size', 'strides',
+                   'dilation_rate', 'output_padding', 'cropping', 'size',
+                   'padding', 'pool_size', 'axis', 'shared_axes']:
             params[key] = _handle_shape(value)
 
         elif key.endswith('_regularizer'):
@@ -103,7 +104,7 @@ def _handle_layer_parameters(params):
         elif key.endswith('_constraint'):
             params[key] = _handle_constraint(value)
 
-        elif key == 'function': # No support for lambda/function eval
+        elif key == 'function':  # No support for lambda/function eval
             params.pop(key)
 
     return params
@@ -126,7 +127,7 @@ def get_sequential_model(config):
         other_options = options.pop('layer_options', {})
         options.update(other_options)
 
-        ## parameters needs special care
+        # parameters needs special care
         options = _handle_layer_parameters(options)
 
         # add input_shape to the first layer only
@@ -155,7 +156,7 @@ def get_functional_model(config):
         other_options = options.pop('layer_options', {})
         options.update(other_options)
 
-        ## parameters needs special care
+        # parameters needs special care
         options = _handle_layer_parameters(options)
         # merge layers
         if 'merging_layers' in options:
@@ -216,10 +217,13 @@ if __name__ == '__main__':
         elif json_model['class_name'] == 'Model':
             options['model_type'] = 'functional'
         else:
-            raise ValueError("Unknow Keras model class: %s" % json_model['class_name'])
+            raise ValueError("Unknow Keras model class: %s"
+                             % json_model['class_name'])
         options['loss'] = inputs['compile_params']['loss']
-        options['optimizer'] = inputs['compile_params']['optimizer_selection']['optimizer_type'].lower()
-        options.update( inputs['compile_params']['optimizer_selection']['optimizer_options'] )
+        options['optimizer'] = (inputs['compile_params']['optimizer_selection']
+                                ['optimizer_type']).lower()
+        options.update((inputs['compile_params']['optimizer_selection']
+                       ['optimizer_options']))
         options.update(inputs['fit_params'])
 
         estimator = klass(config, **options)

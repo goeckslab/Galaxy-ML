@@ -5,9 +5,11 @@ import warnings
 from keras.models import Sequential
 from keras import layers
 from keras.layers import Dense, Activation
-from keras_galaxy_models import (_get_params_from_dict, _param_to_dict, _update_dict,
-                                 check_params, SearchParam, KerasLayers,
-                                 BaseKerasModel, KerasGClassifier, KerasGRegressor)
+from keras_galaxy_models import (
+    _get_params_from_dict, _param_to_dict, _update_dict,
+    check_params, SearchParam, KerasLayers,
+    BaseKerasModel, KerasGClassifier, KerasGRegressor)
+
 from sklearn.base import clone
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from tensorflow import set_random_seed
@@ -57,109 +59,144 @@ outputs = layers.Dense(10, activation='softmax')(x)
 resnet_model = keras.Model(inputs, outputs, name='toy_resnet')
 
 
-d = {'name': 'sequential_1',
-    'layers': [{'class_name': 'Dense',
-        'config': {'name': 'dense_1',
-        'trainable': True,
-        'units': 64,
-        'activation': 'linear',
-        'use_bias': True,
-        'kernel_initializer': {'class_name': 'VarianceScaling',
-            'config': {'scale': 1.0,
-            'mode': 'fan_avg',
-            'distribution': 'uniform',
-            'seed': None}},
-        'bias_initializer': {'class_name': 'Zeros', 'config': {}},
-        'kernel_regularizer': None,
-        'bias_regularizer': None,
-        'activity_regularizer': None,
-        'kernel_constraint': None,
-        'bias_constraint': None}},
-        {'class_name': 'Activation',
-        'config': {'name': 'activation_1',
-        'trainable': True,
-        'activation': 'tanh'}},
-        {'class_name': 'Activation',
-        'config': {'name': 'activation_2',
-        'trainable': True,
-        'activation': 'tanh'}},
-        {'class_name': 'Dense',
-        'config': {'name': 'dense_2',
-        'trainable': True,
-        'units': 32,
-        'activation': 'linear',
-        'use_bias': True,
-        'kernel_initializer': {'class_name': 'VarianceScaling',
-            'config': {'scale': 1.0,
-            'mode': 'fan_avg',
-            'distribution': 'uniform',
-            'seed': None}},
-        'bias_initializer': {'class_name': 'Zeros', 'config': {}},
-        'kernel_regularizer': None,
-        'bias_regularizer': None,
-        'activity_regularizer': None,
-        'kernel_constraint': None,
-        'bias_constraint': None}}]
-}
+d = {
+    'name': 'sequential_1',
+    'layers': [
+        {
+            'class_name': 'Dense',
+            'config': {
+                'name': 'dense_1',
+                'trainable': True,
+                'units': 64,
+                'activation': 'linear',
+                'use_bias': True,
+                'kernel_initializer': {
+                    'class_name': 'VarianceScaling',
+                    'config': {
+                        'scale': 1.0,
+                        'mode': 'fan_avg',
+                        'distribution': 'uniform',
+                        'seed': None}},
+                'bias_initializer': {
+                    'class_name': 'Zeros',
+                    'config': {}},
+                'kernel_regularizer': None,
+                'bias_regularizer': None,
+                'activity_regularizer': None,
+                'kernel_constraint': None,
+                'bias_constraint': None}},
+        {
+            'class_name': 'Activation',
+            'config': {
+                'name': 'activation_1',
+                'trainable': True,
+                'activation': 'tanh'}},
+        {
+            'class_name': 'Activation',
+            'config': {
+                'name': 'activation_2',
+                'trainable': True,
+                'activation': 'tanh'}},
+        {
+            'class_name': 'Dense',
+            'config': {
+                'name': 'dense_2',
+                'trainable': True,
+                'units': 32,
+                'activation': 'linear',
+                'use_bias': True,
+                'kernel_initializer': {
+                    'class_name': 'VarianceScaling',
+                    'config': {
+                        'scale': 1.0,
+                        'mode': 'fan_avg',
+                        'distribution': 'uniform',
+                        'seed': None}},
+                'bias_initializer': {
+                    'class_name': 'Zeros',
+                    'config': {}},
+                'kernel_regularizer': None,
+                'bias_regularizer': None,
+                'activity_regularizer': None,
+                'kernel_constraint': None,
+                'bias_constraint': None}}]}
 
 
 def test_get_params_from_dict():
     got = list(_get_params_from_dict(d['layers'][0], 'layers_0_Dense').keys())
-    expect = ['layers_0_Dense__class_name', 'layers_0_Dense__config', 
-              'layers_0_Dense__config__name', 'layers_0_Dense__config__trainable',
-              'layers_0_Dense__config__units', 'layers_0_Dense__config__activation',
-              'layers_0_Dense__config__use_bias', 'layers_0_Dense__config__kernel_initializer',
-              'layers_0_Dense__config__kernel_initializer__class_name',
-              'layers_0_Dense__config__kernel_initializer__config',
-              'layers_0_Dense__config__kernel_initializer__config__scale',
-              'layers_0_Dense__config__kernel_initializer__config__mode',
-              'layers_0_Dense__config__kernel_initializer__config__distribution',
-              'layers_0_Dense__config__kernel_initializer__config__seed',
-              'layers_0_Dense__config__bias_initializer',
-              'layers_0_Dense__config__bias_initializer__class_name',
-              'layers_0_Dense__config__bias_initializer__config',
-              'layers_0_Dense__config__kernel_regularizer',
-              'layers_0_Dense__config__bias_regularizer',
-              'layers_0_Dense__config__activity_regularizer',
-              'layers_0_Dense__config__kernel_constraint',
-              'layers_0_Dense__config__bias_constraint']
+    expect = [
+        'layers_0_Dense__class_name', 'layers_0_Dense__config',
+        'layers_0_Dense__config__name',
+        'layers_0_Dense__config__trainable',
+        'layers_0_Dense__config__units',
+        'layers_0_Dense__config__activation',
+        'layers_0_Dense__config__use_bias',
+        'layers_0_Dense__config__kernel_initializer',
+        'layers_0_Dense__config__kernel_initializer__class_name',
+        'layers_0_Dense__config__kernel_initializer__config',
+        'layers_0_Dense__config__kernel_initializer__config__scale',
+        'layers_0_Dense__config__kernel_initializer__config__mode',
+        'layers_0_Dense__config__kernel_initializer__config__distribution',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'layers_0_Dense__config__bias_initializer',
+        'layers_0_Dense__config__bias_initializer__class_name',
+        'layers_0_Dense__config__bias_initializer__config',
+        'layers_0_Dense__config__kernel_regularizer',
+        'layers_0_Dense__config__bias_regularizer',
+        'layers_0_Dense__config__activity_regularizer',
+        'layers_0_Dense__config__kernel_constraint',
+        'layers_0_Dense__config__bias_constraint']
     assert got == expect, got
 
 
 def test_param_to_dict():
-    param = {'layers_0_Dense__config__kernel_initializer__config__distribution': 'uniform'}
+    param = {
+        'layers_0_Dense__config__kernel_initializer__config__distribution':
+            'uniform'}
     key = list(param.keys())[0]
     got = _param_to_dict(key, param[key])
 
-    expect = {'layers_0_Dense': {'config': {'kernel_initializer': {'config': {'distribution': 'uniform'}}}}}
+    expect = {'layers_0_Dense': {
+                'config': {
+                    'kernel_initializer': {
+                        'config': {
+                            'distribution': 'uniform'}}}}}
     assert got == expect, got
 
 
 def test_update_dict():
     config = model.get_config()
-    layers=config['layers']
+    layers = config['layers']
     d = layers[0]
-    u = {'config': {'kernel_initializer': {'config': {'distribution': 'random_uniform'}}}}
+    u = {'config': {
+            'kernel_initializer': {
+                'config': {
+                    'distribution': 'random_uniform'}}}}
     got = _update_dict(d, u)
-    
-    expect = {'class_name': 'Dense', 
-              'config': {'name': 'dense_1',
-                         'trainable': True,
-                         'units': 64,
-                         'activation': 'linear',
-                         'use_bias': True,
-                         'kernel_initializer': {'class_name': 'VarianceScaling',
-                                                'config': {'scale': 1.0,
-                                                           'mode': 'fan_avg',
-                                                           'distribution': 'random_uniform',
-                                                           'seed': None}},
-                         'bias_initializer': {'class_name': 'Zeros', 
-                                              'config': {}},
-                         'kernel_regularizer': None,
-                         'bias_regularizer': None,
-                         'activity_regularizer': None,
-                         'kernel_constraint': None,
-                         'bias_constraint': None}}
+
+    expect = {
+        'class_name': 'Dense',
+        'config': {
+            'name': 'dense_1',
+            'trainable': True,
+            'units': 64,
+            'activation': 'linear',
+            'use_bias': True,
+            'kernel_initializer': {
+                'class_name': 'VarianceScaling',
+                'config': {
+                    'scale': 1.0,
+                    'mode': 'fan_avg',
+                    'distribution': 'random_uniform',
+                    'seed': None}},
+            'bias_initializer': {
+                'class_name': 'Zeros',
+                'config': {}},
+            'kernel_regularizer': None,
+            'bias_regularizer': None,
+            'activity_regularizer': None,
+            'kernel_constraint': None,
+            'bias_constraint': None}}
     assert got == expect, got
 
 
@@ -167,52 +204,61 @@ def test_get_params_keras_layers():
     config = model.get_config()
     layers = KerasLayers(name=config['name'], layers=config['layers'])
     got = list(layers.get_params().keys())
-    expect = ['layers', 'name', 'layers_0_Dense', 'layers_1_Activation',
-              'layers_2_Activation', 'layers_3_Dense', 'layers_0_Dense__class_name',
-              'layers_0_Dense__config', 'layers_0_Dense__config__name',
-              'layers_0_Dense__config__trainable', 'layers_0_Dense__config__units',
-              'layers_0_Dense__config__activation', 'layers_0_Dense__config__use_bias',
-              'layers_0_Dense__config__kernel_initializer',
-              'layers_0_Dense__config__kernel_initializer__class_name',
-              'layers_0_Dense__config__kernel_initializer__config',
-              'layers_0_Dense__config__kernel_initializer__config__scale',
-              'layers_0_Dense__config__kernel_initializer__config__mode',
-              'layers_0_Dense__config__kernel_initializer__config__distribution',
-              'layers_0_Dense__config__kernel_initializer__config__seed',
-              'layers_0_Dense__config__bias_initializer',
-              'layers_0_Dense__config__bias_initializer__class_name',
-              'layers_0_Dense__config__bias_initializer__config',
-              'layers_0_Dense__config__kernel_regularizer',
-              'layers_0_Dense__config__bias_regularizer',
-              'layers_0_Dense__config__activity_regularizer',
-              'layers_0_Dense__config__kernel_constraint',
-              'layers_0_Dense__config__bias_constraint',
-              'layers_1_Activation__class_name',
-              'layers_1_Activation__config', 'layers_1_Activation__config__name',
-              'layers_1_Activation__config__trainable',
-              'layers_1_Activation__config__activation',
-              'layers_2_Activation__class_name', 'layers_2_Activation__config',
-              'layers_2_Activation__config__name', 'layers_2_Activation__config__trainable',
-              'layers_2_Activation__config__activation', 'layers_3_Dense__class_name',
-              'layers_3_Dense__config', 'layers_3_Dense__config__name',
-              'layers_3_Dense__config__trainable', 'layers_3_Dense__config__units',
-              'layers_3_Dense__config__activation', 'layers_3_Dense__config__use_bias',
-              'layers_3_Dense__config__kernel_initializer',
-              'layers_3_Dense__config__kernel_initializer__class_name',
-              'layers_3_Dense__config__kernel_initializer__config',
-              'layers_3_Dense__config__kernel_initializer__config__scale',
-              'layers_3_Dense__config__kernel_initializer__config__mode',
-              'layers_3_Dense__config__kernel_initializer__config__distribution',
-              'layers_3_Dense__config__kernel_initializer__config__seed',
-              'layers_3_Dense__config__bias_initializer',
-              'layers_3_Dense__config__bias_initializer__class_name',
-              'layers_3_Dense__config__bias_initializer__config',
-              'layers_3_Dense__config__kernel_regularizer',
-              'layers_3_Dense__config__bias_regularizer',
-              'layers_3_Dense__config__activity_regularizer',
-              'layers_3_Dense__config__kernel_constraint',
-              'layers_3_Dense__config__bias_constraint']
-    
+    expect = [
+        'layers', 'name', 'layers_0_Dense', 'layers_1_Activation',
+        'layers_2_Activation', 'layers_3_Dense',
+        'layers_0_Dense__class_name', 'layers_0_Dense__config',
+        'layers_0_Dense__config__name',
+        'layers_0_Dense__config__trainable',
+        'layers_0_Dense__config__units',
+        'layers_0_Dense__config__activation',
+        'layers_0_Dense__config__use_bias',
+        'layers_0_Dense__config__kernel_initializer',
+        'layers_0_Dense__config__kernel_initializer__class_name',
+        'layers_0_Dense__config__kernel_initializer__config',
+        'layers_0_Dense__config__kernel_initializer__config__scale',
+        'layers_0_Dense__config__kernel_initializer__config__mode',
+        'layers_0_Dense__config__kernel_initializer__config__distribution',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'layers_0_Dense__config__bias_initializer',
+        'layers_0_Dense__config__bias_initializer__class_name',
+        'layers_0_Dense__config__bias_initializer__config',
+        'layers_0_Dense__config__kernel_regularizer',
+        'layers_0_Dense__config__bias_regularizer',
+        'layers_0_Dense__config__activity_regularizer',
+        'layers_0_Dense__config__kernel_constraint',
+        'layers_0_Dense__config__bias_constraint',
+        'layers_1_Activation__class_name',
+        'layers_1_Activation__config',
+        'layers_1_Activation__config__name',
+        'layers_1_Activation__config__trainable',
+        'layers_1_Activation__config__activation',
+        'layers_2_Activation__class_name', 'layers_2_Activation__config',
+        'layers_2_Activation__config__name',
+        'layers_2_Activation__config__trainable',
+        'layers_2_Activation__config__activation',
+        'layers_3_Dense__class_name',
+        'layers_3_Dense__config', 'layers_3_Dense__config__name',
+        'layers_3_Dense__config__trainable',
+        'layers_3_Dense__config__units',
+        'layers_3_Dense__config__activation',
+        'layers_3_Dense__config__use_bias',
+        'layers_3_Dense__config__kernel_initializer',
+        'layers_3_Dense__config__kernel_initializer__class_name',
+        'layers_3_Dense__config__kernel_initializer__config',
+        'layers_3_Dense__config__kernel_initializer__config__scale',
+        'layers_3_Dense__config__kernel_initializer__config__mode',
+        'layers_3_Dense__config__kernel_initializer__config__distribution',
+        'layers_3_Dense__config__kernel_initializer__config__seed',
+        'layers_3_Dense__config__bias_initializer',
+        'layers_3_Dense__config__bias_initializer__class_name',
+        'layers_3_Dense__config__bias_initializer__config',
+        'layers_3_Dense__config__kernel_regularizer',
+        'layers_3_Dense__config__bias_regularizer',
+        'layers_3_Dense__config__activity_regularizer',
+        'layers_3_Dense__config__kernel_constraint',
+        'layers_3_Dense__config__bias_constraint']
+
     assert got == expect, got
 
 
@@ -295,25 +341,28 @@ def test_set_params_base_keras_model():
 
     got1 = len(classifier.config['layers'])
     got2 = classifier.lr
-    got3 = classifier.config['layers'][2]['config']['kernel_initializer']['config']['scale']
+    got3 = (classifier.config['layers'][2]['config']
+            ['kernel_initializer']['config']['scale'])
 
     assert got1 == 3, got1
     assert got2 == 0.05, got2
     assert got3 == 2.0, got3
 
 
-
 def test_get_params_keras_g_classifier():
     config = train_model.get_config()
-    classifier = KerasGClassifier(config, optimizer='adam', metrics=['accuracy'])
+    classifier = KerasGClassifier(config, optimizer='adam',
+                                  metrics=['accuracy'])
 
     got = list(classifier.get_params().keys())
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
-    expect = ['amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay', 'epochs',
-              'epsilon', 'loss', 'lr', 'metrics', 'model_type', 'optimizer', 'seed',
-              'layers_0_Dense__config__kernel_initializer__config__seed',
-              'layers_1_Dense__config__kernel_initializer__config__seed']
+    expect = [
+        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config',
+        'decay', 'epochs', 'epsilon', 'loss', 'lr', 'metrics',
+        'model_type', 'optimizer', 'seed',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
 
@@ -323,23 +372,26 @@ def test_gridsearchcv_keras_g_classifier():
     classifier = KerasGClassifier(config, optimizer='adam', metrics=[])
 
     param_grid = dict(
-        epochs = [60],
-        batch_size = [20],
-        lr = [0.03],
-        layers_1_Dense__config__kernel_initializer__config__seed = [42],
-        layers_0_Dense__config__kernel_initializer__config__seed = [999]
+        epochs=[60],
+        batch_size=[20],
+        lr=[0.03],
+        layers_1_Dense__config__kernel_initializer__config__seed=[42],
+        layers_0_Dense__config__kernel_initializer__config__seed=[999]
     )
     cv = StratifiedKFold(n_splits=3)
 
-    grid = GridSearchCV(classifier, param_grid, cv=cv, scoring='accuracy', refit=True)
+    grid = GridSearchCV(classifier, param_grid, cv=cv,
+                        scoring='accuracy', refit=True)
     grid_result = grid.fit(X, y)
 
     got1 = round(grid_result.best_score_, 2)
     got2 = grid_result.best_estimator_.lr
     got3 = grid_result.best_estimator_.epochs
     got4 = grid_result.best_estimator_.batch_size
-    got5 = grid_result.best_estimator_.config['layers'][0]['config']['kernel_initializer']['config']['seed']
-    got6 = grid_result.best_estimator_.config['layers'][1]['config']['kernel_initializer']['config']['seed']
+    got5 = (grid_result.best_estimator_.config['layers'][0]['config']
+            ['kernel_initializer']['config']['seed'])
+    got6 = (grid_result.best_estimator_.config['layers'][1]['config']
+            ['kernel_initializer']['config']['seed'])
 
     assert got1 == 0.65, got1
     assert got2 == 0.03, got2
@@ -356,10 +408,11 @@ def test_get_params_keras_g_regressor():
     got = list(regressor.get_params().keys())
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
-    expect = ['batch_size', 'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
-              'model_type', 'momentum', 'nesterov', 'optimizer', 'seed',
-              'layers_0_Dense__config__kernel_initializer__config__seed',
-              'layers_1_Dense__config__kernel_initializer__config__seed']
+    expect = [
+        'batch_size', 'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
+        'model_type', 'momentum', 'nesterov', 'optimizer', 'seed',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
 
@@ -369,11 +422,11 @@ def test_gridsearchcv_keras_g_regressor():
     regressor = KerasGRegressor(config, optimizer='adam', metrics=[])
 
     param_grid = dict(
-        epochs = [60],
-        batch_size = [20],
-        lr = [0.03],
-        layers_1_Dense__config__kernel_initializer__config__seed = [42],
-        layers_0_Dense__config__kernel_initializer__config__seed = [999]
+        epochs=[60],
+        batch_size=[20],
+        lr=[0.03],
+        layers_1_Dense__config__kernel_initializer__config__seed=[42],
+        layers_0_Dense__config__kernel_initializer__config__seed=[999]
     )
     cv = KFold(n_splits=3)
 
@@ -384,8 +437,10 @@ def test_gridsearchcv_keras_g_regressor():
     got2 = grid_result.best_estimator_.lr
     got3 = grid_result.best_estimator_.epochs
     got4 = grid_result.best_estimator_.batch_size
-    got5 = grid_result.best_estimator_.config['layers'][0]['config']['kernel_initializer']['config']['seed']
-    got6 = grid_result.best_estimator_.config['layers'][1]['config']['kernel_initializer']['config']['seed']
+    got5 = (grid_result.best_estimator_.config['layers']
+            [0]['config']['kernel_initializer']['config']['seed'])
+    got6 = (grid_result.best_estimator_.config['layers'][1]['config']
+            ['kernel_initializer']['config']['seed'])
 
     assert got1 == -0.54, got1
     assert got2 == 0.03, got2
@@ -398,11 +453,11 @@ def test_gridsearchcv_keras_g_regressor():
 def test_check_params():
     fn = (Sequential.fit, Sequential.predict)
     params1 = dict(
-        epochs = 100,
-        validation_split = 0.2
+        epochs=100,
+        validation_split=0.2
     )
     params2 = dict(
-        random_state = 9999
+        random_state=9999
     )
     try:
         check_params(params1, fn)
@@ -430,7 +485,7 @@ def test_funtional_model_get_params():
     got = {}
     for key, value in params.items():
         if key.startswith('layers_1_Conv2D__')\
-            or (not key.endswith('config')\
+            or (not key.endswith('config')
                 and not key.startswith('layers')):
             got[key] = value
 
@@ -448,28 +503,31 @@ def test_funtional_model_get_params():
         'seed': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',
-        'layers_1_Conv2D__config': {'name': 'conv2d_1',
-                                    'trainable': True,
-                                    'filters': 32,
-                                    'kernel_size': (3, 3),
-                                    'strides': (1, 1),
-                                    'padding': 'valid',
-                                    'data_format': 'channels_last',
-                                    'dilation_rate': (1, 1),
-                                    'activation': 'relu',
-                                    'use_bias': True,
-                                    'kernel_initializer': {'class_name': 'VarianceScaling',
-                                                           'config': {'scale': 1.0,
-                                                                      'mode': 'fan_avg',
-                                                                      'distribution': 'uniform',
-                                                                      'seed': None}},
-                                    'bias_initializer': {'class_name': 'Zeros',
-                                                         'config': {}},
-                                                         'kernel_regularizer': None,
-                                                         'bias_regularizer': None,
-                                                         'activity_regularizer': None,
-                                                         'kernel_constraint': None,
-                                                         'bias_constraint': None},
+        'layers_1_Conv2D__config': {
+            'name': 'conv2d_1',
+            'trainable': True,
+            'filters': 32,
+            'kernel_size': (3, 3),
+            'strides': (1, 1),
+            'padding': 'valid',
+            'data_format': 'channels_last',
+            'dilation_rate': (1, 1),
+            'activation': 'relu',
+            'use_bias': True,
+            'kernel_initializer': {
+                'class_name': 'VarianceScaling',
+                'config': {'scale': 1.0,
+                           'mode': 'fan_avg',
+                           'distribution': 'uniform',
+                           'seed': None}},
+            'bias_initializer': {
+                'class_name': 'Zeros',
+                'config': {}},
+            'kernel_regularizer': None,
+            'bias_regularizer': None,
+            'activity_regularizer': None,
+            'kernel_constraint': None,
+            'bias_constraint': None},
         'layers_1_Conv2D__config__name': 'conv2d_1',
         'layers_1_Conv2D__config__trainable': True,
         'layers_1_Conv2D__config__filters': 32,
@@ -480,22 +538,27 @@ def test_funtional_model_get_params():
         'layers_1_Conv2D__config__dilation_rate': (1, 1),
         'layers_1_Conv2D__config__activation': 'relu',
         'layers_1_Conv2D__config__use_bias': True,
-        'layers_1_Conv2D__config__kernel_initializer': {'class_name': 'VarianceScaling',
-                                                        'config': {'scale': 1.0,
-                                                        'mode': 'fan_avg',
-                                                        'distribution': 'uniform',
-                                                        'seed': None}},
-        'layers_1_Conv2D__config__kernel_initializer__class_name': 'VarianceScaling',
-        'layers_1_Conv2D__config__kernel_initializer__config': {'scale': 1.0,
-                                                                'mode': 'fan_avg',
-                                                                'distribution': 'uniform',
-                                                                'seed': None},
+        'layers_1_Conv2D__config__kernel_initializer': {
+            'class_name': 'VarianceScaling',
+            'config': {'scale': 1.0,
+                       'mode': 'fan_avg',
+                       'distribution': 'uniform',
+                       'seed': None}},
+        'layers_1_Conv2D__config__kernel_initializer__class_name':
+            'VarianceScaling',
+        'layers_1_Conv2D__config__kernel_initializer__config': {
+            'scale': 1.0,
+            'mode': 'fan_avg',
+            'distribution': 'uniform',
+            'seed': None},
         'layers_1_Conv2D__config__kernel_initializer__config__scale': 1.0,
         'layers_1_Conv2D__config__kernel_initializer__config__mode': 'fan_avg',
-        'layers_1_Conv2D__config__kernel_initializer__config__distribution': 'uniform',
+        'layers_1_Conv2D__config__kernel_initializer__config__distribution':
+            'uniform',
         'layers_1_Conv2D__config__kernel_initializer__config__seed': None,
-        'layers_1_Conv2D__config__bias_initializer': {'class_name': 'Zeros',
-                                                      'config': {}},
+        'layers_1_Conv2D__config__bias_initializer': {
+            'class_name': 'Zeros',
+            'config': {}},
         'layers_1_Conv2D__config__bias_initializer__class_name': 'Zeros',
         'layers_1_Conv2D__config__bias_initializer__config': {},
         'layers_1_Conv2D__config__kernel_regularizer': None,
@@ -522,7 +585,8 @@ def test_set_params_functional_model():
 
     classifier.set_params(**params)
 
-    got1 = classifier.config['layers'][1]['config']['kernel_initializer']['config']['seed']
+    got1 = (classifier.config['layers'][1]['config']
+            ['kernel_initializer']['config']['seed'])
     got2 = classifier.config['layers'][1]['config']['filters']
     got3 = classifier.lr
     got4 = classifier.epochs

@@ -10,10 +10,12 @@ import collections
 import numpy as np
 from keras import backend as K
 from keras.models import Sequential, Model
-from keras.optimizers import (SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam)
+from keras.optimizers import (SGD, RMSprop, Adagrad,
+                              Adadelta, Adam, Adamax, Nadam)
 from keras.utils import to_categorical
 from keras.utils.generic_utils import has_arg, to_list
-from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
+from sklearn.base import (BaseEstimator, ClassifierMixin,
+                          RegressorMixin)
 from sklearn.externals import six
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
@@ -79,10 +81,11 @@ def _get_params_from_dict(dic, name):
 
     for key, value in six.iteritems(dic):
         if isinstance(value, dict):
-            out['%s__%s'% (name, key)] = value
-            out.update(_get_params_from_dict(value, '%s__%s'% (name, key)))
+            out['%s__%s' % (name, key)] = value
+            out.update(_get_params_from_dict(
+                value, '%s__%s' % (name, key)))
         else:
-            out['%s__%s'% (name, key)] = value
+            out['%s__%s' % (name, key)] = value
 
     return out
 
@@ -181,7 +184,6 @@ class KerasLayers(BaseEstimator):
 
         return rval
 
-
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
         out = super(KerasLayers, self).get_params(deep=False)
@@ -199,7 +201,8 @@ class KerasLayers(BaseEstimator):
 
         for key in list(six.iterkeys(params)):
             if not key.startswith('layers'):
-                raise ValueError("Only layer structure parameters are not searchable!")
+                raise ValueError("Only layer structure parameters are "
+                                 "not searchable!")
         # 1. replace `layers`
         if 'layers' in params:
             setattr(self, 'layers', params.pop('layers'))
@@ -247,29 +250,62 @@ class BaseKerasModel(BaseEstimator):
 
     Parameters
     ----------
-    config : dictionary, from `model.get_config()`
-    model_type : str, 'sequential' or 'functional'
-    optimizer : str, 'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
-                'adamax', 'nadam', default 'sgd'
-    loss : str, same as Keras `loss`, default 'binary_crossentropy',
+    config : dictionary
+        from `model.get_config()`
+
+    model_type : str
+        'sequential' or 'functional'
+
+    optimizer : str, default 'sgd'
+        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
+
+    loss : str, default 'binary_crossentropy'
+        same as Keras `loss`
+
     metrics : list of strings, default []
-    lr : None or float, optimizer parameter, default change with `optimizer`
-    momentum : None or float, for optimizer `sgd` only, ignored otherwise
-    nesterov : None or bool, for optimizer `sgd` only, ignored otherwise
-    decay : None or float, optimizer parameter, default change with `optimizer`
-    rho : None or float, optimizer parameter, default change with `optimizer`
-    epsilon : None or float, optimizer parameter, default change with `optimizer`
-    amsgrad : None or bool, for optimizer `adam` only, ignored otherwise
-    beta_1 : None or float, optimizer parameter, default change with `optimizer`
-    beta_2 : None or float, optimizer parameter, default change with `optimizer`
-    schedule_decay : None or float, optimizer parameter, default change with `optimizer`
-    epochs : int, fit_param from Keras,
-    batch_size : int, fit_param, from Keras
-    seed : None or int, backend random seed, default 0
+
+    lr : None or float
+        optimizer parameter, default change with `optimizer`
+
+    momentum : None or float
+        for optimizer `sgd` only, ignored otherwise
+
+    nesterov : None or bool
+        for optimizer `sgd` only, ignored otherwise
+
+    decay : None or float
+        optimizer parameter, default change with `optimizer`
+    rho : None or float
+        optimizer parameter, default change with `optimizer`
+
+    epsilon : None or float
+        optimizer parameter, default change with `optimizer`
+
+    amsgrad : None or bool
+        for optimizer `adam` only, ignored otherwise
+
+    beta_1 : None or float
+        optimizer parameter, default change with `optimizer`
+
+    beta_2 : None or float
+        optimizer parameter, default change with `optimizer`
+
+    schedule_decay : None or float
+        optimizer parameter, default change with `optimizer`
+
+    epochs : int
+        fit_param from Keras
+
+    batch_size : int
+        fit_param, from Keras
+
+    seed : None or int, default 0
+        backend random seed
     """
-    def __init__(self, config, model_type='sequential', optimizer='sgd',
-                 loss='binary_crossentropy', metrics=[], lr=None, momentum=None,
-                 decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None,
+    def __init__(self, config, model_type='sequential',
+                 optimizer='sgd', loss='binary_crossentropy',
+                 metrics=[], lr=None, momentum=None, decay=None,
+                 nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=0, **fit_params):
         self.config = config
@@ -281,7 +317,7 @@ class BaseKerasModel(BaseEstimator):
         self.batch_size = batch_size
         self.seed = seed
         self.fit_params = fit_params
-        #TODO support compile parameters
+        # TODO support compile parameters
 
         check_params(fit_params, Model.fit)
 
@@ -328,7 +364,8 @@ class BaseKerasModel(BaseEstimator):
             self.beta_1 = 0.9 if beta_1 is None else beta_1
             self.beta_2 = 0.999 if beta_2 is None else beta_2
             self.epsilon = None if epsilon is None else epsilon
-            self.schedule_decay = 0.004 if schedule_decay is None else schedule_decay
+            self.schedule_decay = 0.004 if schedule_decay is None\
+                else schedule_decay
 
         else:
             raise ValueError("Unsupported optimizer type: %s" % optimizer)
@@ -352,8 +389,8 @@ class BaseKerasModel(BaseEstimator):
                 self.epsilon = None
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            return RMSprop(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
-                           decay=self.decay)
+            return RMSprop(lr=self.lr, rho=self.rho,
+                           epsilon=self.epsilon, decay=self.decay)
 
         elif self.optimizer == 'adagrad':
             if not hasattr(self, 'epsilon'):
@@ -370,7 +407,8 @@ class BaseKerasModel(BaseEstimator):
                 self.epsilon = None
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            return Adadelta(lr=self.lr, rho=self.rho, epsilon=self.epsilon,
+            return Adadelta(lr=self.lr, rho=self.rho,
+                            epsilon=self.epsilon,
                             decay=self.decay)
 
         elif self.optimizer == 'adam':
@@ -384,8 +422,9 @@ class BaseKerasModel(BaseEstimator):
                 self.epsilon = None
             if not hasattr(self, 'amsgrad'):
                 self.amsgrad = False
-            return Adam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                        epsilon=self.epsilon, decay=self.decay, amsgrad=self.amsgrad)
+            return Adam(lr=self.lr, beta_1=self.beta_1,
+                        beta_2=self.beta_2, epsilon=self.epsilon,
+                        decay=self.decay, amsgrad=self.amsgrad)
 
         elif self.optimizer == 'adamax':
             if not hasattr(self, 'beta_1'):
@@ -396,8 +435,9 @@ class BaseKerasModel(BaseEstimator):
                 self.decay = 0
             if not hasattr(self, 'epsilon'):
                 self.epsilon = None
-            return Adamax(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                          epsilon=self.epsilon, decay=self.decay)
+            return Adamax(lr=self.lr, beta_1=self.beta_1,
+                          beta_2=self.beta_2, epsilon=self.epsilon,
+                          decay=self.decay)
 
         elif self.optimizer == 'nadam':
             if not hasattr(self, 'beta_1'):
@@ -408,8 +448,9 @@ class BaseKerasModel(BaseEstimator):
                 self.epsilon = None
             if not hasattr(self, 'schedule_decay'):
                 self.schedule_decay = 0.004
-            return Nadam(lr=self.lr, beta_1=self.beta_1, beta_2=self.beta_2,
-                         epsilon=self.epsilon, schedule_decay=self.schedule_decay)
+            return Nadam(lr=self.lr, beta_1=self.beta_1,
+                         beta_2=self.beta_2, epsilon=self.epsilon,
+                         schedule_decay=self.schedule_decay)
 
     @property
     def named_layers(self):
@@ -429,17 +470,22 @@ class BaseKerasModel(BaseEstimator):
         if self.model_type not in ['sequential', 'functional']:
             raise ValueError("Unsupported model type %s" % self.model_type)
 
-        self.model_class_ = Sequential if self.model_type == 'sequential' else Model
+        if self.model_type == 'sequential':
+            self.model_class_ = Sequential
+        else:
+            self.model_class_ = Model
+
         self.model_ = self.model_class_.from_config(config)
 
-        self.model_.compile(loss=self.loss, optimizer=self._optimizer, metrics=self.metrics)
+        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
+                            metrics=self.metrics)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
         fit_params = self.fit_params
         fit_params.update(
-            dict(epochs = self.epochs, batch_size = self.batch_size))
+            dict(epochs=self.epochs, batch_size=self.batch_size))
         fit_params.update(kwargs)
 
         # set tensorflow random seed
@@ -498,10 +544,11 @@ class BaseKerasModel(BaseEstimator):
                 else:
                     # replace non-layer parameter
                     if name not in valid_params:
-                        raise ValueError("Invalid parameter %s for estimator %s. "
-                                         "Check the list of available parameters "
-                                         "with `estimator.get_params().keys()`." %
-                                         (name, self))
+                        raise ValueError(
+                            "Invalid parameter %s for estimator %s. "
+                            "Check the list of available parameters "
+                            "with `estimator.get_params().keys()`."
+                            % (name, self))
                     setattr(self, name, params.pop(name))
 
             elif not name.startswith('layers'):
@@ -538,7 +585,11 @@ class BaseKerasModel(BaseEstimator):
             if self.model_type not in ['sequential', 'functional']:
                 raise ValueError("Unsupported model type %s" % self.model_type)
 
-            model_class_ = Sequential if self.model_type == 'sequential' else Model
+            if self.model_type == 'sequential':
+                model_class_ = Sequential
+            else:
+                model_class_ = Model
+
             model_ = model_class_.from_config(config)
 
             return model_.to_json()
@@ -572,7 +623,6 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
 
         return super(KerasGClassifier, self)._fit(X, y, **kwargs)
 
-    
     def predict_proba(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'])
@@ -604,7 +654,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
-        outputs = self.model_.evaluate(x, y, **kwargs)
+        outputs = self.model_.evaluate(X, y, **kwargs)
         outputs = to_list(outputs)
         for name, output in zip(self.model_.metrics_names, outputs):
             if name == 'acc':
