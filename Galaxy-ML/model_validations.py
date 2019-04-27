@@ -11,12 +11,12 @@ train_test_split
 """
 
 import numpy as np
-import random
 import warnings
 
 from itertools import chain
 from math import ceil, floor
-from sklearn.model_selection import GroupShuffleSplit, ShuffleSplit, StratifiedShuffleSplit
+from sklearn.model_selection import (GroupShuffleSplit, ShuffleSplit,
+                                     StratifiedShuffleSplit)
 from sklearn.model_selection._split import _BaseKFold, _RepeatedSplits
 from sklearn.utils import check_random_state, indexable, safe_indexing
 from sklearn.utils.validation import _num_samples, check_array
@@ -162,7 +162,7 @@ def train_test_split(*arrays, **options):
         n_samples = uniques.size
 
     n_train, n_test = _validate_shuffle_split(n_samples, test_size, train_size,
-											  default_test_size=0.25)
+                                              default_test_size=0.25)
 
     shuffle_options = dict(test_size=n_test,
                            train_size=n_train,
@@ -179,7 +179,7 @@ def train_test_split(*arrays, **options):
     elif shuffle == 'simple':
         if labels is not None:
             warnings.warn("The `labels` is not needed and therefore "
-                            "ignored for ShuffleSplit, as shuffle='simple'!")
+                          "ignored for ShuffleSplit, as shuffle='simple'!")
 
         cv = ShuffleSplit(**shuffle_options)
         train, test = next(cv.split(X=arrays[0], y=None))
@@ -193,11 +193,12 @@ def train_test_split(*arrays, **options):
         train, test = next(cv.split(X=arrays[0], y=None, groups=labels))
 
     else:
-        raise ValueError("The argument `shuffle` only supports None, 'simple', "
-                            "'stratified' and 'group', but got `%s`!" % shuffle)
+        raise ValueError("The argument `shuffle` only supports None, "
+                         "'simple', 'stratified' and 'group', but got `%s`!"
+                         % shuffle)
 
     return list(chain.from_iterable((safe_indexing(a, train),
-                                     safe_indexing(a, test)) for a in arrays))
+                                    safe_indexing(a, test)) for a in arrays))
 
 
 class OrderedKFold(_BaseKFold):

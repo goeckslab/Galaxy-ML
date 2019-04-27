@@ -24,11 +24,11 @@ from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn import metrics
 from sklearn.base import BaseEstimator, clone, RegressorMixin
-from sklearn.externals import joblib, six
+from sklearn.externals import six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.pipeline import Pipeline
-from sklearn.utils import as_float_array, check_random_state, check_X_y
+from sklearn.utils import as_float_array, check_X_y
 from sklearn.utils._joblib import Parallel, delayed
 from sklearn.utils.validation import (check_array, check_is_fitted,
                                       check_memory, column_or_1d)
@@ -46,11 +46,21 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
     Parameters
     ----------
-    n_iter : int, sample count
-    positive_thres : float, z_score shreshold to discretize positive target values
-    negative_thres : float, z_score threshold to discretize negative target values
-    verbose : 0 or geater, if not 0, print progress
-    n_jobs : int, default=1. The number of CPUs to use to do the computation.
+    n_iter : int
+        sample count
+
+    positive_thres : float
+        z_score shreshold to discretize positive target values
+
+    negative_thres : float
+        z_score threshold to discretize negative target values
+
+    verbose : int
+        0 or geater, if not 0, print progress
+
+    n_jobs : int, default=1
+        The number of CPUs to use to do the computation.
+
     pre_dispatch : int, or string.
         Controls the number of jobs that get dispatched during parallel
         execution. Reducing this number can be useful to avoid an
@@ -64,22 +74,25 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
               spawned
             - A string, giving an expression as a function of n_jobs,
               as in '2*n_jobs'
+
     random_state : int or None
     """
 
-    def __init__(self, n_iter=1000, positive_thres=-1,
-                 negative_thres=0, verbose=0, n_jobs=1,
-                 pre_dispatch='2*n_jobs',
+    def __init__(self, n_iter=1000, positive_thres=-1, negative_thres=0,
+                 verbose=0, n_jobs=1, pre_dispatch='2*n_jobs',
                  random_state=None):
         """
         IRAPS turns towwards general Anomaly Detection
         It comapares positive_thres with negative_thres,
         and decide which portion is the positive target.
         e.g.:
-        (positive_thres=-1, negative_thres=0) => positive = Z_score of target < -1
-        (positive_thres=1, negative_thres=0) => positive = Z_score of target > 1
+        (positive_thres=-1, negative_thres=0)
+                 => positive = Z_score of target < -1
+        (positive_thres=1, negative_thres=0)
+                 => positive = Z_score of target > 1
 
-        Note: The positive targets here is always the abnormal minority group.
+        Note: The positive targets here is always the
+            abnormal minority group.
         """
         self.n_iter = n_iter
         self.positive_thres = positive_thres
@@ -96,10 +109,11 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         """
         X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
 
-        def _stochastic_sampling(X, y, random_state=None, positive_thres=-1, negative_thres=0):
-            # each iteration select a random number of random subset of training samples
-            # this is somewhat different from the original IRAPS method,
-            # but effect is almost the same.
+        def _stochastic_sampling(X, y, random_state=None, positive_thres=-1,
+                                 negative_thres=0):
+            # each iteration select a random number of random subset of
+            # training samples. this is somewhat different from the original
+            # IRAPS method, but effect is almost the same.
             SAMPLE_SIZE = [0.25, 0.75]
             n_samples = X.shape[0]
 
@@ -108,9 +122,11 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
                                           int(n_samples * SAMPLE_SIZE[1]))
                 index = random.sample(list(range(n_samples)), n_select)
             else:
-                n_select = random.Random(random_state).randint(int(n_samples * SAMPLE_SIZE[0]),
-                                                       int(n_samples * SAMPLE_SIZE[1]))
-                index = random.Random(random_state).sample(list(range(n_samples)), n_select)
+                n_select = random.Random(random_state).randint(
+                                    int(n_samples * SAMPLE_SIZE[0]),
+                                    int(n_samples * SAMPLE_SIZE[1]))
+                index = random.Random(random_state).sample(
+                                    list(range(n_samples)), n_select)
 
             X_selected, y_selected = X[index], y[index]
 
@@ -129,17 +145,22 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
                 return
 
             # p_values
-            _, p = ttest_ind(X_selected_positive, X_selected_negative, axis=0, equal_var=False)
+            _, p = ttest_ind(X_selected_positive, X_selected_negative,
+                             axis=0, equal_var=False)
 
             # fold_change == mean change?
             # TODO implement other normalization method
             positive_mean = X_selected_positive.mean(axis=0)
             negative_mean = X_selected_negative.mean(axis=0)
             mean_change = positive_mean - negative_mean
-            # mean_change = np.select([positive_mean > negative_mean, positive_mean < negative_mean],
-            #                        [positive_mean / negative_mean, -negative_mean / positive_mean])
+            # mean_change = np.select(
+            #       [positive_mean > negative_mean,
+            #           positive_mean < negative_mean],
+            #       [positive_mean / negative_mean,
+            #           -negative_mean / positive_mean])
             # mean_change could be adjusted by power of 2
-            # mean_change = 2**mean_change if mean_change>0 else -2**abs(mean_change)
+            # mean_change = 2**mean_change \
+            #       if mean_change>0 else -2**abs(mean_change)
 
             return p, mean_change, negative_mean
 
@@ -156,11 +177,12 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
                     X, y, random_state=seed,
                     positive_thres=self.positive_thres,
                     negative_thres=self.negative_thres)
-                        for seed in range(self.random_state, self.random_state+self.n_iter))
+                        for seed in range(self.random_state,
+                                          self.random_state+self.n_iter))
         res = [_ for _ in res if _]
         if len(res) < 50:
             raise ValueError("too few (%d) valid feature lists "
-                            "were generated!" % len(res))
+                             "were generated!" % len(res))
         pvalues = np.vstack([x[0] for x in res])
         fold_changes = np.vstack([x[1] for x in res])
         base_values = np.vstack([x[2] for x in res])
@@ -176,7 +198,8 @@ def _iraps_core_fit(iraps_core, X, y):
     return iraps_core.fit(X, y)
 
 
-class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, RegressorMixin)):
+class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
+                                         BaseEstimator, RegressorMixin)):
     """
     Extend the bases of both sklearn feature_selector and classifier.
     From sklearn BaseEstimator:
@@ -227,7 +250,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         self.iraps_core_ = iraps_core
 
         pvalues = as_float_array(iraps_core.pvalues_, copy=True)
-        ## why np.nan is here?
+        # why np.nan is here?
         pvalues[np.isnan(pvalues)] = np.finfo(pvalues.dtype).max
 
         fold_changes = as_float_array(iraps_core.fold_changes_, copy=True)
@@ -255,14 +278,17 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
         fold_changes[mask_0 == 0] = 0.0
         signature = fold_changes[:, mask].sum(axis=0) / counts[mask]
         signature = np.vstack((signature, base_values[:, mask].mean(axis=0)))
-        # It's not clearn whether min_size could impact prediction performance
-        if signature is None or signature.shape[1] < self.min_signature_features:
-            raise ValueError("The classifier got None signature or the number of sinature "
-                             "feature is less than minimum!")
+        # It's not clearn whether min_size could impact prediction
+        # performance
+        if signature is None\
+                or signature.shape[1] < self.min_signature_features:
+            raise ValueError("The classifier got None signature or the number "
+                             "of sinature feature is less than minimum!")
 
         self.signature_ = np.asarray(signature)
         self.mask_ = mask
-        ## TODO: support other discretize method: fixed value, upper third quater, etc.
+        # TODO: support other discretize method: fixed value, upper
+        # third quater, etc.
         self.discretize_value = y.mean() + y.std() * self.discretize
         if iraps_core.negative_thres > iraps_core.positive_thres:
             self.less_is_positive = True
@@ -295,7 +321,8 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter, BaseEstimator, Re
 
         X = as_float_array(X)
         X_transformed = self.transform(X) - signature[1]
-        corrcoef = np.array([np.corrcoef(signature[0], e)[0][1] for e in X_transformed])
+        corrcoef = np.array(
+            [np.corrcoef(signature[0], e)[0][1] for e in X_transformed])
         corrcoef[np.isnan(corrcoef)] = np.finfo(np.float32).min
 
         return corrcoef
@@ -334,7 +361,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         The threshold value used to discretize True and False targets
     """
 
-    def __init__(self, classifier, z_score=-1, value=None, less_is_positive=True):
+    def __init__(self, classifier, z_score=-1, value=None,
+                 less_is_positive=True):
         self.classifier = classifier
         self.z_score = z_score
         self.value = value
@@ -342,7 +370,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
 
     def fit(self, X, y, sample_weight=None):
         """
-        Convert y to True and False labels and then fit the classifier with X and new y
+        Convert y to True and False labels and then fit the classifier
+        with X and new y
 
         Returns
         ------
@@ -415,7 +444,8 @@ class _BinarizeTargetScorer(_BaseScorer):
                                                  sample_weight=sample_weight,
                                                  **self._kwargs)
         else:
-            return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 **self._kwargs)
 
 
 class _BinarizeTargetProbaScorer(_BaseScorer):
@@ -437,26 +467,33 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
                                                  sample_weight=sample_weight,
                                                  **self._kwargs)
         else:
-            return self._sign * self._score_func(y_trans, y_pred, **self._kwargs)
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 **self._kwargs)
 
 
 # accuracy
-binarize_accuracy_scorer = _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
+binarize_accuracy_scorer = \
+        _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
 
 # balanced_accuracy
-binarize_balanced_accuracy_scorer = _BinarizeTargetScorer(metrics.balanced_accuracy_score, 1, {})
+binarize_balanced_accuracy_scorer = \
+        _BinarizeTargetScorer(metrics.balanced_accuracy_score, 1, {})
 
 # precision
-binarize_precision_scorer = _BinarizeTargetScorer(metrics.precision_score, 1, {})
+binarize_precision_scorer =\
+        _BinarizeTargetScorer(metrics.precision_score, 1, {})
 
 # recall
-binarize_recall_scorer = _BinarizeTargetScorer(metrics.recall_score, 1, {})
+binarize_recall_scorer =\
+        _BinarizeTargetScorer(metrics.recall_score, 1, {})
 
 # roc_auc
-binarize_auc_scorer = _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
+binarize_auc_scorer =\
+        _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
 
 # average_precision_scorer
-binarize_average_precision_scorer = _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
+binarize_average_precision_scorer =\
+        _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
 
 # roc_auc_scorer
 iraps_auc_scorer = binarize_auc_scorer
@@ -494,7 +531,8 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         The threshold value used to discretize True and False targets
     """
 
-    def __init__(self, regressor, z_score=-1, value=None, less_is_positive=True):
+    def __init__(self, regressor, z_score=-1, value=None,
+                 less_is_positive=True):
         self.regressor = regressor
         self.z_score = z_score
         self.value = value
