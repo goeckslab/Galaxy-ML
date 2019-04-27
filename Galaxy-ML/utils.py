@@ -410,12 +410,12 @@ def get_estimator(estimator_json):
     estimator_cls = estimator_json['selected_estimator']
 
     if estimator_module == 'xgboost':
-        cls = getattr(xgboost, estimator_cls)
+        klass = getattr(xgboost, estimator_cls)
     else:
         module = getattr(sklearn, estimator_module)
-        cls = getattr(module, estimator_cls)
+        klass = getattr(module, estimator_cls)
 
-    estimator = cls()
+    estimator = klass()
 
     estimator_params = estimator_json['text_params'].strip()
     if estimator_params != '':
