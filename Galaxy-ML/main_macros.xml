@@ -1806,6 +1806,21 @@
     </section>
   </xml>
 
+  <xml name="stacking_base_estimator">
+    <conditional name="estimator_selector">
+        <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
+            <expand macro="estimator_module_options">
+                <option value="custom_estimator">Load a custom estimator</option>
+            </expand>
+        </param>
+        <expand macro="estimator_suboptions">
+            <when value="custom_estimator">
+                <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline"/>
+            </when>
+        </expand>
+    </conditional>
+  </xml>
+
   <!-- Outputs -->
 
   <xml name="output">
