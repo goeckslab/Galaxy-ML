@@ -35,16 +35,7 @@ with open(infile_object, 'rb') as f:
 
 if attribute == 'get_params':
     ## get_params()
-    res = est_obj.get_params()
-    results = []
-    for k, v in res.items():
-        ## params below won't be shown for search in the searchcv tool
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread', 'verbose')
-        if k.endswith(keywords):
-            results.append(['*', k, k+": "+repr(v)])
-        else:
-            results.append(['@', k, k+": "+repr(v)])
-    results.append(['', 'Note:', '@, params eligible for search in searchcv tool.'])
+    results = get_search_params(est_ojb)
     df = pandas.DataFrame(results, columns=['', 'Parameter', 'Value'])
     df.to_csv('$outfile', sep='\t', index=False)
 elif attribute == 'final_estimator':

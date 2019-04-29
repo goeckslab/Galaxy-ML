@@ -50,7 +50,6 @@ except NameError:
     except ImportError:
         pass
 
-
 try:
     DyRFECV
 except NameError:
@@ -434,7 +433,7 @@ def get_estimator(estimator_json):
 def get_cv(cv_json):
     """
     cv_json:
-            e.g.:
+        e.g.:
             {
                 'selected_cv': 'StratifiedKFold',
                 'n_splits': 3,
@@ -529,3 +528,21 @@ def get_scoring(scoring_json):
         return scoring
 
     return my_scorers[scoring_json['primary_scoring']]
+
+
+def get_search_params(estimator):
+    params = estimator.get_params()
+    results = []
+    for k, v in params.items():
+        # params below won't be shown for search in the searchcv tool
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps',
+                    'nthread', 'verbose')
+        if k.endswith(keywords):
+            results.append(['*', k, k+": "+repr(v)])
+        else:
+            results.append(['@', k, k+": "+repr(v)])
+    results.append(
+        ["", "Note:",
+         "@, params eligible for search in searchcv tool."])
+
+    return results

@@ -1798,6 +1798,14 @@
     </param>
   </xml>
 
+  <xml name="stacking_ensemble_inputs">
+    <section name="options" title="Advanced Options" expanded="false">
+        <yield/>
+        <param argument="use_features_in_secondary" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
+        <param argument="store_train_meta_features" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
+    </section>
+  </xml>
+
   <!-- Outputs -->
 
   <xml name="output">
