@@ -1,4 +1,4 @@
-### Version 0.4.0 - dev / tool_main: 1.0.0.2
+### Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)
 
 #### New Features
 
@@ -15,7 +15,7 @@
 - Fix safepickler classobj issue
 
 
-### Version 0.3.0/ tool_main: 1.0.0.2
+### Version 0.3.0/ tool_main: 1.0.0.3 (04-23-2019)
 
 #### New Features
 
