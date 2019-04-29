@@ -48,7 +48,7 @@
                 <expand macro="stacking_ensemble_inputs">
                     <expand macro="cv_reduced"/>
                     <expand macro="shuffle" label="shuffle"/>
-                    <expand macro="random_state" default_value="0" help_text="Integer number. The seed of the pseudo random number generator to use when shuffling the data."/>
+                    <expand macro="random_state" default_value="" help_text="Integer number. The seed of the pseudo random number generator to use when shuffling the data."/>
                     <param argument="use_probas" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
                 </expand>
             </when>
@@ -63,7 +63,7 @@
                     <expand macro="cv_reduced"/>
                     <!--TODO support group splitters. Hint: `groups` is a fit_param-->
                     <expand macro="shuffle" label="shuffle"/>
-                    <expand macro="random_state" default_value="0" help_text="Integer number. The seed of the pseudo random number generator to use when shuffling the data."/>
+                    <expand macro="random_state" default_value="" help_text="Integer number. The seed of the pseudo random number generator to use when shuffling the data."/>
                     <param argument="refit" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true"/>
                 </expand>
             </when>
