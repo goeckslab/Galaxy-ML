@@ -2,10 +2,12 @@
 
 #### New Features
 
+- Adds `StackingCVClassifier`, `StackingClassifier` and `StackingRegressor` to `Stacking_ensembles` tool, and makes explicit base estimator and meta estimator building options.
 - Adds `.gitattributes` and `.gitignore`.
 
 #### Changes
 
+- Changes `extended_ensemble_ml.xml` to `stacking_ensembles.xml`.
 - Moves src to subfolder `Galaxy-ML`
 
 #### Bug Fixes
