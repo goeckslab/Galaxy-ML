@@ -50,7 +50,6 @@ except NameError:
     except ImportError:
         pass
 
-
 try:
     DyRFECV
 except NameError:
@@ -445,7 +444,7 @@ def get_estimator(estimator_json):
 def get_cv(cv_json):
     """
     cv_json:
-            e.g.:
+        e.g.:
             {
                 'selected_cv': 'StratifiedKFold',
                 'n_splits': 3,
@@ -540,3 +539,28 @@ def get_scoring(scoring_json):
         return scoring
 
     return my_scorers[scoring_json['primary_scoring']]
+
+
+def get_search_params(estimator):
+    res = estimator.get_params()
+    params = [SearchParam(k, v) for k, v in res.items()]
+    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
+    results = []
+    for param in params:
+        # params below won't be shown for search in the searchcv tool
+        # And show partial `repr` for values which are dictionary,
+        # especially useful for keras models
+        k, v = param.s_param, param.value
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread',
+                    'verbose', 'name')
+        if k.endswith(keywords):
+            results.append(['*', k, k+": "+repr(v)])
+        elif type(v) is dict:
+            results.append(['@', k, k+": "+repr(v)[:100]])
+        else:
+            results.append(['@', k, k+": "+repr(v)])
+    results.append(
+        ["", "Note:",
+         "@, params eligible for search in searchcv tool."])
+
+    return results

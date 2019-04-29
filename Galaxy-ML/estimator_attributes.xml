@@ -36,24 +36,7 @@ with open(infile_object, 'rb') as f:
 
 if attribute == 'get_params':
     ## get_params()
-    res = est_obj.get_params()
-    params = [SearchParam(k, v) for k, v in res.items()]
-    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
-    results = []
-    for param in params:
-        ## params below won't be shown for search in the searchcv tool
-        ## And show partial `repr` for values which are dictionary,
-        ## especially useful for keras models
-        k, v = param.s_param, param.value
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread',
-                    'verbose', 'name')
-        if k.endswith(keywords):
-            results.append(['*', k, k+": "+repr(v)])
-        elif type(v) is dict:
-            results.append(['@', k, k+": "+repr(v)[:100]])
-        else:
-            results.append(['@', k, k+": "+repr(v)])
-    results.append(['', 'Note:', '@, params eligible for search in searchcv tool.'])
+    results = get_search_params(est_ojb)
     df = pandas.DataFrame(results, columns=['', 'Parameter', 'Value'])
     df.to_csv('$outfile', sep='\t', index=False)
 elif attribute == 'final_estimator':

@@ -48,7 +48,7 @@ NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', 'steps',
                   'nthread', 'verbose')
 
 
-def get_search_params(params_builder):
+def _eval_search_params(params_builder):
     search_params = {}
 
     for p in params_builder['param_set']:
@@ -286,7 +286,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                 new_params = {p: 1}
                 estimator.set_params(**new_params)
 
-    param_grid = get_search_params(params_builder)
+    param_grid = _eval_search_params(params_builder)
     searcher = optimizer(estimator, param_grid, **options)
 
     # do train_test_split
