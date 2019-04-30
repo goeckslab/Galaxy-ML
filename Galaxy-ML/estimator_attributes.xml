@@ -36,7 +36,7 @@ with open(infile_object, 'rb') as f:
 
 if attribute == 'get_params':
     ## get_params()
-    results = get_search_params(est_ojb)
+    results = get_search_params(est_obj)
     df = pandas.DataFrame(results, columns=['', 'Parameter', 'Value'])
     df.to_csv('$outfile', sep='\t', index=False)
 elif attribute == 'final_estimator':
