@@ -1,3 +1,10 @@
+### Version 0.4.1 / tool_main: 1.0.0.4 (04-29-2019)
+
+#### Bug Fixes
+
+- Fixes stacking estimators whitelist issue and other import issues.
+
+
 ### Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)
 
 #### New Features
