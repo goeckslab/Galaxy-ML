@@ -760,6 +760,9 @@
   ],
 
   "MLXTEND_NAMES":[
-    "mlxtend.regressor.stacking_cv_regression.StackingCVRegressor"
+    "mlxtend.classifier.stacking_cv_classification.StackingCVClassifier",
+    "mlxtend.classifier.stacking_classification.StackingClassifier",
+    "mlxtend.regressor.stacking_cv_regression.StackingCVRegressor",
+    "mlxtend.regressor.stacking_regression.StackingRegressor"
   ]
 }

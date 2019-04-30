@@ -26,7 +26,7 @@ from sklearn import (
 
 try:
     import mlxtend
-    from mlxtend import regressor
+    from mlxtend import regressor, classifier
 except ImportError as e:
     print(e)
     pass
@@ -47,14 +47,20 @@ try:
 except NameError:
     try:
         from model_validations import OrderedKFold, RepeatedOrderedKFold
-    except ImportError:
+    except ImportError as e:
+        print(e)
         pass
 
 try:
     DyRFECV
 except NameError:
     # feature_selectors is required to use `utils`
-    from feature_selectors import DyRFE, DyRFECV, check_feature_importances
+    try:
+        from feature_selectors import (DyRFE, DyRFECV,
+                                       check_feature_importances)
+    except ImportError as e:
+        print(e)
+        pass
 
 try:
     Z_RandomOverSampler
