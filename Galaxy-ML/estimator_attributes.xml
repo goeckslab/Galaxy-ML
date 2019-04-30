@@ -24,6 +24,7 @@ exec(open('$__tool_directory__/iraps_classifier.py').read())
 exec(open('$__tool_directory__/preprocessors.py').read())
 exec(open('$__tool_directory__/feature_selectors.py').read())
 exec(open('$__tool_directory__/keras_galaxy_models.py').read())
+exec(open('$__tool_directory__/model_validations.py').read())
 exec(open('$__tool_directory__/utils.py').read(), globals())
 
 warnings.simplefilter('ignore')
@@ -36,7 +37,7 @@ with open(infile_object, 'rb') as f:
 
 if attribute == 'get_params':
     ## get_params()
-    results = get_search_params(est_ojb)
+    results = get_search_params(est_obj)
     df = pandas.DataFrame(results, columns=['', 'Parameter', 'Value'])
     df.to_csv('$outfile', sep='\t', index=False)
 elif attribute == 'final_estimator':
