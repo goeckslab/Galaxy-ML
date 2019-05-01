@@ -62,7 +62,7 @@
                 <param argument="shuffle" type="select">
                     <option value="None">None - No shuffle</option>
                     <option value="simple">Shuffle -- for regression problems</option>
-                    <option value="statified">StratifiedShuffle -- will use the target values as class labels</option>
+                    <option value="stratified">StratifiedShuffle -- will use the target values as class labels</option>
                     <option value="group">GroupShuffle -- make sure group CV option is choosen</option>
                 </param>
             </when>
@@ -413,7 +413,7 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="12"/>
-                    <has_text text="0.7762968161366681" />
+                    <has_text text="0.776296816136668" />
                 </assert_contents>
             </output>
         </test>
