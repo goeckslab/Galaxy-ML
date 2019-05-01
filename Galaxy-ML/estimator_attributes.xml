@@ -58,6 +58,10 @@ elif attribute in ['best_params_', 'named_steps']:
     res = getattr(est_obj, attribute)
     with open('$outfile', 'w') as f:
         f.write(repr(res))
+elif attribute == 'cv_results_':
+    res = pandas.DataFrame(est_obj.cv_results_)
+    res = res[sorted(res.columns)]
+    res.to_csv('$outfile', sep='\t', index=False)
 else:
     res = getattr(est_obj, attribute)
     columns = []
@@ -83,6 +87,7 @@ else:
             <option value="init_">Fitted estimator - init_ </option>
             <option value="named_steps">Pipeline - named_steps </option>
             <option value="final_estimator">Pipeline - final_estimator </option>
+            <option value="cv_results_">SearchCV - cv_results_ </option>
             <option value="best_estimator_">SearchCV - best_estimator_ </option>
             <option value="best_score_">SearchCV - best_score_ </option>
             <option value="best_params_">SearchCV - best_params_ </option>

@@ -538,20 +538,24 @@ def get_scoring(scoring_json):
     if scoring_json['secondary_scoring'] != 'None'\
             and scoring_json['secondary_scoring'] !=\
             scoring_json['primary_scoring']:
-        scoring = {}
-        scoring['primary'] = my_scorers[scoring_json['primary_scoring']]
+        return_scoring = {}
+        primary_scoring = scoring_json['primary_scoring']
+        return_scoring[primary_scoring] = my_scorers[primary_scoring]
         for scorer in scoring_json['secondary_scoring'].split(','):
             if scorer != scoring_json['primary_scoring']:
-                scoring[scorer] = my_scorers[scorer]
-        return scoring
+                return_scoring[scorer] = my_scorers[scorer]
+        return return_scoring
 
     return my_scorers[scoring_json['primary_scoring']]
 
 
 def get_search_params(estimator):
+    """Format the output of `estimator.get_params()`
+    """
     res = estimator.get_params()
     params = [SearchParam(k, v) for k, v in res.items()]
     params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
+
     results = []
     for param in params:
         # params below won't be shown for search in the searchcv tool
