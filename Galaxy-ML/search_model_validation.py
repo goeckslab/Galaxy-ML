@@ -260,7 +260,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     else:
         options['error_score'] = np.NaN
     if options['refit'] and isinstance(options['scoring'], dict):
-        options['refit'] = 'primary'
+        options['refit'] = primary_scoring
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
 
@@ -329,14 +329,9 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     if do_train_test_split == 'no':
         # save results
-        cv_result = pandas.DataFrame(searcher.cv_results_)
-        col_rename = {}
-        for col in cv_result.columns:
-            if col.endswith('_primary'):
-                col_rename[col] = col[:-7] + primary_scoring
-        cv_result.rename(inplace=True, columns=col_rename)
-        cv_result = cv_result[sorted(cv_result.columns)]
-        cv_result.to_csv(path_or_buf=outfile_result, sep='\t',
+        cv_results = pandas.DataFrame(searcher.cv_results_)
+        cv_results = cv_results[sorted(cv_results.columns)]
+        cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
                          header=True, index=False)
 
     # output test result using best_estimator_
