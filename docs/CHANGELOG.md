@@ -1,4 +1,13 @@
-### Version 0.4.1 / tool_main: 1.0.0.4 (04-29-2019)
+### Version 0.4.2 / tool_main: 1.0.0.4 (05-01-2019)
+
+#### New Features
+
+- Adds `cv_results` attributes to `estimator_attributes` tool.
+
+
+#### Changes
+
+- Refactors the multiple scoring input for searchcv and simplify cv_results output.
 
 #### Bug Fixes
 
