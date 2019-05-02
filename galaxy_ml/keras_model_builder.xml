@@ -23,8 +23,8 @@
   <inputs>
 		<param name="infile_json" type="data" format="json" label="Select the dataset containing Keras model configurations"/>
     <param name="learning_type" type="select" label="Do classification or regression?">
-      <option value="keras_classifier">KerasClassifier</option>
-      <option value="keras_regressor">KerasRegressor</option>
+      <option value="keras_classifier">KerasGClassifier</option>
+      <option value="keras_regressor">KerasGRegressor</option>
     </param>
     <section name="compile_params" title="Compile Parameters" expanded="true">
       <param name="loss" type="select" label="Select a loss function">
