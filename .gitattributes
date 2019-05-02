@@ -1,7 +1,7 @@
 /docs export-ignore
 /results export-ignore
-/Galaxy-ML/tests export-ignore
-/Galaxy-ML/test-data export-ignore
+/galaxy_ml/tests export-ignore
+/galaxy_ml/test-data export-ignore
 /README.md export-ignore
 
 /.gitattributes export-ignore
