@@ -179,6 +179,6 @@ class TDMScaler(BaseEstimator, TransformerMixin):
 
     def inverse_transform(self, X):
         """
-        Scale back the data to the original representation
+        Scale the data back to the original state
         """
         raise NotImplementedError("Inverse transformation is not implemented!")
