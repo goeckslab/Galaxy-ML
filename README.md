@@ -1,6 +1,6 @@
 
 # Galaxy-ML
-Galaxy-ML is a web machine learning pipeline building framework, with special support to biomedical data. Under the management of unified scikit-learn APIs, cutting-edge machine learning libraries are combined together to provide thousands of different pipelines suitable for various needs. In the form of [Galalxy](https://github.com/galaxyproject/galaxy) tools, Galaxy-ML provides scalabe, reproducible and transparent machine learning computations.
+Galaxy-ML is a web machine learning end-to-end pipeline building framework, with special support to biomedical data. Under the management of unified scikit-learn APIs, cutting-edge machine learning libraries are combined together to provide thousands of different pipelines suitable for various needs. In the form of [Galalxy](https://github.com/galaxyproject/galaxy) tools, Galaxy-ML provides scalabe, reproducible and transparent machine learning computations.
 
 
 ### Key features:
@@ -30,8 +30,8 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
   - StackingCVRegressor
   - StackingRegressor
 - _[keras](https://github.com/keras-team/keras)_
-  - KerasClassifier
-  - KerasRegressor
+  - KerasGClassifier (new API)
+  - KerasGRegressor (new API)
   
 ##### Preprocessor:
 - _[scikit-learn](https://github.com/scikit-learn/scikit-learn)_
