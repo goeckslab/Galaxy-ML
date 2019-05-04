@@ -332,7 +332,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         cv_results = pandas.DataFrame(searcher.cv_results_)
         cv_results = cv_results[sorted(cv_results.columns)]
         cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
-                         header=True, index=False)
+                          header=True, index=False)
 
     # output test result using best_estimator_
     else:

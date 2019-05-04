@@ -197,14 +197,11 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 4:
         infile_json = sys.argv[4]
+    if len(sys.argv) > 5:
+        infile_weights = sys.argv[5]
 
     # for keras_model_builder tool
     if tool_id == 'keras_model_builder':
-        if inputs['learning_type'] == 'keras_classifier':
-            klass = KerasGClassifier
-        else:
-            klass = KerasGRegressor
-
         with open(infile_json, 'r') as f:
             json_model = json.load(f)
 
@@ -214,21 +211,39 @@ if __name__ == '__main__':
 
         if json_model['class_name'] == 'Sequential':
             options['model_type'] = 'sequential'
+            klass = Sequential
         elif json_model['class_name'] == 'Model':
             options['model_type'] = 'functional'
+            klass = Model
         else:
             raise ValueError("Unknow Keras model class: %s"
                              % json_model['class_name'])
-        options['loss'] = inputs['compile_params']['loss']
-        options['optimizer'] = (inputs['compile_params']['optimizer_selection']
-                                ['optimizer_type']).lower()
-        options.update((inputs['compile_params']['optimizer_selection']
-                       ['optimizer_options']))
-        options.update(inputs['fit_params'])
 
-        estimator = klass(config, **options)
+        # load prefitted model
+        if inputs['mode_selection']['mode_type'] == 'prefitted':
+            estimator = klass.from_config(config)
+            estimator.load_weights(infile_weights)
+        # build train model
+        else:
+            if inputs['mode_selection']['learning_type'] == 'keras_classifier':
+                klass = KerasGClassifier
+            else:
+                klass = KerasGRegressor
+
+            options['loss'] = (inputs['mode_selection']
+                               ['compile_params']['loss'])
+            options['optimizer'] =\
+                (inputs['mode_selection']['compile_params']
+                 ['optimizer_selection']['optimizer_type']).lower()
+
+            options.update((inputs['mode_selection']['compile_params']
+                            ['optimizer_selection']['optimizer_options']))
+            options.update(inputs['mode_selection']['fit_params'])
+
+            estimator = klass(config, **options)
+
         print(repr(estimator))
-
+        # save model by pickle
         with open(outfile, 'wb') as f:
             pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
 
