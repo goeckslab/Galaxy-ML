@@ -139,9 +139,11 @@ class SafePickler(pickle.Unpickler, object):
             'im_class', 'im_func', 'im_self', 'gi_code', 'gi_frame',
             '__asteval__', 'f_locals', '__mro__')
 
-        good_names = ['copy_reg._reconstructor', '__builtin__.object',
-                      '__builtin__.bytearray', 'builtins.object',
-                      'builtins.bytearray']
+        good_names = [
+            'copy_reg._reconstructor', '__builtin__.object',
+            '__builtin__.bytearray', 'builtins.object',
+            'builtins.bytearray', 'keras.engine.sequential.Sequential',
+            'keras.engine.sequential.Model']
 
         if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
             fullname = module + '.' + name

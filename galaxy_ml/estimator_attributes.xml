@@ -62,6 +62,8 @@ elif attribute == 'cv_results_':
     res = pandas.DataFrame(est_obj.cv_results_)
     res = res[sorted(res.columns)]
     res.to_csv('$outfile', sep='\t', index=False)
+elif attribute == 'save_weights':
+    est_obj.save_weights('$outfile')
 else:
     res = getattr(est_obj, attribute)
     columns = []
@@ -96,6 +98,7 @@ else:
             <option value="ranking_">Feature_selection - ranking_ </option>
             <option value="n_features_">Feature_selection - n_features_ </option>
             <option value="grid_scores_">Feature_selection - grid_scores_ </option>
+            <option value="save_weights">KerasGClassifier/KerasGRegressor - save_weights</option>
         </param>
     </inputs>
     <outputs>
@@ -106,6 +109,7 @@ else:
                 <when input="attribute_type" value="final_estimator" format="zip" />
                 <when input="attribute_type" value="best_estimator_" format="zip" />
                 <when input="attribute_type" value="init_" format="zip" />
+                <when input="attribute_type" value="save_weights" format="h5"/>
             </change_format>
         </data>
     </outputs>
@@ -149,6 +153,11 @@ else:
             <param name="infile_object" value="LinearRegression02.zip" ftype="zip"/>
             <param name="attribute_type" value="get_params"/>
             <output name="outfile" value="get_params.tabular"/>
+        </test>
+        <test>
+            <param name="infile_object" value="fitted_keras_g_regressor01.zip" ftype="zip"/>
+            <param name="attribute_type" value="save_weights"/>
+            <output name="outfile" value="keras_save_weights01.h5" compare="sim_size" delta="5"/>
         </test>
     </tests>
     <help>

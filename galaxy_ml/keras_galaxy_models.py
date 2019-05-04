@@ -594,6 +594,59 @@ class BaseKerasModel(BaseEstimator):
 
             return model_.to_json()
 
+    def save_weights(self, filepath, overwrite=True):
+        """Dumps all layer weights to a HDF5 file.
+
+        parameters
+        ----------
+        filepath : str
+            path to the file to save the weights to.
+
+        overwrite : bool, default is True
+            Whether to silently overwrite any existing file at the
+            target location, or provide the user with a manual prompt.
+        """
+        if not hasattr(self, 'model_'):
+            raise ValueError("Keras model is not fitted. No weights to save!")
+
+        self.model_.sample_weights(filepath, overwrite=overwrite)
+
+    def load_weights(self, filepath, by_name=False,
+                     skip_mismatch=False, reshape=False):
+        """Loads all layer weights from a HDF5 save file.
+
+        parameters
+        ----------
+        filepath : str
+            path to the weights file to load.
+
+        by_name: Bool
+            whether to load weights by name or by topological order.
+
+        skip_mismatch : Boolean
+            whether to skip loading of layers where there is a mismatch
+            in the number of weights, or a mismatch in the shape of the
+            weight (only valid when `by_name`=True).
+
+        reshape : Reshape weights to fit the layer when the correct number
+            of weight arrays is present but their shape does not match.
+        """
+        config = self.config
+
+        if self.model_type not in ['sequential', 'functional']:
+            raise ValueError("Unsupported model type %s" % self.model_type)
+
+        if self.model_type == 'sequential':
+            self.model_class_ = Sequential
+        else:
+            self.model_class_ = Model
+
+        self.model_ = self.model_class_.from_config(config)
+
+        self.model_.load_weights(filepath, by_name=by_name,
+                                 skip_mismatch=skip_mismatch,
+                                 reshape=reshape)
+
 
 class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """
