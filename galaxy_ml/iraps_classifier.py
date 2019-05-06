@@ -434,6 +434,14 @@ class _BinarizeTargetScorer(_BaseScorer):
         # support pipeline object
         if isinstance(clf, Pipeline):
             clf = clf.steps[-1][-1]
+        # support stacking ensemble estimators
+        else:
+            clf_name = clf.__class__.__name__
+            if clf_name in ['StackingCVClassifier', 'StackingClassifier']:
+                clf = clf.meta_classifier
+            elif clf_name in ['StackingCVRegressor', 'StackingRegressor']:
+                clf = clf.meta_regressor
+
         if clf.less_is_positive:
             y_trans = y < clf.discretize_value
         else:
@@ -457,6 +465,14 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         # support pipeline object
         if isinstance(clf, Pipeline):
             clf = clf.steps[-1][-1]
+        # support stacking ensemble estimators
+        else:
+            clf_name = clf.__class__.__name__
+            if clf_name in ['StackingCVClassifier', 'StackingClassifier']:
+                clf = clf.meta_classifier
+            elif clf_name in ['StackingCVRegressor', 'StackingRegressor']:
+                clf = clf.meta_regressor
+
         if clf.less_is_positive:
             y_trans = y < clf.discretize_value
         else:
