@@ -1,8 +1,8 @@
 import json
-import model_persist
 import pickle
 import time
 import sys
+from galaxy_ml import model_persist
 from sklearn import (
     cluster, decomposition, ensemble, feature_extraction,
     feature_selection, gaussian_process, kernel_approximation,

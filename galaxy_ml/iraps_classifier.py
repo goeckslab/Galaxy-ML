@@ -425,42 +425,33 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         return self.classifier_.predict(X)
 
 
-class _BinarizeTargetScorer(_BaseScorer):
-    """
-    base class to make binarized target specific scorer
-    """
-
-    def __call__(self, clf, X, y, sample_weight=None):
-        # support pipeline object
-        if isinstance(clf, Pipeline):
-            clf = clf.steps[-1][-1]
-        if clf.less_is_positive:
-            y_trans = y < clf.discretize_value
-        else:
-            y_trans = y > clf.discretize_value
-        y_pred = clf.predict(X)
-        if sample_weight is not None:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 sample_weight=sample_weight,
-                                                 **self._kwargs)
-        else:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 **self._kwargs)
-
-
 class _BinarizeTargetProbaScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
 
     def __call__(self, clf, X, y, sample_weight=None):
+        clf_name = clf.__class__.__name__
         # support pipeline object
         if isinstance(clf, Pipeline):
-            clf = clf.steps[-1][-1]
-        if clf.less_is_positive:
-            y_trans = y < clf.discretize_value
+            main_estimator = clf.steps[-1][-1]
+        # support stacking ensemble estimators
+        # TODO support nested pipeline/stacking estimators
+        elif clf_name in ['StackingCVClassifier', 'StackingClassifier']:
+            main_estimator = clf.meta_clf_
+        elif clf_name in ['StackingCVRegressor', 'StackingRegressor']:
+            main_estimator = clf.meta_regr_
         else:
-            y_trans = y > clf.discretize_value
+            main_estimator = clf
+
+        discretize_value = main_estimator.discretize_value
+        less_is_positive = main_estimator.less_is_positive
+
+        if less_is_positive:
+            y_trans = y < discretize_value
+        else:
+            y_trans = y > discretize_value
+
         y_pred = clf.predict(X)
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_pred,
@@ -470,22 +461,6 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
             return self._sign * self._score_func(y_trans, y_pred,
                                                  **self._kwargs)
 
-
-# accuracy
-binarize_accuracy_scorer = \
-        _BinarizeTargetScorer(metrics.accuracy_score, 1, {})
-
-# balanced_accuracy
-binarize_balanced_accuracy_scorer = \
-        _BinarizeTargetScorer(metrics.balanced_accuracy_score, 1, {})
-
-# precision
-binarize_precision_scorer =\
-        _BinarizeTargetScorer(metrics.precision_score, 1, {})
-
-# recall
-binarize_recall_scorer =\
-        _BinarizeTargetScorer(metrics.recall_score, 1, {})
 
 # roc_auc
 binarize_auc_scorer =\
