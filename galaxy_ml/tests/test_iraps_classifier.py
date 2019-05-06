@@ -4,8 +4,8 @@ import pandas as pd
 import time
 import warnings
 from sklearn.model_selection import cross_validate
-from model_validations import OrderedKFold
-from iraps_classifier import (
+from galaxy_ml.model_validations import OrderedKFold
+from galaxy_ml.iraps_classifier import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer)

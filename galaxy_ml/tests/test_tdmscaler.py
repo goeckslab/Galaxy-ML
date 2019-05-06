@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from preprocessors import TDMScaler
+from galaxy_ml.preprocessors import TDMScaler
 
 
 warnings.simplefilter('ignore')

@@ -5,7 +5,7 @@ import warnings
 from keras.models import Sequential
 from keras import layers
 from keras.layers import Dense, Activation
-from keras_galaxy_models import (
+from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
     check_params, SearchParam, KerasLayers,
     BaseKerasModel, KerasGClassifier, KerasGRegressor)
