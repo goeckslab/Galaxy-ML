@@ -1,9 +1,10 @@
-### Version 0.4.3 / tool_main: 1.0.0.4 (05-06-2019)
+### Version 0.4.3 / tool_main: 1.0.0.4 keras_tool 0.2.0 (05-06-2019)
 
 #### New Features
 
 - Adds `cv_results` attributes to `estimator_attributes` tool.
-
+- Adds loading prefitted model for prediction in `keras_model_builder` tool.
+- Adds `save_weights` and `load_weights` for keras classifier/regressor models.
 
 #### Changes
 
