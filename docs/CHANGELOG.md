@@ -1,4 +1,4 @@
-### Version 0.4.2 / tool_main: 1.0.0.4 (05-01-2019)
+### Version 0.4.3 / tool_main: 1.0.0.4 (05-06-2019)
 
 #### New Features
 
