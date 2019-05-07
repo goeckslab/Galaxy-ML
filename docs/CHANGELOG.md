@@ -13,6 +13,7 @@
 #### Bug Fixes
 
 - Fixes stacking estimators whitelist issue and other import issues.
+- Fixes bases typo error for stacking ensembles tool
 
 
 ### Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)
