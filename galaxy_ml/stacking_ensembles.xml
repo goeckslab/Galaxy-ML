@@ -13,12 +13,12 @@
             #if $base.estimator_selector.selected_module == 'custom_estimator'
             bases='${base.estimator_selector.c_estimator}';
             #else
-            base='None';
+            bases='None';
             #end if
         #elif $base.estimator_selector.selected_module == 'custom_estimator'
         bases="\$bases,${base.estimator_selector.c_estimator}";
         #else
-        base="\$bases,None";
+        bases="\$bases,None";
         #end if
         #end for
         python '$__tool_directory__/stacking_ensembles.py'
