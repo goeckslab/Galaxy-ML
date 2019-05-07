@@ -39,7 +39,8 @@ except NameError:
             IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
             BinarizeTargetRegressor, binarize_auc_scorer,
             binarize_average_precision_scorer)
-    except ImportError:
+    except ImportError as e:
+        print(e)
         pass
 
 try:
@@ -67,7 +68,8 @@ try:
 except NameError:
     try:
         from preprocessors import Z_RandomOverSampler
-    except ImportError:
+    except ImportError as e:
+        print(e)
         pass
 
 try:

@@ -438,9 +438,9 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         # support stacking ensemble estimators
         # TODO support nested pipeline/stacking estimators
         elif clf_name in ['StackingCVClassifier', 'StackingClassifier']:
-            main_estimator = clf.meta_classifier
+            main_estimator = clf.meta_clf_
         elif clf_name in ['StackingCVRegressor', 'StackingRegressor']:
-            main_estimator = clf.meta_regressor
+            main_estimator = clf.meta_regr_
         else:
             main_estimator = clf
 
