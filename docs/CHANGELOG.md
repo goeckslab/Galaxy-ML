@@ -1,4 +1,4 @@
-### Version 0.4.3 / tool_main: 1.0.0.4 / keras_tool 0.2.0 (05-06-2019)
+### Version 0.4.4 / tool_main: 1.0.0.4 / keras_tool 0.2.0 (05-09-2019)
 
 #### New Features
 
@@ -14,6 +14,7 @@
 #### Bug Fixes
 
 - Fixes stacking estimators whitelist issue and other import issues.
+- Fixes bases typo error in stacking ensemble tool
 
 
 ### Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)
