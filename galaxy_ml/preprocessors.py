@@ -6,10 +6,15 @@ import imblearn
 import numpy as np
 
 from collections import Counter
+from .externals.selene_sdk.predict._common import _pad_sequence
+from .externals.selene_sdk.predict._common import _truncate_sequence
+from .externals.selene_sdk.sequences._sequence import\
+    _fast_sequence_to_encoding
 from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as imbPipeline
 from imblearn.utils import check_target_type
+from pyfaidx import Fasta
 from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing.data import _handle_zeros_in_scale
@@ -182,3 +187,103 @@ class TDMScaler(BaseEstimator, TransformerMixin):
         Scale the data back to the original state
         """
         raise NotImplementedError("Inverse transformation is not implemented!")
+
+
+class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
+    """Convert Genomic sequences to one-hot encoded 2d array
+
+    Paramaters
+    ----------
+    fasta_path : str, default None
+        File path to the fasta file. There could two alternative ways to set up
+        `fasta_path`. 1) through fit_params; 2) set_params().
+    padding : bool, default is False
+        All sequences are expected to be in the same length, but sometimes not.
+        If True, all sequences use the same length of first entry by either
+        padding or truncating. If False, raise ValueError if different seuqnce
+        lengthes are found.
+    """
+    BASE_TO_INDEX = {
+        'A': 0, 'C': 1, 'G': 2, 'T': 3,
+        'a': 0, 'c': 1, 'g': 2, 't': 3,
+    }
+
+    UNK_BASE = 'N'
+
+    def __init__(self, fasta_path=None, padding=False):
+        super(GenomeOneHotEncoder, self).__init__()
+        self.fasta_path = fasta_path
+        self.padding = padding
+
+    def fit(self, X, y=None, fasta_path=None):
+        """
+        Parameters
+        ----------
+        X : array, (n_samples, 1)
+            Contains the index numbers of fasta sequnce in the fasta file.
+        y : array or list
+            Target values.
+        fasta_path : str
+            File path to the fasta file. 
+
+        Returns
+        -------
+        self
+        """
+        if fasta_path:
+            self.fasta_path = fasta_path
+            
+        if not self.fasta_path:
+            raise ValueError("`fasta_path` can't be None!")
+
+        fasta_file = Fasta(self.fasta_path)
+        # set up the sequence_length from the first entry
+        sequence_length = len(fasta_file[int(X[0, 0])])
+        if not self.padding:
+            for idx in X[:, 0]:
+                fasta_record = fasta_file[int(idx)]
+                if len(fasta_record) != sequence_length:
+                    raise ValueError("The first sequence record contains "
+                                     "%d bases, while %s contrain %d bases"
+                                     % (sequence_length,
+                                        repr(fasta_record),
+                                        len(fasta_record)))
+
+        self.fasta_file = fasta_file
+        self.sequence_length = sequence_length
+        return self
+
+    def transform(self, X):
+        """convert index in X into one-hot encoded 2d array
+
+        Parameter
+        ---------
+        X : array, (n_samples, 1)
+            Contains the index numbers of fasta sequnce in the fasta file.
+        
+        Returns
+        -------
+        Transformed X in 3d array, (n_sequences, sequence_length, 4)
+        """
+        # One base encodes for 4 byts
+        sequences_endcoding = np.zeros((X.shape[0],
+                                        self.sequence_length,
+                                        4))
+        for i in range(X.shape[0]):
+            cur_sequence = self.fasta_file[int(X[i, 0])]
+            if len(cur_sequence) > self.sequence_length:
+                cur_sequence = _truncate_sequence(cur_sequence,
+                                                  self.sequence_length)
+            elif len(cur_sequence) < self.sequence_length:
+                cur_sequence = _pad_sequence(cur_sequence,
+                                             self.sequence_length,
+                                             GenomeOneHotEncoder.UNK_BASE)
+
+            cur_sequence_encodeing = _fast_sequence_to_encoding(
+                str(cur_sequence),
+                GenomeOneHotEncoder.BASE_TO_INDEX,
+                4)
+
+            sequences_endcoding[i, :, :] = cur_sequence_encodeing
+
+        return sequences_endcoding
