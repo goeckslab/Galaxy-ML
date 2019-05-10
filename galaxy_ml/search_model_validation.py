@@ -339,8 +339,6 @@ def main(inputs, infile_estimator, infile1, infile2,
         best_estimator_ = searcher.best_estimator_
         if isinstance(options['scoring'], collections.Mapping):
             is_multimetric = True
-            options['scoring'][primary_scoring] =\
-                options['scoring'].pop('primary')
         else:
             is_multimetric = False
 
