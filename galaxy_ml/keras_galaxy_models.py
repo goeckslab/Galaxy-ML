@@ -8,6 +8,7 @@ Date: 4/11/2019
 
 import collections
 import numpy as np
+import tensorflow as tf
 from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
@@ -475,7 +476,9 @@ class BaseKerasModel(BaseEstimator):
         else:
             self.model_class_ = Model
 
-        self.model_ = self.model_class_.from_config(config)
+        self.model_ = self.model_class_.from_config(
+            config,
+            custom_objects=dict(tf=tf))
 
         self.model_.compile(loss=self.loss, optimizer=self._optimizer,
                             metrics=self.metrics)
@@ -590,7 +593,9 @@ class BaseKerasModel(BaseEstimator):
             else:
                 model_class_ = Model
 
-            model_ = model_class_.from_config(config)
+            model_ = model_class_.from_config(
+                config,
+                custom_objects=dict(tf=tf))
 
             return model_.to_json()
 
@@ -609,7 +614,7 @@ class BaseKerasModel(BaseEstimator):
         if not hasattr(self, 'model_'):
             raise ValueError("Keras model is not fitted. No weights to save!")
 
-        self.model_.sample_weights(filepath, overwrite=overwrite)
+        self.model_.save_weights(filepath, overwrite=overwrite)
 
     def load_weights(self, filepath, by_name=False,
                      skip_mismatch=False, reshape=False):
@@ -641,7 +646,9 @@ class BaseKerasModel(BaseEstimator):
         else:
             self.model_class_ = Model
 
-        self.model_ = self.model_class_.from_config(config)
+        self.model_ = self.model_class_.from_config(
+            config,
+            custom_objects=dict(tf=tf))
 
         self.model_.load_weights(filepath, by_name=by_name,
                                  skip_mismatch=skip_mismatch,

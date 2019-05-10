@@ -1,6 +1,9 @@
+import json
 import keras
 import numpy as np
+import os
 import pandas as pd
+import tempfile
 import warnings
 from keras.models import Sequential
 from keras import layers
@@ -606,3 +609,44 @@ def test_to_json_keras_g_classifier():
     with open('./test-data/to_json.txt', 'r') as f:
         expect = f.read()
     assert got == expect, got
+
+
+def test_keras_model_to_json():
+    with open('./test-data/keras02.json', 'r') as f:
+        model_json = json.load(f)
+
+    if model_json['class_name'] == 'Sequential':
+        model_type = 'sequential'
+    elif model_json['class_name'] == 'Model':
+        model_type = 'functional'
+
+    config = model_json.get('config')
+
+    model = KerasGClassifier(config, model_type=model_type)
+
+    got = model.to_json()  # json_string
+
+    assert len(got) > 4850, len(got)
+    assert got.startswith('{"class_name": "Model",'), got
+
+
+def test_keras_model_load_and_save_weights():
+    with open('./test-data/keras_model_drosophila01.json', 'r') as f:
+        model_json = json.load(f)
+
+    config = model_json.get('config')
+    if model_json['class_name'] == 'Sequential':
+        model_type = 'sequential'
+    else:
+        model_type = 'functional'
+    model = KerasGRegressor(config, model_type=model_type)
+
+    model.load_weights('./test-data/keras_model_drosophila_weights01.h5')
+
+    tmp = tempfile.mktemp()
+    model.save_weights(tmp)
+
+    got = os.path.getsize(tmp)
+    expect = os.path.getsize('./test-data/keras_model_drosophila_weights01.h5')
+
+    assert abs(got - expect) < 40, got - expect
