@@ -14,6 +14,8 @@
 #### Bug Fixes
 
 - Fixes stacking estimators whitelist issue and other import issues.
+- Fixes bases typo error in stacking ensembles tool
+- Fixes multiple scoring error in train_test_split mode
 
 
 ### Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)
