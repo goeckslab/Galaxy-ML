@@ -96,14 +96,50 @@
                 <param name="estimator_type" value="StackingCVRegressor"/>
             </conditional>
             <repeat name="base_est_builder">
-                <param name="base_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="custom_estimator"/>
+                    <param name="c_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+                </conditional>
             </repeat>
             <repeat name="base_est_builder">
-                <param name="base_estimator" value="XGBRegressor01.zip" ftype="zip"/>
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="custom_estimator"/>
+                    <param name="c_estimator" value="XGBRegressor01.zip" ftype="zip"/>
+                </conditional>
             </repeat>
-            <param name="meta_estimator" value="LinearRegression01.zip" ftype="zip"/>
+            <section name="meta_estimator">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="custom_estimator"/>
+                    <param name="c_estimator" value="LinearRegression01.zip" ftype="zip"/>
+                </conditional>
+            </section>
             <param name="get_params" value="false"/>
             <output name="outfile" file="StackingCVRegressor01.zip" compare="sim_size" delta="5"/>
+        </test>
+        <test>
+            <conditional name="algo_selection">
+                <param name="estimator_type" value="StackingCVRegressor"/>
+            </conditional>
+            <repeat name="base_est_builder">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="custom_estimator"/>
+                    <param name="c_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+                </conditional>
+            </repeat>
+            <repeat name="base_est_builder">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="xgboost"/>
+                    <param name="selected_estimator" value="XGBRegressor"/>
+                </conditional>
+            </repeat>
+            <section name="meta_estimator">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="svm"/>
+                    <param name="selected_estimator" value="SVR"/>
+                </conditional>
+            </section>
+            <param name="get_params" value="false"/>
+            <output name="outfile" file="StackingCVRegressor02.zip" compare="sim_size" delta="5"/>
         </test>
     </tests>
     <help>
