@@ -1,8 +1,9 @@
 import numpy as np
-import pyfaidx
 import warnings
+
 from galaxy_ml.externals.selene_sdk.sequences._sequence import\
     _fast_sequence_to_encoding
+from galaxy_ml.externals import pyfaidx
 from galaxy_ml.preprocessors import GenomeOneHotEncoder
 
 

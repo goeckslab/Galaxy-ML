@@ -3,11 +3,9 @@ Z_RandomOverSampler
 """
 import imblearn
 import numpy as np
-
 from collections import Counter
 from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
-from imblearn.pipeline import Pipeline as imbPipeline
 from imblearn.utils import check_target_type
 from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -236,7 +234,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         y : array or list
             Target values.
         fasta_path : str
-            File path to the fasta file. 
+            File path to the fasta file.
 
         Returns
         -------
@@ -244,11 +242,11 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         """
         if fasta_path:
             self.fasta_path = fasta_path
-            
+
         if not self.fasta_path:
             raise ValueError("`fasta_path` can't be None!")
 
-        fasta_file = Fasta(self.fasta_path)
+        fasta_file = pyfaidx.Fasta(self.fasta_path)
         # set up the sequence_length from the first entry
         sequence_length = len(fasta_file[int(X[0, 0])])
         if not self.padding:
@@ -272,7 +270,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         ---------
         X : array, (n_samples, 1)
             Contains the index numbers of fasta sequnce in the fasta file.
-        
+
         Returns
         -------
         Transformed X in 3d array, (n_sequences, sequence_length, 4)
@@ -284,17 +282,21 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         for i in range(X.shape[0]):
             cur_sequence = self.fasta_file[int(X[i, 0])]
             if len(cur_sequence) > self.sequence_length:
-                cur_sequence = _truncate_sequence(cur_sequence,
-                                                  self.sequence_length)
-            elif len(cur_sequence) < self.sequence_length:
-                cur_sequence = _pad_sequence(cur_sequence,
-                                             self.sequence_length,
-                                             GenomeOneHotEncoder.UNK_BASE)
+                cur_sequence = selene_sdk.predict._common._truncate_sequence(
+                    cur_sequence,
+                    self.sequence_length)
 
-            cur_sequence_encodeing = _fast_sequence_to_encoding(
-                str(cur_sequence),
-                GenomeOneHotEncoder.BASE_TO_INDEX,
-                4)
+            elif len(cur_sequence) < self.sequence_length:
+                cur_sequence = selene_sdk.predict._common._pad_sequence(
+                    cur_sequence,
+                    self.sequence_length,
+                    GenomeOneHotEncoder.UNK_BASE)
+
+            cur_sequence_encodeing = selene_sdk.sequences._sequence.\
+                _fast_sequence_to_encoding(
+                    str(cur_sequence),
+                    GenomeOneHotEncoder.BASE_TO_INDEX,
+                    4)
 
             sequences_endcoding[i, :, :] = cur_sequence_encodeing
 
