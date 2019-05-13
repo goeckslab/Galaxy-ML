@@ -15,22 +15,27 @@
         <inputs name="inputs" />
         <configfile name="sklearn_model_validation_script">
             <![CDATA[
-import sys
-import os
+import imblearn
 import json
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pickle
+import pprint
+import skrebate
+import sys
+import warnings
+import xgboost
+from mlxtend import classifier, regressor
+from sklearn import (
+    cluster, compose, decomposition, ensemble, feature_extraction,
+    feature_selection, gaussian_process, kernel_approximation, metrics,
+    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
+    svm, linear_model, tree, discriminant_analysis)
 
-from imblearn.pipeline import Pipeline as imbPipeline
-from sklearn.pipeline import Pipeline
+sys.path.insert(0, '$__tool_directory__')
+from utils import SafeEval, get_cv, get_scoring, load_model, read_columns
 
-WL_FILE = '$__tool_directory__/pk_whitelist.json'
-
-exec(open('$__tool_directory__/iraps_classifier.py').read())
-exec(open('$__tool_directory__/preprocessors.py').read())
-exec(open('$__tool_directory__/feature_selectors.py').read())
-exec(open('$__tool_directory__/model_validations.py').read())
-exec(open('$__tool_directory__/utils.py').read(), globals())
+N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 warnings.filterwarnings('ignore')
 

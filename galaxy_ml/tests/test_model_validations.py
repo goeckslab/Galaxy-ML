@@ -12,8 +12,8 @@ from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import ignore_warnings
 
-from galaxy_ml.model_validations import (train_test_split, OrderedKFold,
-                               RepeatedOrderedKFold)
+from galaxy_ml.model_validations import (
+    train_test_split, OrderedKFold, RepeatedOrderedKFold)
 
 
 warnings.simplefilter('ignore')
