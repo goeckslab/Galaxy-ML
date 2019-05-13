@@ -15,16 +15,23 @@
         <configfile name="main_script">
             <![CDATA[
 import json
+import pandas
+import pickle
+import skrebate
+import sys
+import warnings
+import xgboost
+from mlxtend import regressor, classifier
+from sklearn import (
+    cluster, compose, decomposition, ensemble, feature_extraction,
+    feature_selection, gaussian_process, kernel_approximation, metrics,
+    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
+    svm, linear_model, tree, discriminant_analysis)
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn.pipeline import Pipeline
 
-WL_FILE = '$__tool_directory__/pk_whitelist.json'
-
-exec(open('$__tool_directory__/iraps_classifier.py').read())
-exec(open('$__tool_directory__/preprocessors.py').read())
-exec(open('$__tool_directory__/feature_selectors.py').read())
-exec(open('$__tool_directory__/model_validations.py').read())
-exec(open('$__tool_directory__/utils.py').read(), globals())
+sys.path.insert(0, '$__tool_directory__')
+from utils import load_model, get_search_params
 
 warnings.simplefilter('ignore')
 
