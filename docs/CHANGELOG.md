@@ -1,14 +1,14 @@
-### Version 0.4.3 / tool_main: 1.0.0.4 (05-06-2019)
+### Version 0.4.5 / tool_main: 1.0.0.4 (05-13-2019)
 
 #### New Features
 
 - Extend binarize target scorers to support stacking estimators, i.e., use binarize target estimator as meta estimator.
 - Adds `cv_results` attributes to `estimator_attributes` tool.
 
-
 #### Changes
 
 - Refactors the multiple scoring input for searchcv and simplify cv_results output.
+- Refactors import system, get rid of exec import.
 
 #### Bug Fixes
 
