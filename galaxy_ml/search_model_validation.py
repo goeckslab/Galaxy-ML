@@ -3,7 +3,6 @@ import collections
 import imblearn
 import json
 import numpy as np
-import os
 import pandas
 import pickle
 import skrebate
@@ -11,9 +10,13 @@ import sklearn
 import sys
 import xgboost
 import warnings
+import iraps_classifier
+import model_validations
+import preprocessors
+import feature_selectors
 from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline
 from scipy.io import mmread
+from mlxtend import classifier, regressor
 from sklearn import (cluster, compose, decomposition, ensemble,
                      feature_extraction, feature_selection,
                      gaussian_process, kernel_approximation, metrics,
@@ -23,26 +26,13 @@ from sklearn import (cluster, compose, decomposition, ensemble,
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score
-from iraps_classifier import (IRAPSCore, IRAPSClassifier,
-                              BinarizeTargetClassifier,
-                              BinarizeTargetRegressor,
-                              binarize_auc_scorer,
-                              binarize_average_precision_scorer)
-from model_validations import OrderedKFold, RepeatedOrderedKFold
-from preprocessors import Z_RandomOverSampler
-from feature_selectors import (DyRFE, DyRFECV,
-                               MyPipeline, MyimbPipeline)
+
 from utils import (SafeEval, get_cv, get_scoring, get_X_y,
                    load_model, read_columns)
 from model_validations import train_test_split
 
-try:
-    from mlxtend import regressor
-except ImportError as e:
-    print(e)
-    pass
 
-N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
+N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = './cached'
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', 'steps',
                   'nthread', 'verbose')

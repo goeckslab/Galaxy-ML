@@ -1,12 +1,9 @@
 import argparse
 import json
-import os
 import pandas as pd
 import pickle
-import warnings
 import xgboost
-from mlxtend.regressor import StackingCVRegressor, StackingRegressor
-from mlxtend.classifier import StackingCVClassifier, StackingClassifier
+import warnings
 from sklearn import (cluster, compose, decomposition, ensemble,
                      feature_extraction, feature_selection,
                      gaussian_process, kernel_approximation, metrics,
@@ -22,10 +19,13 @@ from iraps_classifier import (IRAPSCore, IRAPSClassifier,
 from preprocessors import Z_RandomOverSampler
 from utils import load_model, get_cv, get_estimator, get_search_params
 
+from mlxtend.regressor import StackingCVRegressor, StackingRegressor
+from mlxtend.classifier import StackingCVClassifier, StackingClassifier
+
 
 warnings.filterwarnings('ignore')
 
-N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
+N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
 def main(inputs_path, output_obj, base_paths=None, meta_path=None,

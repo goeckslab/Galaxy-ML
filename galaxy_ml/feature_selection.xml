@@ -18,18 +18,21 @@
             <![CDATA[
 import json
 import sklearn.feature_selection
-
+import skrebate
+import pandas
+import sys
+import warnings
+import xgboost
+from sklearn import (
+    cluster, compose, decomposition, ensemble, feature_extraction,
+    feature_selection, gaussian_process, kernel_approximation, metrics,
+    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
+    svm, linear_model, tree, discriminant_analysis)
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn.pipeline import Pipeline
 
-WL_FILE = '$__tool_directory__/pk_whitelist.json'
-
-exec(open('$__tool_directory__/iraps_classifier.py').read())
-exec(open('$__tool_directory__/preprocessors.py').read())
-exec(open('$__tool_directory__/feature_selectors.py').read())
-exec(open('$__tool_directory__/keras_galaxy_models.py').read())
-exec(open('$__tool_directory__/model_validations.py').read())
-exec(open('$__tool_directory__/utils.py').read(), globals())
+sys.path.insert(0, '$__tool_directory__')
+from utils import SafeEval, feature_selector, read_columns
 
 warnings.simplefilter('ignore')
 
@@ -105,7 +108,7 @@ y = read_columns(
 y = y.ravel()
 
 ## Create feature selector
-new_selector = feature_selector(params['fs_algorithm_selector'])
+new_selector = feature_selector(params['fs_algorithm_selector'], X=X, y=y)
 if params['fs_algorithm_selector']['selected_algorithm'] != 'SelectFromModel'\
         or params['fs_algorithm_selector']['model_inputter']['input_mode'] != 'prefitted' :
     new_selector.fit(X, y)

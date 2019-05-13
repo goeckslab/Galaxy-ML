@@ -15,24 +15,28 @@
         <inputs name="inputs" />
         <configfile name="sklearn_pipeline_script">
             <![CDATA[
+import imblearn
 import json
+import pickle
 import pprint
 import skrebate
-import imblearn
-from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import make_pipeline as imb_make_pipeline
-from sklearn import (preprocessing, svm, linear_model, ensemble, naive_bayes,
-                    tree, neighbors, decomposition, kernel_approximation, cluster)
+import sys
+import warnings
+from mlxtend import classifier, regressor
+from sklearn import (
+    cluster, compose, decomposition, ensemble, feature_extraction,
+    feature_selection, gaussian_process, kernel_approximation, metrics,
+    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
+    svm, linear_model, tree, discriminant_analysis)
 from sklearn.pipeline import make_pipeline
+from imblearn.pipeline import make_pipeline as imb_make_pipeline
 
-WL_FILE = '$__tool_directory__/pk_whitelist.json'
+sys.path.insert(0, '$__tool_directory__')
 
-exec(open('$__tool_directory__/iraps_classifier.py').read())
-exec(open('$__tool_directory__/preprocessors.py').read())
-exec(open('$__tool_directory__/feature_selectors.py').read())
-exec(open('$__tool_directory__/keras_galaxy_models.py').read())
-exec(open('$__tool_directory__/model_validations.py').read())
-exec(open('$__tool_directory__/utils.py').read(), globals())
+from utils import SafeEval, feature_selector, get_estimator, try_get_attr
+from preprocessors import Z_RandomOverSampler
+
+N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 warnings.filterwarnings('ignore')
 
@@ -60,7 +64,8 @@ def get_component(input_json, check_none=False):
         if not check_none:
             return None, False
         else:
-            sys.exit("The pre-processing component type can't be None when the number of components is greater than 1.")
+            sys.exit("The pre-processing component type can't be None "
+                     "when the number of components is greater than 1.")
     if input_json['component_type'] == 'pre_processor':
         preprocessor = input_json['pre_processors']['selected_pre_processor']
         pre_processor_options = input_json['pre_processors']['options']
@@ -115,7 +120,7 @@ def get_component(input_json, check_none=False):
             options = safe_eval( 'dict(' + options + ')' )
             obj.set_params(**options)
     elif input_json['component_type'] == 'IRAPS':
-        iraps_core = IRAPSCore()
+        iraps_core = try_get_attr('iraps_classifier','IRAPSCore')()
         core_params = input_json['text_params'].strip()
         if core_params != '':
             try:
@@ -132,6 +137,7 @@ def get_component(input_json, check_none=False):
             options['occurrence'] = input_json['occurrence']
         if input_json['discretize'] is not None:
             options['discretize'] = input_json['discretize']
+        IRAPSClassifier = try_get_attr('iraps_classifier','IRAPSClassifier')
         obj = IRAPSClassifier(iraps_core, **options)
     if 'n_jobs' in obj.get_params():
         obj.set_params( n_jobs=N_JOBS )
@@ -439,6 +445,32 @@ with open('$outfile', 'wb') as out_handler:
             <param name="selected_estimator" value="RandomForestClassifier"/>
             <param name="output_type" value="Final_Estimator_Builder"/>
             <output name="outfile" file="RandomForestClassifier.zip" compare="sim_size" delta="5"/>
+        </test>
+        <test>
+            <conditional name="component_selector">
+                <param name="component_type" value="IRAPS"/>
+            </conditional>
+            <section name="final_estimator" title="Final Estimator" expanded="true">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="none"/>
+                </conditional>
+            </section>
+            <params name="output_type" value="Final_Estimator_Builder"/>
+            <output name="outfile" file="pipeline14" compare="sim_size" delta="5"/>
+        </test>
+        <test>
+            <conditional name="component_selector">
+                <param name="component_type" value="None"/>
+            </conditional>
+            <section name="final_estimator">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="binarize_target"/>
+                    <param name="clf_or_regr" value="BinarizeTargetClassifier"/>
+                    <param name="wrapped_estimator" value="RandomForestClassifier.zip" ftype="zip"/>
+                </conditional>
+            </section>
+            <param name="output_type" value="Final_Estimator_Builder"/>
+            <output name="outfile" file="pipeline15" compare="sim_size" delta="5"/>
         </test>
     </tests>
     <help>
