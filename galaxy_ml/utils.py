@@ -46,7 +46,7 @@ except ImportError:
 
 try:
     import keras_galaxy_models
-except ImportError as e:
+except ImportError:
     pass
 
 # handle pickle white list file
@@ -68,12 +68,7 @@ class _SafePickler(pickle.Unpickler, object):
         with open(WL_FILE, 'r') as f:
             self.pk_whitelist = json.load(f)
 
-    def find_class(self, module, name):
-        """ override """
-        pk_whitelist = self.pk_whitelist
-
-        # balack list first
-        bad_names = (
+        self.bad_names = (
             'and', 'as', 'assert', 'break', 'class', 'continue',
             'def', 'del', 'elif', 'else', 'except', 'exec',
             'finally', 'for', 'from', 'global', 'if', 'import',
@@ -88,35 +83,40 @@ class _SafePickler(pickle.Unpickler, object):
             'im_class', 'im_func', 'im_self', 'gi_code', 'gi_frame',
             '__asteval__', 'f_locals', '__mro__')
 
-        if name in bad_names:
-            raise pickle.UnpicklingError("global '%s.%s' is forbidden"
-                                         % (module, name))
-
-        # custom module in Galaxy-ML
-        if module in ['__main__', 'keras_galaxy_models',
-                      'feature_selectors', 'preprocessors',
-                      'iraps_classifier', 'model_validations']:
-            cutom_module = sys.modules.get(module, None)
-            if cutom_module:
-                return getattr(cutom_module, name)
-            else:
-                try:
-                    return eval(name)    # __main__
-                except NameError:
-                    raise pickle.UnpicklingError("global '%s.%s' is forbidden"
-                                                 % (module, name))
-
-        # unclassified globals.
-        good_names = [
+        # unclassified good globals
+        self.good_names = [
             'copy_reg._reconstructor', '__builtin__.object',
             '__builtin__.bytearray', 'builtins.object',
             'builtins.bytearray', 'keras.engine.sequential.Sequential',
             'keras.engine.sequential.Model']
 
-        # For objects from outside libraries, maybe it's necessary
-        # to verify names as well. Currently only a blacklist checker
+        # custom module in Galaxy-ML
+        self.custom_modules = [
+            '__main__', 'keras_galaxy_models', 'feature_selectors',
+            'preprocessors', 'iraps_classifier', 'model_validations']
+
+    # override
+    def find_class(self, module, name):
+        # balack list first
+        if name in self.bad_names:
+            raise pickle.UnpicklingError("global '%s.%s' is forbidden"
+                                         % (module, name))
+
+        # custom module in Galaxy-ML
+        if module in self.custom_modules:
+            cutom_module = sys.modules.get(module, None)
+            if cutom_module:
+                return getattr(cutom_module, name)
+            else:
+                raise pickle.UnpicklingError("Module %s' is not imported"
+                                             % module)
+
+        # For objects from outside libraries, it's necessary to verify
+        # both module and name. Currently only a blacklist checker
         # is working.
         # TODO: replace with a whitelist checker.
+        good_names = self.good_names
+        pk_whitelist = self.pk_whitelist
         if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
             fullname = module + '.' + name
             if (fullname in good_names)\
