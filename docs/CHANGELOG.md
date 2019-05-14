@@ -4,6 +4,8 @@
 
 - Extend binarize target scorers to support stacking estimators, i.e., use binarize target estimator as meta estimator.
 - Adds `cv_results` attributes to `estimator_attributes` tool.
+- Adds loading prefitted model for prediction in `keras_model_builder` tool.
+- Adds `save_weights` and `load_weights` for keras classifier/regressor models.
 
 #### Changes
 
