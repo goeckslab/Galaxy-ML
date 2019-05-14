@@ -44,6 +44,11 @@ try:
 except ImportError:
     pass
 
+try:
+    import keras_galaxy_models
+except ImportError:
+    pass
+
 # handle pickle white list file
 WL_FILE = __import__('os').path.join(
     __import__('os').path.dirname(__file__), 'pk_whitelist.json')
@@ -561,14 +566,23 @@ def get_scoring(scoring_json):
 def get_search_params(estimator):
     """Format the output of `estimator.get_params()`
     """
-    params = estimator.get_params()
+    res = estimator.get_params()
+    SearchParam = try_get_attr('keras_galaxy_models', 'SearchParam')
+    params = [SearchParam(k, v) for k, v in res.items()]
+    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
+
     results = []
-    for k, v in params.items():
+    for param in params:
         # params below won't be shown for search in the searchcv tool
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps',
-                    'nthread', 'verbose')
+        # And show partial `repr` for values which are dictionary,
+        # especially useful for keras models
+        k, v = param.s_param, param.value
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread',
+                    'verbose', 'name')
         if k.endswith(keywords):
             results.append(['*', k, k+": "+repr(v)])
+        elif type(v) is dict:
+            results.append(['@', k, k+": "+repr(v)[:100]])
         else:
             results.append(['@', k, k+": "+repr(v)])
     results.append(
