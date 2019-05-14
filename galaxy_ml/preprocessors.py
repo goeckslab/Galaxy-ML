@@ -1,20 +1,14 @@
 """
 Z_RandomOverSampler
 """
-
 import imblearn
 import numpy as np
 
 from collections import Counter
-from .externals.selene_sdk.predict._common import _pad_sequence
-from .externals.selene_sdk.predict._common import _truncate_sequence
-from .externals.selene_sdk.sequences._sequence import\
-    _fast_sequence_to_encoding
 from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.pipeline import Pipeline as imbPipeline
 from imblearn.utils import check_target_type
-from pyfaidx import Fasta
 from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing.data import _handle_zeros_in_scale
@@ -22,6 +16,24 @@ from sklearn.utils import check_array, safe_indexing
 from sklearn.utils.fixes import nanpercentile
 from sklearn.utils.validation import (check_is_fitted, check_X_y,
                                       FLOAT_DTYPES)
+try:
+    import pyfaidx
+except ImportError:
+    rval = __import__('os').system("pip install pyfaidx==0.5.5.2")
+    if rval != 0:
+        raise ImportError("module pyfaidx is not installed. "
+                          "Galaxy attemped to install but failed."
+                          "Please Contact Admin for manual "
+                          "installation.")
+try:
+    # tools should pick up here
+    from externals import selene_sdk
+except ImportError:
+    # nosetest picks here
+    try:
+        from .externals import selene_sdk
+    except ImportError:
+        pass
 
 
 class Z_RandomOverSampler(BaseOverSampler):
