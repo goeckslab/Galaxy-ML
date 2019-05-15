@@ -3,8 +3,17 @@ import warnings
 
 from galaxy_ml.externals.selene_sdk.sequences._sequence import\
     _fast_sequence_to_encoding
-from galaxy_ml.externals import pyfaidx
 from galaxy_ml.preprocessors import GenomeOneHotEncoder
+
+try:
+    import pyfaidx
+except ImportError:
+    rval = __import__('os').system("pip install pyfaidx==0.5.5.2")
+    if rval != 0:
+        raise ImportError("module pyfaidx is not installed. "
+                          "Galaxy attemped to install but failed."
+                          "Please Contact Admin for manual "
+                          "installation.")
 
 
 warnings.simplefilter('ignore')

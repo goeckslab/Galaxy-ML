@@ -9,10 +9,12 @@ Date: 4/11/2019
 import collections
 import numpy as np
 import tensorflow as tf
+from abc import ABCMeta
 from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
+from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
@@ -165,7 +167,7 @@ class SearchParam(object):
         return _param_to_dict(self.s_param, self.value)
 
 
-class KerasLayers(BaseEstimator):
+class KerasLayers(six.with_metaclass(ABCMeta, BaseEstimator)):
     """
     Parameters:
     -----------
@@ -245,7 +247,7 @@ class KerasLayers(BaseEstimator):
         return self
 
 
-class BaseKerasModel(BaseEstimator):
+class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     """
     Base class for Galaxy Keras wrapper
 
@@ -501,13 +503,9 @@ class BaseKerasModel(BaseEstimator):
 
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
-        out = super(BaseKerasModel, self).get_params(deep=False)
         # call self._optimizer to activate hidden attributes
         self._optimizer
-        params = list(six.iterkeys(out))
-        for key in params:
-            if not hasattr(self, key):
-                out.pop(key)
+        out = super(BaseKerasModel, self).get_params(deep=deep)
 
         if not deep:
             return out
@@ -663,7 +661,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         """
         Parameters:
         -----------
-        X : array-like, shape `(n_samples, n_features)`
+        X : array-like, shape `(n_samples, feature_arrays)`
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
         check_classification_targets(y)
@@ -751,3 +749,197 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
         if isinstance(loss, list):
             return -loss[0]
         return -loss
+
+
+class KerasBatchClassifier(KerasGClassifier):
+    """
+    keras classifier with batch generator
+
+    Parameters
+    ----------
+    config : dictionary
+        from `model.get_config()`
+
+    train_batch_generator: instance of batch generator
+
+    array_converter: instance of to_array class
+
+    train_batch_generator: instance of batch generator (default=None)
+        if None, same as train_batch_generator
+
+    model_type : str
+        'sequential' or 'functional'
+
+    optimizer : str, default 'sgd'
+        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
+
+    loss : str, default 'binary_crossentropy'
+        same as Keras `loss`
+
+    metrics : list of strings, default []
+
+    lr : None or float
+        optimizer parameter, default change with `optimizer`
+
+    momentum : None or float
+        for optimizer `sgd` only, ignored otherwise
+
+    nesterov : None or bool
+        for optimizer `sgd` only, ignored otherwise
+
+    decay : None or float
+        optimizer parameter, default change with `optimizer`
+    rho : None or float
+        optimizer parameter, default change with `optimizer`
+
+    epsilon : None or float
+        optimizer parameter, default change with `optimizer`
+
+    amsgrad : None or bool
+        for optimizer `adam` only, ignored otherwise
+
+    beta_1 : None or float
+        optimizer parameter, default change with `optimizer`
+
+    beta_2 : None or float
+        optimizer parameter, default change with `optimizer`
+
+    schedule_decay : None or float
+        optimizer parameter, default change with `optimizer`
+
+    epochs : int
+        fit_param from Keras
+
+    batch_size : int
+        fit_param, from Keras
+
+    seed : None or int, default 0
+        backend random seed
+    """
+    def __init__(self, config, train_batch_generator,
+                 array_converter, predict_batch_generator=None,
+                 model_type='sequential', optimizer='sgd',
+                 loss='binary_crossentropy', metrics=[], lr=None,
+                 momentum=None, decay=None, nesterov=None, rho=None,
+                 epsilon=None, amsgrad=None, beta_1=None,
+                 beta_2=None, schedule_decay=None, epochs=1,
+                 batch_size=None, seed=0, n_jobs=1, **fit_params):
+        super(KerasBatchClassifier, self).__init__(
+            config, model_type='sequential', optimizer='sgd',
+            loss='binary_crossentropy', metrics=[], lr=None,
+            momentum=None, decay=None, nesterov=None, rho=None,
+            epsilon=None, amsgrad=None, beta_1=None, beta_2=None,
+            schedule_decay=None, epochs=1, batch_size=None,
+            seed=0, **fit_params)
+        self.train_batch_generator = train_batch_generator
+        self.array_converter = array_converter
+        self.predict_batch_generator = predict_batch_generator
+        self.n_jobs = n_jobs
+
+    def fit(self, X, y, class_weight=None, **kwargs):
+        """ fit the model
+        """
+        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
+        check_classification_targets(y)
+        check_params(kwargs, Model.fit)
+
+        if len(y.shape) == 2 and y.shape[1] > 1:
+            self.classes_ = np.arange(y.shape[1])
+        elif (len(y.shape) == 2 and y.shape[1] == 1) or len(y.shape) == 1:
+            self.classes_ = np.unique(y)
+            y = np.searchsorted(self.classes_, y)
+        else:
+            raise ValueError('Invalid shape for y: ' + str(y.shape))
+        self.n_classes_ = len(self.classes_)
+
+        if class_weight is not None:
+            kwargs['class_weight'] = class_weight
+
+        config = self.config
+
+        if self.model_type not in ['sequential', 'functional']:
+            raise ValueError("Unsupported model type %s" % self.model_type)
+
+        if self.model_type == 'sequential':
+            self.model_class_ = Sequential
+        else:
+            self.model_class_ = Model
+
+        self.model_ = self.model_class_.from_config(
+            config,
+            custom_objects=dict(tf=tf))
+
+        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
+                            metrics=self.metrics)
+
+        if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
+            y = to_categorical(y)
+
+        fit_params = self.fit_params
+        fit_params.update(kwargs)
+
+        # set tensorflow random seed
+        if self.seed is not None and K.backend() == 'tensorflow':
+            set_random_seed(self.seed)
+
+        batch_size = self.batch_size
+        epochs = self.epochs
+        n_jobs = self.n_jobs
+        self.model_.fit_generator(
+            self.train_batch_generator.flow(X, y, batch_size=batch_size),
+            steps_per_epoch=X.shape[0]/batch_size, epochs=epochs,
+            workers=n_jobs, use_multiprocessing=True if n_jobs > 1 else False,
+            **fit_params)
+
+        return self
+
+    def predict_proba(self, X, **kwargs):
+        check_is_fitted(self, 'model_')
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
+        check_params(kwargs, Model.predict)
+
+        if self.predict_batch_generator is None:
+            predict_batch_generator = self.train_batch_generator
+        else:
+            predict_batch_generator = self.predict_batch_generator
+
+        batch_size = self.batch_size
+        n_jobs = self.n_jobs
+        probs = self.model_.predict_generator(
+            predict_batch_generator.flow(X, batch_size=batch_size),
+            n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
+            **kwargs)
+
+        if probs.shape[1] == 1:
+            # first column is probability of class 0 and second is of class 1
+            probs = np.hstack([1 - probs, probs])
+        return probs
+
+    def score(self, X, y, **kwargs):
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
+        y = np.searchsorted(self.classes_, y)
+        check_params(kwargs, Model.evaluate)
+
+        if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
+            y = to_categorical(y)
+
+        if self.predict_batch_generator is None:
+            predict_batch_generator = self.train_batch_generator
+        else:
+            predict_batch_generator = self.predict_batch_generator
+
+        n_jobs = self.n_jobs
+        batch_size = self.batch_size
+        outputs = self.model_.evaluate_generator(
+            predict_batch_generator.flow(X, y, batch_size=batch_size),
+            n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
+            **kwargs)
+
+        outputs = to_list(outputs)
+        for name, output in zip(self.model_.metrics_names, outputs):
+            if name == 'acc':
+                return output
+
+        raise ValueError('The model is not configured to compute accuracy. '
+                         'You should pass `metrics=["accuracy"]` to '
+                         'the `model.compile()` method.')

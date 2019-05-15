@@ -1,9 +1,9 @@
 """
 Z_RandomOverSampler
 """
-import imblearn
 import numpy as np
 from collections import Counter
+from keras.preprocessing.image import ImageDataGenerator
 from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.utils import check_target_type
@@ -301,3 +301,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
             sequences_endcoding[i, :, :] = cur_sequence_encodeing
 
         return sequences_endcoding
+
+
+class ImageBatchGenerator(ImageDataGenerator, BaseEstimator):
+    pass

@@ -11,7 +11,9 @@ from keras.layers import Dense, Activation
 from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
     check_params, SearchParam, KerasLayers,
-    BaseKerasModel, KerasGClassifier, KerasGRegressor)
+    BaseKerasModel, KerasGClassifier, KerasGRegressor,
+    KerasBatchClassifier)
+from galaxy_ml.preprocessors import ImageBatchGenerator
 
 from sklearn.base import clone
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
@@ -314,18 +316,14 @@ def test_get_params_base_keras_model():
             got[key] = value
 
     expect = {
-        'batch_size': None,
-        'decay': 0,
-        'epochs': 1,
-        'loss': 'binary_crossentropy',
-        'lr': 0.01,
-        'metrics': [],
-        'model_type': 'sequential',
-        'momentum': 0,
-        'nesterov': False,
-        'optimizer': 'sgd',
-        'seed': 0
-    }
+        'amsgrad': None, 'batch_size': None,
+        'beta_1': None, 'beta_2': None, 'decay': 0,
+        'epochs': 1, 'epsilon': None,
+        'loss': 'binary_crossentropy', 'lr': 0.01,
+        'metrics': [], 'model_type': 'sequential',
+        'momentum': 0, 'nesterov': False,
+        'optimizer': 'sgd', 'rho': None,
+        'schedule_decay': None, 'seed': 0}
 
     assert got == expect, got
 
@@ -361,10 +359,10 @@ def test_get_params_keras_g_classifier():
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
     expect = [
-        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config',
-        'decay', 'epochs', 'epsilon', 'loss', 'lr', 'metrics',
-        'model_type', 'optimizer', 'seed',
-        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay',
+        'epochs', 'epsilon', 'loss', 'lr', 'metrics', 'model_type',
+        'momentum', 'nesterov', 'optimizer', 'rho', 'schedule_decay',
+        'seed', 'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
@@ -412,9 +410,10 @@ def test_get_params_keras_g_regressor():
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
     expect = [
-        'batch_size', 'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
-        'model_type', 'momentum', 'nesterov', 'optimizer', 'seed',
-        'layers_0_Dense__config__kernel_initializer__config__seed',
+        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay',
+        'epochs', 'epsilon', 'loss', 'lr', 'metrics', 'model_type',
+        'momentum', 'nesterov', 'optimizer', 'rho', 'schedule_decay',
+        'seed', 'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
@@ -493,9 +492,13 @@ def test_funtional_model_get_params():
             got[key] = value
 
     expect = {
+        'amsgrad': None,
         'batch_size': None,
+        'beta_1': None,
+        'beta_2': None,
         'decay': 0,
         'epochs': 1,
+        'epsilon': None,
         'loss': 'binary_crossentropy',
         'lr': 0.01,
         'metrics': [],
@@ -503,6 +506,8 @@ def test_funtional_model_get_params():
         'momentum': 0,
         'nesterov': False,
         'optimizer': 'sgd',
+        'rho': None,
+        'schedule_decay': None,
         'seed': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',
@@ -650,3 +655,72 @@ def test_keras_model_load_and_save_weights():
     expect = os.path.getsize('./test-data/keras_model_drosophila_weights01.h5')
 
     assert abs(got - expect) < 40, got - expect
+
+
+def test_image_batch_generator_get_params():
+    batch_generator = ImageBatchGenerator()
+
+    got = batch_generator.get_params()
+    expect = {'brightness_range': None, 'channel_shift_range': 0.0,
+              'cval': 0.0, 'data_format': 'channels_last',
+              'dtype': 'float32', 'featurewise_center': False,
+              'featurewise_std_normalization': False,
+              'fill_mode': 'nearest', 'height_shift_range': 0.0,
+              'horizontal_flip': False, 'preprocessing_function': None,
+              'rescale': None, 'rotation_range': 0,
+              'samplewise_center': False,
+              'samplewise_std_normalization': False, 'shear_range': 0.0,
+              'validation_split': None, 'vertical_flip': False,
+              'width_shift_range': 0.0, 'zca_epsilon': 1e-06,
+              'zca_whitening': False, 'zoom_range': [1.0, 1.0]}
+
+    assert got == expect, got
+
+
+def test_keras_batch_classifier_get_params():
+    config = model.get_config()
+    batch_generator = ImageBatchGenerator()
+    array_convertor = None
+    classifier = KerasBatchClassifier(
+        config, batch_generator, array_convertor, model_type='sequential')
+
+    params = classifier.get_params()
+    got = {key: value for key, value in params.items()
+           if not key.startswith(('config', 'layers'))}
+
+    got.pop('train_batch_generator', None)
+    expect = {'amsgrad': None, 'array_converter': None, 'batch_size': None,
+              'beta_1': None, 'beta_2': None, 'decay': 0, 'epochs': 1,
+              'epsilon': None, 'loss': 'binary_crossentropy',
+              'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
+              'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+              'optimizer': 'sgd', 'predict_batch_generator': None,
+              'rho': None, 'schedule_decay': None, 'seed': 0,
+              'train_batch_generator__brightness_range': None,
+              'train_batch_generator__channel_shift_range': 0.0,
+              'train_batch_generator__cval': 0.0,
+              'train_batch_generator__data_format': 'channels_last',
+              'train_batch_generator__dtype': 'float32',
+              'train_batch_generator__featurewise_center': False,
+              'train_batch_generator__featurewise_std_normalization': False,
+              'train_batch_generator__fill_mode': 'nearest',
+              'train_batch_generator__height_shift_range': 0.0,
+              'train_batch_generator__horizontal_flip': False,
+              'train_batch_generator__preprocessing_function': None,
+              'train_batch_generator__rescale': None,
+              'train_batch_generator__rotation_range': 0,
+              'train_batch_generator__samplewise_center': False,
+              'train_batch_generator__samplewise_std_normalization': False,
+              'train_batch_generator__shear_range': 0.0,
+              'train_batch_generator__validation_split': None,
+              'train_batch_generator__vertical_flip': False,
+              'train_batch_generator__width_shift_range': 0.0,
+              'train_batch_generator__zca_epsilon': 1e-06,
+              'train_batch_generator__zca_whitening': False,
+              'train_batch_generator__zoom_range': [1.0, 1.0]}
+
+    for k, v in got.items():
+        if k not in expect:
+            print("%s: %s" % (k, v))
+
+    assert got == expect, got
