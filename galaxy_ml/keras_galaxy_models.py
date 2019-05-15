@@ -665,7 +665,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         -----------
         X : array-like, shape `(n_samples, n_features)`
         """
-        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
+        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
         check_classification_targets(y)
         check_params(kwargs, Model.fit)
 
@@ -685,7 +685,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
 
     def predict_proba(self, X, **kwargs):
         check_is_fitted(self, 'model_')
-        X = check_array(X, accept_sparse=['csc', 'csr'])
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.predict)
 
         probs = self.model_.predict(X, **kwargs)
@@ -696,7 +696,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
 
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
-        X = check_array(X, accept_sparse=['csc', 'csr'])
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.predict)
 
         proba = self.model_.predict(X, **kwargs)
@@ -707,7 +707,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         return self.classes_[classes]
 
     def score(self, X, y, **kwargs):
-        X = check_array(X, accept_sparse=['csc', 'csr'])
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         y = np.searchsorted(self.classes_, y)
         check_params(kwargs, Model.evaluate)
 
@@ -730,21 +730,21 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
     Scikit-learn API wrapper for Keras regressor
     """
     def fit(self, X, y, **kwargs):
-        X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'])
+        X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.fit)
 
         return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
-        X = check_array(X, accept_sparse=['csc', 'csr'])
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.predict)
 
         return np.squeeze(self.model_.predict(X, **kwargs), axis=-1)
 
     def score(self, X, y, **kwargs):
         check_is_fitted(self, 'model_')
-        X = check_array(X, accept_sparse=['csc', 'csr'])
+        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.evaluate)
 
         loss = self.model_.evaluate(X, y, **kwargs)
