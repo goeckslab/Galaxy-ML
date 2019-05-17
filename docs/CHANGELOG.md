@@ -1,3 +1,23 @@
+### Version 0.6.0 / tool_main: 1.0.6.0 / keras: 0.2.0 (05-13-2019)
+
+#### New Features
+
+- Adds Nested CV to searchcv tool.
+- Adds `BinarizeTargetClassifier`.classifier_, `BinarizeTargetRegressor`.regressor_ and `IRAPSClassifier`.get_signature() in estimator_attributes tool.
+- Reformat the output of `corss_validate`.
+- Adds `KerasBatchClassifier`.
+- Makes `KerasGClassifier` and `KerasGRegressor` support multi-dimension array. 
+
+#### Changes
+
+- Changes min value of `n_splits`  from 2 to 1.
+- Main Tool version changes on the last second number instead of the last one.
+
+#### Bug Fixes
+
+- Fixes `train_test_split` doesn't work with `default` scoring.
+
+
 ### Version 0.5.0 / tool_main: 1.0.0.5 / keras: 0.2.0 (05-13-2019)
 
 #### New Features
