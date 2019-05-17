@@ -305,12 +305,13 @@ def main(inputs, infile_estimator, infile1, infile2,
                 for warning in w:
                     print(repr(warning.message))
 
-        stat = {}
-        for k, v in rval.items():
+        keys = list(rval.keys())
+        for k in keys:
             if k.startswith('test'):
-                stat['mean_' + k] = np.mean(v)
-                stat['std_' + k] = np.std(v)
-        rval.update(stat)
+                rval['mean_' + k] = np.mean(rval[k])
+                rval['std_' + k] = np.std(rval[k])
+            if k.endswith('time'):
+                rval.pop(k)
         rval = pandas.DataFrame(rval)
         rval = rval[sorted(rval.columns)]
         rval.to_csv(path_or_buf=outfile_result, sep='\t',
