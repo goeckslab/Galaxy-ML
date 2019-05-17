@@ -25,7 +25,7 @@ from sklearn import (cluster, compose, decomposition, ensemble,
                      tree, discriminant_analysis)
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
-from sklearn.model_selection._validation import _score
+from sklearn.model_selection._validation import _score, cross_validate
 
 from utils import (SafeEval, get_cv, get_scoring, get_X_y,
                    load_model, read_columns)
@@ -279,69 +279,107 @@ def main(inputs, infile_estimator, infile1, infile2,
     param_grid = _eval_search_params(params_builder)
     searcher = optimizer(estimator, param_grid, **options)
 
-    # do train_test_split
-    do_train_test_split = params['train_test_split'].pop('do_split')
-    if do_train_test_split == 'yes':
-        # make sure refit is choosen
-        if not options['refit']:
-            raise ValueError("Refit must be `True` for shuffle splitting!")
-        split_options = params['train_test_split']
+    # do nested split
+    split_mode = params['outer_split'].pop('split_mode')
+    # nested CV, outer cv using cross_validate
+    if split_mode == 'nested_cv':
+        outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
 
-        # splits
-        if split_options['shuffle'] == 'stratified':
-            split_options['labels'] = y
-            X, X_test, y, y_test = train_test_split(X, y, **split_options)
-        elif split_options['shuffle'] == 'group':
-            if not groups:
-                raise ValueError("No group based CV option was "
-                                 "choosen for group shuffle!")
-            split_options['labels'] = groups
-            X, X_test, y, y_test, groups, _ =\
-                train_test_split(X, y, **split_options)
+        if options['error_score'] == 'raise':
+            rval = cross_validate(
+                searcher, X, y, scoring=options['scoring'],
+                cv=outer_cv, n_jobs=N_JOBS, verbose=0,
+                error_score=options['error_score'])
         else:
-            if split_options['shuffle'] == 'None':
-                split_options['shuffle'] = None
-            X, X_test, y, y_test =\
-                train_test_split(X, y, **split_options)
-    # end train_test_split
+            warnings.simplefilter('always', FitFailedWarning)
+            with warnings.catch_warnings(record=True) as w:
+                try:
+                    rval = cross_validate(
+                        searcher, X, y,
+                        scoring=options['scoring'],
+                        cv=outer_cv, n_jobs=N_JOBS,
+                        verbose=0,
+                        error_score=options['error_score'])
+                except ValueError:
+                    pass
+                for warning in w:
+                    print(repr(warning.message))
 
-    if options['error_score'] == 'raise':
-        searcher.fit(X, y, groups=groups)
+        stat = {}
+        for k, v in rval.items():
+            if k.startswith('test'):
+                stat['mean_' + k] = np.mean(v)
+                stat['std_' + k] = np.std(v)
+        rval.update(stat)
+        rval = pandas.DataFrame(rval)
+        rval = rval[sorted(rval.columns)]
+        rval.to_csv(path_or_buf=outfile_result, sep='\t',
+                    header=True, index=False)
     else:
-        warnings.simplefilter('always', FitFailedWarning)
-        with warnings.catch_warnings(record=True) as w:
-            try:
-                searcher.fit(X, y, groups=groups)
-            except ValueError:
-                pass
-            for warning in w:
-                print(repr(warning.message))
+        if split_mode == 'train_test_split':
+            # make sure refit is choosen
+            if not options['refit']:
+                raise ValueError("Refit must be `True` for shuffle splitting!")
+            split_options = params['outer_split']
 
-    if do_train_test_split == 'no':
-        # save results
-        cv_results = pandas.DataFrame(searcher.cv_results_)
-        cv_results = cv_results[sorted(cv_results.columns)]
-        cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
-                          header=True, index=False)
+            # splits
+            if split_options['shuffle'] == 'stratified':
+                split_options['labels'] = y
+                X, X_test, y, y_test = train_test_split(X, y, **split_options)
+            elif split_options['shuffle'] == 'group':
+                if not groups:
+                    raise ValueError("No group based CV option was "
+                                     "choosen for group shuffle!")
+                split_options['labels'] = groups
+                X, X_test, y, y_test, groups, _ =\
+                    train_test_split(X, y, **split_options)
+            else:
+                if split_options['shuffle'] == 'None':
+                    split_options['shuffle'] = None
+                X, X_test, y, y_test =\
+                    train_test_split(X, y, **split_options)
+        # end train_test_split
 
-    # output test result using best_estimator_
-    else:
-        best_estimator_ = searcher.best_estimator_
-        if isinstance(options['scoring'], collections.Mapping):
-            is_multimetric = True
+        if options['error_score'] == 'raise':
+            searcher.fit(X, y, groups=groups)
         else:
-            is_multimetric = False
+            warnings.simplefilter('always', FitFailedWarning)
+            with warnings.catch_warnings(record=True) as w:
+                try:
+                    searcher.fit(X, y, groups=groups)
+                except ValueError:
+                    pass
+                for warning in w:
+                    print(repr(warning.message))
 
-        test_score = _score(best_estimator_, X_test,
-                            y_test, options['scoring'],
-                            is_multimetric=is_multimetric)
-        if not is_multimetric:
-            test_score = {primary_scoring: test_score}
-        for key, value in test_score.items():
-            test_score[key] = [value]
-        result_df = pandas.DataFrame(test_score)
-        result_df.to_csv(path_or_buf=outfile_result, sep='\t',
-                         header=True, index=False)
+        if split_mode == 'no':
+            # save results
+            cv_results = pandas.DataFrame(searcher.cv_results_)
+            cv_results = cv_results[sorted(cv_results.columns)]
+            cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
+                              header=True, index=False)
+
+        # output test result using best_estimator_
+        else:
+            best_estimator_ = searcher.best_estimator_
+            scorer_ = searcher.scorer_
+            if isinstance(scorer_, collections.Mapping):
+                is_multimetric = True
+            else:
+                is_multimetric = False
+
+            print(best_estimator_)
+            print(scorer_)
+            test_score = _score(best_estimator_, X_test,
+                                y_test, scorer_,
+                                is_multimetric=is_multimetric)
+            if not is_multimetric:
+                test_score = {primary_scoring: test_score}
+            for key, value in test_score.items():
+                test_score[key] = [value]
+            result_df = pandas.DataFrame(test_score)
+            result_df.to_csv(path_or_buf=outfile_result, sep='\t',
+                             header=True, index=False)
 
     memory.clear(warn=False)
 

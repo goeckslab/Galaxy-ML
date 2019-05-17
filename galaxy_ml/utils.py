@@ -536,6 +536,10 @@ def balanced_accuracy_score(y_true, y_pred):
 def get_scoring(scoring_json):
     """Return single sklearn scorer class
         or multiple scoers in dictionary
+
+    Returns
+    -------
+    single scorer instance or multiple scorers in dict
     """
     if scoring_json['primary_scoring'] == 'default':
         return None

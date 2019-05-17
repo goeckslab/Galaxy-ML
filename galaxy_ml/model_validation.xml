@@ -109,12 +109,14 @@ selected_function = params['model_validation_functions']['selected_function']
 
 if selected_function == 'cross_validate':
     res = validator(pipeline, X, y, **options)
+    stat = {}
+    for k, v in res.items():
+        if k.startswith('test'):
+            stat['mean_' + k] = np.mean(v)
+            stat['std_' + k] = np.std(v)
+    res.update(stat)
     rval = pd.DataFrame(res)
-    col_rename = {}
-    for col in rval.columns:
-        if col.endswith('_primary'):
-            col_rename[col] = col[:-7] + primary_scoring
-    rval.rename(inplace=True, columns=col_rename)
+    rval = rval[sorted(rval.columns)]
 elif selected_function == 'cross_val_predict':
     predicted = validator(pipeline, X, y, **options)
     if len(predicted.shape) == 1:

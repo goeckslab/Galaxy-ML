@@ -924,9 +924,9 @@
     </conditional>
   </xml>
 
-  <xml name="cv_reduced">
+  <xml name="cv_reduced" token_label="Select the cv splitter">
     <conditional name="cv_selector">
-      <param name="selected_cv" type="select" label="Select the cv splitter:">
+      <param name="selected_cv" type="select" label="@LABEL@">
         <expand macro="cv_splitter"/>
       </param>
       <expand macro="cv_splitter_options"/>
