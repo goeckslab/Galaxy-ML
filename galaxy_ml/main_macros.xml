@@ -934,7 +934,7 @@
   </xml>
 
   <xml name="cv_n_splits" token_value="3" token_help="Number of folds. Must be at least 2.">
-    <param argument="n_splits" type="integer" value="@VALUE@" min="2" label="n_splits" help="@HELP@"/>
+    <param argument="n_splits" type="integer" value="@VALUE@" min="1" label="n_splits" help="@HELP@"/>
   </xml>
 
   <xml name="cv_shuffle">
