@@ -62,7 +62,7 @@ def _eval_search_params(params_builder):
             search_list = search_list[1:].strip()
             # TODO maybe add regular express check
             ev = safe_eval_es(search_list)
-            preprocessors = (
+            preprocessings = (
                 preprocessing.StandardScaler(), preprocessing.Binarizer(),
                 preprocessing.Imputer(), preprocessing.MaxAbsScaler(),
                 preprocessing.Normalizer(), preprocessing.MinMaxScaler(),
@@ -133,21 +133,21 @@ def _eval_search_params(params_builder):
                 if obj is None:
                     newlist.append(None)
                 elif obj == 'all_0':
-                    newlist.extend(preprocessors[0:36])
+                    newlist.extend(preprocessings[0:36])
                 elif obj == 'sk_prep_all':      # no KernalCenter()
-                    newlist.extend(preprocessors[0:8])
+                    newlist.extend(preprocessings[0:8])
                 elif obj == 'fs_all':
-                    newlist.extend(preprocessors[8:15])
+                    newlist.extend(preprocessings[8:15])
                 elif obj == 'decomp_all':
-                    newlist.extend(preprocessors[15:26])
+                    newlist.extend(preprocessings[15:26])
                 elif obj == 'k_appr_all':
-                    newlist.extend(preprocessors[26:30])
+                    newlist.extend(preprocessings[26:30])
                 elif obj == 'reb_all':
-                    newlist.extend(preprocessors[31:36])
+                    newlist.extend(preprocessings[31:36])
                 elif obj == 'imb_all':
-                    newlist.extend(preprocessors[36:55])
-                elif type(obj) is int and -1 < obj < len(preprocessors):
-                    newlist.append(preprocessors[obj])
+                    newlist.extend(preprocessings[36:55])
+                elif type(obj) is int and -1 < obj < len(preprocessings):
+                    newlist.append(preprocessings[obj])
                 elif hasattr(obj, 'get_params'):       # user uploaded object
                     if 'n_jobs' in obj.get_params():
                         newlist.append(obj.set_params(n_jobs=N_JOBS))
@@ -238,6 +238,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     optimizer = params['search_schemes']['selected_search_scheme']
     optimizer = getattr(model_selection, optimizer)
 
+    # handle gridsearchcv options
     options = params['search_schemes']['options']
 
     splitter, groups = get_cv(options.pop('cv_selector'))
@@ -257,21 +258,27 @@ def main(inputs, infile_estimator, infile1, infile2,
     with open(infile_estimator, 'rb') as estimator_handler:
         estimator = load_model(estimator_handler)
 
+    # handle memory
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
     # cache iraps_core fits could increase search speed significantly
     if estimator.__class__.__name__ == 'IRAPSClassifier':
         estimator.set_params(memory=memory)
     else:
+        # For iraps buried in pipeline
         for p, v in estimator.get_params().items():
             if p.endswith('memory'):
+                # for case of `__irapsclassifier__memory`
                 if len(p) > 8 and p[:-8].endswith('irapsclassifier'):
                     # cache iraps_core fits could increase search
                     # speed significantly
                     new_params = {p: memory}
                     estimator.set_params(**new_params)
+                # security reason, we don't want memory being
+                # modified unexpectedly
                 elif v:
                     new_params = {p, None}
                     estimator.set_params(**new_params)
+            # For now, 1 CPU is suggested for iprasclassifier
             elif p.endswith('n_jobs'):
                 new_params = {p: 1}
                 estimator.set_params(**new_params)
@@ -341,6 +348,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                     train_test_split(X, y, **split_options)
         # end train_test_split
 
+        # shared by both train_test_split and non-split
         if options['error_score'] == 'raise':
             searcher.fit(X, y, groups=groups)
         else:
@@ -353,6 +361,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                 for warning in w:
                     print(repr(warning.message))
 
+        # no outer split
         if split_mode == 'no':
             # save results
             cv_results = pandas.DataFrame(searcher.cv_results_)
@@ -360,7 +369,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
                               header=True, index=False)
 
-        # output test result using best_estimator_
+        # train_test_split, output test result using best_estimator_
         else:
             best_estimator_ = searcher.best_estimator_
             scorer_ = searcher.scorer_
@@ -369,8 +378,6 @@ def main(inputs, infile_estimator, infile1, infile2,
             else:
                 is_multimetric = False
 
-            print(best_estimator_)
-            print(scorer_)
             test_score = _score(best_estimator_, X_test,
                                 y_test, scorer_,
                                 is_multimetric=is_multimetric)
