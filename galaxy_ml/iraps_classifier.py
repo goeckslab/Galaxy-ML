@@ -28,6 +28,7 @@ from sklearn.base import (BaseEstimator, clone, RegressorMixin,
 from sklearn.externals import six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
+from sklearn.model_selection._search import BaseSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.utils import as_float_array, check_X_y
 from sklearn.utils._joblib import Parallel, delayed
@@ -436,6 +437,9 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         # support pipeline object
         if isinstance(clf, Pipeline):
             main_estimator = clf.steps[-1][-1]
+        # support GridSearchCV/RandomSearchCV
+        elif isinstance(clf, BaseSearchCV):
+            main_estimator = clf.best_estimator_
         # support stacking ensemble estimators
         # TODO support nested pipeline/stacking estimators
         elif clf_name in ['StackingCVClassifier', 'StackingClassifier']:

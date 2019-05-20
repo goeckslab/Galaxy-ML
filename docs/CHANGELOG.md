@@ -1,3 +1,19 @@
+### Version 0.6.1 / tool_main: 1.0.6.1 / keras: 0.2.0 (05-13-2019)
+
+#### New Features
+
+- Adds `BinarizeTargetTransformer`.
+- Adds support of binarize_scorers to `BaseSearchCV`.
+
+#### Changes
+
+-
+
+#### Bug Fixes
+
+-
+
+
 ### Version 0.6.0 / tool_main: 1.0.6.0 / keras: 0.2.0 (05-13-2019)
 
 #### New Features
@@ -15,7 +31,7 @@
 
 #### Bug Fixes
 
-- Fixes `train_test_split` doesn't work with `default` scoring.
+- Fixes `train_test_split` which didn't work with `default` scoring.
 
 
 ### Version 0.5.0 / tool_main: 1.0.0.5 / keras: 0.2.0 (05-13-2019)
