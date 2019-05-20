@@ -23,7 +23,8 @@ import warnings
 from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn import metrics
-from sklearn.base import BaseEstimator, clone, RegressorMixin
+from sklearn.base import (BaseEstimator, clone, RegressorMixin,
+                          TransformerMixin)
 from sklearn.externals import six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
@@ -567,3 +568,86 @@ regression_auc_scorer = binarize_auc_scorer
 
 # average_precision_scorer
 regression_average_precision_scorer = binarize_average_precision_scorer
+
+
+class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
+    """
+    Extend transformaer to work for binarized target.
+
+    Parameters
+    ----------
+    transformer: object
+        Estimator object such as derived from sklearn `TransformerMixin`,
+        including feature_selector and preprocessor
+
+    z_score: float, default=-1.0
+        Threshold value based on z_score. Will be ignored when
+        fixed_value is set
+
+    value: float, default=None
+        Threshold value
+
+    less_is_positive: boolean, default=True
+        When target is less the threshold value, it will be converted
+        to True, False otherwise.
+
+    Attributes
+    ----------
+    transformer_: object
+        Fitted regressor
+
+    discretize_value: float
+        The threshold value used to discretize True and False targets
+    """
+    def __init__(self, transformer, z_score=-1, value=None,
+                 less_is_positive=True):
+        self.transformer = transformer
+        self.z_score = z_score
+        self.value = value
+        self.less_is_positive = less_is_positive
+
+    def fit(self, X, y):
+        """
+        Convert y to True and False labels and then fit the transformer
+        with X and new y
+
+        Returns
+        ------
+        self: object
+        """
+        y = check_array(y, accept_sparse=False, force_all_finite=True,
+                        ensure_2d=False, dtype='numeric')
+        y = column_or_1d(y)
+
+        if self.value is None:
+            discretize_value = y.mean() + y.std() * self.z_score
+        else:
+            discretize_value = self.Value
+        self.discretize_value = discretize_value
+
+        if self.less_is_positive:
+            y_trans = y < discretize_value
+        else:
+            y_trans = y > discretize_value
+
+        self.transformer_ = clone(self.transformer)
+
+        self.transformer_.fit(X, y_trans)
+
+        return self
+
+    def transform(self, X):
+        """Transform X
+
+        Parameters
+        ----------
+        X : array of shape [n_samples, n_features]
+
+        Returns
+        -------
+        X_r : array
+        """
+        check_is_fitted(self, 'transformer_')
+        X = check_array(X, dtype=None, accept_sparse='csr')
+
+        return self.transformer_.transform(X)
