@@ -22,7 +22,7 @@
 - Adds `BinarizeTargetClassifier`.classifier_, `BinarizeTargetRegressor`.regressor_ and `IRAPSClassifier`.get_signature() in estimator_attributes tool.
 - Reformat the output of `corss_validate`.
 - Adds `KerasBatchClassifier`.
-- Makes `KerasGClassifier` and `KerasGRegressor` support multi-dimension array. 
+- Makes `KerasGClassifier` and `KerasGRegressor` support multi-dimension array.
 
 #### Changes
 
