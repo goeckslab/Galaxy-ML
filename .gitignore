@@ -4,7 +4,7 @@ Galaxy-ML/*.pyc
 Galaxy-ML/tests/*.pyc
 
 # Notebook
-*.ipynb
+#*.ipynb
 
 #
 .DS_Store
