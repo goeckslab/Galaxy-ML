@@ -1,9 +1,10 @@
-### Version 0.6.1 / tool_main: 1.0.6.1 / keras: 0.2.0 (05-13-2019)
+### Version 0.6.2 / tool_main: 1.0.6.2 / keras: 0.2.0 (05-13-2019)
 
 #### New Features
 
 - Adds `BinarizeTargetTransformer`.
 - Adds support of binarize_scorers to `BaseSearchCV`.
+- Adds `sklearn.ensemble.VotingClassifier` and `VotingRegressor` (will be available sklearn v0.21).
 
 #### Changes
 
