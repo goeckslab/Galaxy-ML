@@ -1,4 +1,4 @@
-### Version 0.6.2 / tool_main: 1.0.6.2 / keras: 0.2.0 (05-13-2019)
+### Version 0.6.3 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-21-2019)
 
 #### New Features
 
@@ -8,7 +8,7 @@
 
 #### Changes
 
--
+- Pumps `stacking_ensembles` too to version 0.2.0
 
 #### Bug Fixes
 
