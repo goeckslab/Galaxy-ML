@@ -11,7 +11,6 @@ from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing.data import _handle_zeros_in_scale
 from sklearn.utils import check_array, safe_indexing
-from sklearn.utils.fixes import nanpercentile
 from sklearn.utils.validation import (check_is_fitted, check_X_y,
                                       FLOAT_DTYPES)
 try:
@@ -109,7 +108,7 @@ def _get_quantiles(X, quantile_range):
             column_data[:len(column_nnz_data)] = column_nnz_data
         else:
             column_data = X[:, feature_idx]
-        quantiles.append(nanpercentile(column_data, quantile_range))
+        quantiles.append(np.nanpercentile(column_data, quantile_range))
 
     quantiles = np.transpose(quantiles)
 
@@ -146,7 +145,7 @@ class TDMScaler(BaseEstimator, TransformerMixin):
                              % (str(self.q_lower), str(self.q_upper)))
 
         # TODO sparse data
-        quantiles = nanpercentile(X, (self.q_lower, self.q_upper))
+        quantiles = np.nanpercentile(X, (self.q_lower, self.q_upper))
         iqr = quantiles[1] - quantiles[0]
 
         self.q_lower_ = quantiles[0]
@@ -173,7 +172,7 @@ class TDMScaler(BaseEstimator, TransformerMixin):
         train_upper_scale = (self.max_ - self.q_upper_) / self.iqr_
         train_lower_scale = (self.q_lower_ - self.min_) / self.iqr_
 
-        test_quantiles = nanpercentile(X, (self.q_lower, self.q_upper))
+        test_quantiles = np.nanpercentile(X, (self.q_lower, self.q_upper))
         test_iqr = _handle_zeros_in_scale(
             test_quantiles[1] - test_quantiles[0], copy=False)
 
