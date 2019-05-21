@@ -1751,6 +1751,20 @@
     </conditional>
   </xml>
 
+  <xml name="stacking_voting_weights">
+    <section name="options" title="Advanced Options" expanded="false">
+        <param argument="weights" type="text" value="[]" optional="true" help="Sequence of weights (float or int). Uses uniform weights if None (`[]`).">
+          <sanitizer>
+            <valid initial="default">
+              <add value="["/>
+              <add value="]"/>
+            </valid>
+          </sanitizer>
+        </param>
+        <yield/>
+    </section>
+  </xml>
+
   <!-- Outputs -->
 
   <xml name="output">
