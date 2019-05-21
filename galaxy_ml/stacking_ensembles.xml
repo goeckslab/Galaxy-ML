@@ -1,11 +1,11 @@
-<tool id="stacking_ensemble_models" name="Stacking Ensemble Models" version="0.1.0">
+<tool id="stacking_ensemble_models" name="Stacking Ensemble Models" version="@ENSEMBLE_VERSION@">
     <description>builds a strong model by stacking multiple algorithms</description>
     <macros>
         <import>main_macros.xml</import>
     </macros>
     <expand macro="python_requirements"/>
     <expand macro="macro_stdio"/>
-    <version_command>echo "$version"</version_command>
+    <version_command>echo "$ENSEMBLE_VERSION"</version_command>
     <command>
         <![CDATA[
         #for $i, $base in enumerate($base_est_builder)
