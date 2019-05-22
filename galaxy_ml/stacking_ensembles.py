@@ -54,7 +54,8 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
             model = get_estimator(estimator_json)
 
         if estimator_type.startswith('sklearn'):
-            named = model.__class__.__name__
+            named = model.__class__.__name__.lower()
+            named = 'base_%d_%s' % (idx, named)
             base_estimators.append((named, model))
         else:
             base_estimators.append(model)
