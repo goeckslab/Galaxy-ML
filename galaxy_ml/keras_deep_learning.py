@@ -2,8 +2,8 @@ import keras
 
 from ast import literal_eval
 from keras.models import Sequential, Model
-from keras_galaxy_models import KerasGClassifier, KerasGRegressor
 from sklearn.externals import six
+from utils import try_get_attr
 
 
 def _handle_shape(literal):
@@ -225,10 +225,8 @@ if __name__ == '__main__':
             estimator.load_weights(infile_weights)
         # build train model
         else:
-            if inputs['mode_selection']['learning_type'] == 'keras_classifier':
-                klass = KerasGClassifier
-            else:
-                klass = KerasGRegressor
+            cls_name = inputs['mode_selection']['learning_type']
+            klass = try_get_attr('keras_galaxy_models', cls_name)
 
             options['loss'] = (inputs['mode_selection']
                                ['compile_params']['loss'])

@@ -22,7 +22,6 @@ import pprint
 import skrebate
 import sys
 import warnings
-from mlxtend import classifier, regressor
 from sklearn import (
     cluster, compose, decomposition, ensemble, feature_extraction,
     feature_selection, gaussian_process, kernel_approximation, metrics,
@@ -32,9 +31,8 @@ from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
 
 sys.path.insert(0, '$__tool_directory__')
-
 from utils import SafeEval, feature_selector, get_estimator, try_get_attr
-from preprocessors import Z_RandomOverSampler
+
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
@@ -110,6 +108,8 @@ def get_component(input_json, check_none=False):
         if algorithm == 'over_sampling.SMOTENC':
             obj = over_sampling.SMOTENC(categorical_features=[])
         elif algorithm == 'Z_RandomOverSampler':
+            Z_RandomOverSampler = try_get_attr('preprocessors',
+                                               'Z_RandomOverSampler')
             obj = Z_RandomOverSampler()
         else:
             globals = algorithm.split('.')

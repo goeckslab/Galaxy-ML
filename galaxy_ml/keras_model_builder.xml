@@ -32,8 +32,8 @@
       <when value="train_model">
         <param name="infile_json" type="data" format="json" label="Select the dataset containing model configurations (JSON)"/>
         <param name="learning_type" type="select" label="Do classification or regression?">
-          <option value="keras_classifier">KerasGClassifier</option>
-          <option value="keras_regressor">KerasGRegressor</option>
+          <option value="KerasGClassifier">KerasGClassifier</option>
+          <option value="KerasGRegressor">KerasGRegressor</option>
         </param>
         <section name="compile_params" title="Compile Parameters" expanded="true">
           <param name="loss" type="select" label="Select a loss function">
@@ -127,7 +127,7 @@
     <test>
       <conditional name="mode_selection">
         <param name="infile_json" value="keras01.json" ftype="json"/>
-        <param name="learning_type" value="keras_regressor"/>
+        <param name="learning_type" value="KerasGRegressor"/>
         <section name="fit_params">
           <param name="epochs" value="100"/>
         </section>

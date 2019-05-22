@@ -24,30 +24,6 @@ from sklearn import (
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
 
-try:
-    import iraps_classifier
-except ImportError:
-    pass
-
-try:
-    import model_validations
-except ImportError:
-    pass
-
-try:
-    import feature_selectors
-except ImportError:
-    pass
-
-try:
-    import preprocessors
-except ImportError:
-    pass
-
-try:
-    import keras_galaxy_models
-except ImportError:
-    pass
 
 # handle pickle white list file
 WL_FILE = __import__('os').path.join(
@@ -87,7 +63,10 @@ class _SafePickler(pickle.Unpickler, object):
         self.good_names = [
             'copy_reg._reconstructor', '__builtin__.object',
             '__builtin__.bytearray', 'builtins.object',
-            'builtins.bytearray', 'keras.engine.sequential.Sequential',
+            'builtins.bytearray']
+
+        self.keras_names = [
+            'keras.engine.sequential.Sequential',
             'keras.engine.sequential.Model']
 
         # custom module in Galaxy-ML
@@ -104,12 +83,17 @@ class _SafePickler(pickle.Unpickler, object):
 
         # custom module in Galaxy-ML
         if module in self.custom_modules:
-            cutom_module = sys.modules.get(module, None)
-            if cutom_module:
-                return getattr(cutom_module, name)
-            else:
-                raise pickle.UnpicklingError("Module %s' is not imported"
-                                             % module)
+            return try_get_attr(module, name)
+
+        fullname = module + '.' + name
+        # keras names
+        keras_names = self.keras_names
+        if fullname in keras_names:
+            # dynamic import, surppress message:
+            # "Using TensorFlow backend."
+            exec("import keras")
+            mod = sys.modules[module]
+            return getattr(mod, name)
 
         # For objects from outside libraries, it's necessary to verify
         # both module and name. Currently only a blacklist checker
@@ -118,7 +102,6 @@ class _SafePickler(pickle.Unpickler, object):
         good_names = self.good_names
         pk_whitelist = self.pk_whitelist
         if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-            fullname = module + '.' + name
             if (fullname in good_names)\
                 or (module.startswith(('sklearn.', 'xgboost.', 'skrebate.',
                                        'imblearn.', 'mlxtend.', 'numpy.'))
@@ -129,6 +112,7 @@ class _SafePickler(pickle.Unpickler, object):
                                     pk_whitelist['NUMPY_NAMES'] +
                                     pk_whitelist['IMBLEARN_NAMES'] +
                                     pk_whitelist['MLXTEND_NAMES'] +
+                                    keras_names +
                                     good_names):
                     # raise pickle.UnpicklingError
                     print("Warning: global %s is not in pickler whitelist "
@@ -610,8 +594,15 @@ def try_get_attr(module, name):
     -------
     class or function
     """
+    if module not in ('__main__', 'keras_galaxy_models',
+                      'feature_selectors', 'preprocessors',
+                      'iraps_classifier', 'model_validations'):
+        raise NameError("%s is recognized as a valid custom "
+                        "module in Galaxy-ML!" % module)
+
     mod = sys.modules.get(module, None)
-    if mod:
-        return getattr(mod, name)
-    else:
-        raise Exception("No module named %s." % module)
+    if not mod:
+        exec("import %s" % module)  # might raise ImportError
+        mod = sys.modules[module]
+
+    return getattr(mod, name)

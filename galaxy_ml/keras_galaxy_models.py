@@ -14,7 +14,6 @@ from keras import backend as K
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
-from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,

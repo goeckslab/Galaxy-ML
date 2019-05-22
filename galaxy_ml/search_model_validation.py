@@ -10,10 +10,6 @@ import sklearn
 import sys
 import xgboost
 import warnings
-import iraps_classifier
-import model_validations
-import preprocessors
-import feature_selectors
 from imblearn import under_sampling, over_sampling, combine
 from scipy.io import mmread
 from mlxtend import classifier, regressor
@@ -28,8 +24,7 @@ from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score, cross_validate
 
 from utils import (SafeEval, get_cv, get_scoring, get_X_y,
-                   load_model, read_columns)
-from model_validations import train_test_split
+                   load_model, read_columns, try_get_attr)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -325,6 +320,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                     header=True, index=False)
     else:
         if split_mode == 'train_test_split':
+            train_test_split = try_get_attr(
+                'model_validations', 'train_test_split')
             # make sure refit is choosen
             if not options['refit']:
                 raise ValueError("Refit must be `True` for shuffle splitting!")
