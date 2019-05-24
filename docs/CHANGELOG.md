@@ -5,6 +5,7 @@
 - Adds `BinarizeTargetTransformer`.
 - Adds support of binarize_scorers to `BaseSearchCV`.
 - Adds `sklearn.ensemble.VotingClassifier` and `VotingRegressor` (will be available sklearn v0.21).
+- Enhances security of `try_get_attr` by adding `check_def` argument.
 
 #### Changes
 

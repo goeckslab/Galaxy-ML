@@ -580,7 +580,7 @@ def get_search_params(estimator):
     return results
 
 
-def try_get_attr(module, name):
+def try_get_attr(module, name, check_def=True):
     """try to get attribute from a custom module
 
     Parameters
@@ -589,6 +589,10 @@ def try_get_attr(module, name):
         Module name
     name : str
         Attribute (class/function) name.
+
+    check_def : boolean
+        If true, only allow definded class or functional
+        in module file.
 
     Returns
     -------
@@ -604,5 +608,20 @@ def try_get_attr(module, name):
     if not mod:
         exec("import %s" % module)  # might raise ImportError
         mod = sys.modules[module]
+
+    # Make it strict, only allow Functiondef and Classdef names
+    # TODO: list all importable names in custom modules
+    # Apply this security check to pickle whitelist checker
+    if check_def:
+        mod_file = mod.__file__
+        with open(mod_file, 'rt') as f:
+            nodes = ast.parse(f.read(), filename=mod_file)
+        val_names = [x.name for x in nodes.body
+                     if isinstance(x, (ast.FunctionDef,
+                                       ast.ClassDef))]
+        if name not in val_names:
+            raise NameError("%s is not a defined class or "
+                            "function in module file %s"
+                            % (name, mod_file))
 
     return getattr(mod, name)
