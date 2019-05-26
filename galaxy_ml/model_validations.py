@@ -22,6 +22,9 @@ from sklearn.utils import check_random_state, indexable, safe_indexing
 from sklearn.utils.validation import _num_samples, check_array
 
 
+__all__ = ('train_test_split', 'OrderedKFold', 'RepeatedOrderedKFold')
+
+
 def _validate_shuffle_split(n_samples, test_size, train_size,
                             default_test_size=None):
     """

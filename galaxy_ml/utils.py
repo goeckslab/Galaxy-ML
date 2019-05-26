@@ -32,6 +32,11 @@ WL_FILE = __import__('os').path.join(
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
+__all__ = ('load_model', 'read_columns', 'feature_selector', 'get_X_y',
+           'SafeEval', 'get_estimator', 'get_cv', 'balanced_accuracy_score',
+           'get_scoring', 'get_search_params', 'check_def')
+
+
 class _SafePickler(pickle.Unpickler, object):
     """
     Used to safely deserialize scikit-learn model objects
@@ -580,7 +585,7 @@ def get_search_params(estimator):
     return results
 
 
-def try_get_attr(module, name, check_def=True):
+def try_get_attr(module, name):
     """try to get attribute from a custom module
 
     Parameters
@@ -589,10 +594,6 @@ def try_get_attr(module, name, check_def=True):
         Module name
     name : str
         Attribute (class/function) name.
-
-    check_def : boolean
-        If true, only allow definded class or functional
-        in module file.
 
     Returns
     -------
@@ -609,19 +610,39 @@ def try_get_attr(module, name, check_def=True):
         exec("import %s" % module)  # might raise ImportError
         mod = sys.modules[module]
 
-    # Make it strict, only allow Functiondef and Classdef names
-    # TODO: list all importable names in custom modules
-    # Apply this security check to pickle whitelist checker
-    if check_def:
-        mod_file = mod.__file__
-        with open(mod_file, 'rt') as f:
-            nodes = ast.parse(f.read(), filename=mod_file)
-        val_names = [x.name for x in nodes.body
-                     if isinstance(x, (ast.FunctionDef,
-                                       ast.ClassDef))]
-        if name not in val_names:
-            raise NameError("%s is not a defined class or "
-                            "function in module file %s"
-                            % (name, mod_file))
+    if hasattr(mod, '__all__') and name not in mod.__all__:
+        raise NameError("%s is not in __all__ of module %s"
+                        % (name, module))
 
     return getattr(mod, name)
+
+
+# Make it strict, only allow Functiondef and Classdef names
+# TODO: list all importable names in custom modules
+# Apply this security check to pickle whitelist checker
+def check_def(mod, name):
+    """ Check whether name is a defined function or class in the
+    module.
+
+    Parameters
+    ----------
+    mod : module name
+
+    name : str
+        Name of a class, function or variable
+
+    Returns
+    -------
+    Raise NameError if the name is not a defined function or class in
+    the module file.
+    """
+    mod_file = mod.__file__
+    with open(mod_file, 'rt') as f:
+        nodes = ast.parse(f.read(), filename=mod_file)
+    val_names = [x.name for x in nodes.body
+                 if isinstance(x, (ast.FunctionDef,
+                                   ast.ClassDef))]
+    if name not in val_names:
+        raise NameError("%s is not a defined class or "
+                        "function in module file %s"
+                        % (name, mod_file))

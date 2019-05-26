@@ -25,6 +25,10 @@ from sklearn.utils import check_X_y, safe_indexing, safe_sqr
 from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
 
 
+__all__ = ('DyRFE', 'DyRFECV', '_MyPipeline', '_MyimbPipeline',
+           'check_feature_importances')
+
+
 class DyRFE(RFE):
     """
     Mainly used with DyRFECV
@@ -303,7 +307,7 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
         return self
 
 
-class MyPipeline(pipeline.Pipeline):
+class _MyPipeline(pipeline.Pipeline):
     """
     Extend pipeline object to have feature_importances_ attribute
     """
@@ -322,7 +326,7 @@ class MyPipeline(pipeline.Pipeline):
         return self
 
 
-class MyimbPipeline(imbPipeline):
+class _MyimbPipeline(imbPipeline):
     """
     Extend imblance pipeline object to have feature_importances_ attribute
     """
@@ -349,9 +353,9 @@ def check_feature_importances(estimator):
     """
     if estimator.__class__.__module__ == 'sklearn.pipeline':
         pipeline_steps = estimator.get_params()['steps']
-        estimator = MyPipeline(pipeline_steps)
+        estimator = _MyPipeline(pipeline_steps)
     elif estimator.__class__.__module__ == 'imblearn.pipeline':
         pipeline_steps = estimator.get_params()['steps']
-        estimator = MyimbPipeline(pipeline_steps)
+        estimator = _MyimbPipeline(pipeline_steps)
     else:
         return estimator

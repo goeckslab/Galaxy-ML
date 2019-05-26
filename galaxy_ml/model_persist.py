@@ -48,6 +48,9 @@ _UNICODE = '-unicode-'
 PY_VERSION = sys.version.split(' ')[0]
 
 
+__all__ = ('JPicklerError', 'ModelToDict', 'DictToModel', 'dumpc', 'loadc')
+
+
 class JPicklerError(Exception):
     pass
 

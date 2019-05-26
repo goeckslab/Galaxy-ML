@@ -38,6 +38,11 @@ from sklearn.utils.validation import (check_array, check_is_fitted,
 
 VERSION = '0.1.1'
 
+__all__ = ('IRAPSCore', 'IRAPSClassifier', 'binarize_auc_scorer',
+           'binarize_average_precision_scorer', 'BinarizeTargetClassifier',
+           'BinarizeTargetRegressor', 'BinarizeTargetTransformer',
+           '_BinarizeTargetProbaScorer')
+
 
 class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
     """

@@ -33,6 +33,10 @@ except ImportError:
         pass
 
 
+__all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
+           'ImageBatchGenerator')
+
+
 class Z_RandomOverSampler(BaseOverSampler):
 
     def __init__(self, sampling_strategy='auto',

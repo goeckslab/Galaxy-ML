@@ -25,6 +25,10 @@ from sklearn.utils.validation import check_is_fitted
 from tensorflow import set_random_seed
 
 
+__all__ = ('check_params', 'SearchParam', 'KerasLayers', 'BaseKerasModel',
+           'KerasGClassifier', 'KerasGRegressor', 'KerasBatchClassifier')
+
+
 class BaseOptimizer(BaseEstimator):
     """
     Base wrapper for Keras Optimizers
