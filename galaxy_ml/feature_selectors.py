@@ -1,8 +1,6 @@
 """
 DyRFE
 DyRFECV
-MyPipeline
-MyimbPipeline
 check_feature_importances
 """
 import numpy as np
@@ -312,7 +310,7 @@ class _MyPipeline(pipeline.Pipeline):
     Extend pipeline object to have feature_importances_ attribute
     """
     def fit(self, X, y=None, **fit_params):
-        super(MyPipeline, self).fit(X, y, **fit_params)
+        super(_MyPipeline, self).fit(X, y, **fit_params)
         estimator = self.steps[-1][-1]
         if hasattr(estimator, 'coef_'):
             coefs = estimator.coef_
@@ -331,7 +329,7 @@ class _MyimbPipeline(imbPipeline):
     Extend imblance pipeline object to have feature_importances_ attribute
     """
     def fit(self, X, y=None, **fit_params):
-        super(MyimbPipeline, self).fit(X, y, **fit_params)
+        super(_MyimbPipeline, self).fit(X, y, **fit_params)
         estimator = self.steps[-1][-1]
         if hasattr(estimator, 'coef_'):
             coefs = estimator.coef_

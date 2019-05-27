@@ -1,4 +1,4 @@
-### Version 0.6.4 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-21-2019)
+### Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)
 
 #### New Features
 
@@ -6,6 +6,7 @@
 - Adds support of binarize_scorers to `BaseSearchCV`.
 - Adds `sklearn.ensemble.VotingClassifier` and `VotingRegressor` (will be available sklearn v0.21).
 - Enhances security of `try_get_attr` by adding `check_def` argument.
+- Adds `__all__` attribute together with `try_get_attr` to manage custom module and names.
 
 #### Changes
 
