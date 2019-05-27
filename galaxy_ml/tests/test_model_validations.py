@@ -1,26 +1,43 @@
-"""pytest
+"""Tests for `model_validations` module.
 """
-
 import warnings
 import pytest
+import pandas as pd
 import numpy as np
 
+from galaxy_ml.model_validations import (
+    train_test_split, OrderedKFold, RepeatedOrderedKFold)
+from galaxy_ml.model_validations import _fit_and_score
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
+
+from keras.callbacks import EarlyStopping
+from keras.models import Sequential
+from keras.layers import Dense
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.externals.six.moves import zip
+from sklearn.model_selection import _search
+from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.metrics import SCORERS
 from sklearn.utils.mocking import MockDataFrame
 from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import ignore_warnings
 
-from galaxy_ml.model_validations import (
-    train_test_split, OrderedKFold, RepeatedOrderedKFold)
 
+setattr(_search, '_fit_and_score', _fit_and_score)
 
 warnings.simplefilter('ignore')
 
 train_test_split.__test__ = False
 
-X = np.ones(10)
+df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+X = df.iloc[:, 0:8].values.astype(float)
+y = df.iloc[:, 8].values
+
+train_model = Sequential()
+train_model.add(Dense(12, input_dim=8, activation='relu'))
+train_model.add(Dense(1, activation='sigmoid'))
 
 
 def test_train_test_split_errors():
@@ -128,6 +145,7 @@ def test_train_test_split():
 
 @ignore_warnings
 def test_train_test_split_pandas():
+    X = np.ones(10)
     # check train_test_split doesn't destroy pandas dataframe
     types = [MockDataFrame]
     try:
@@ -156,6 +174,7 @@ def test_train_test_split_sparse():
 
 
 def test_train_test_split_mock_pandas():
+    X = np.ones(10)
     # X mock dataframe
     X_df = MockDataFrame(X)
     X_train, X_test = train_test_split(X_df)
@@ -257,3 +276,107 @@ def test_repeated_ordered_kfold():
                [0, 4, 9]]
 
     assert got2 == expect2, got2
+
+
+def test_fit_and_score():
+    X = np.arange(100).reshape((10, 10))
+    y = np.arange(10)
+    estimator = RandomForestRegressor(random_state=42)
+
+    scorer = SCORERS['r2']
+    train, test = next(KFold(n_splits=5).split(X, y))
+
+    parameters = {}
+    fit_params = {}
+
+    got1 = _fit_and_score(estimator, X, y, scorer, train, test,
+                          verbose=0, parameters=parameters,
+                          fit_params=fit_params)
+
+    expect1 = [-16.0]
+    assert expect1 == got1, got1
+
+    got2 = _fit_and_score(estimator, X, y, scorer, train, test,
+                          verbose=0, parameters=parameters,
+                          fit_params=fit_params,
+                          return_train_score=True)
+
+    expect2 = [0.97, -16.0]
+    assert expect2 == [round(x, 2) for x in got2], got2
+
+
+def test_fit_and_score_keras_model():
+    config = train_model.get_config()
+    regressor = KerasGClassifier(config, optimizer='adam',
+                                 metrics=[], batch_size=32,
+                                 epochs=30)
+
+    scorer = SCORERS['accuracy']
+    train, test = next(KFold(n_splits=5).split(X, y))
+    assert np.array_equal(test, np.arange(154)), test
+
+    new_params = {
+        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
+        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+    }
+    parameters = new_params
+    fit_params = {'shuffle': False}
+
+    got1 = _fit_and_score(regressor, X, y, scorer, train, test,
+                          verbose=0, parameters=parameters,
+                          fit_params=fit_params)
+
+    assert 0.57 <= round(got1[0], 2) <= 0.60, got1
+
+
+def test_fit_and_score_keras_model_callbacks():
+    config = train_model.get_config()
+    regressor = KerasGClassifier(config, optimizer='adam',
+                                 metrics=[], batch_size=32,
+                                 epochs=500)
+
+    scorer = SCORERS['accuracy']
+    train, test = next(KFold(n_splits=5).split(X, y))
+
+    new_params = {
+        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
+        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+    }
+    parameters = new_params
+    callbacks = [EarlyStopping()]
+    fit_params = {'shuffle': False, 'callbacks': callbacks}
+
+    got1 = _fit_and_score(regressor, X, y, scorer, train, test,
+                          verbose=0, parameters=parameters,
+                          fit_params=fit_params)
+
+    assert 0.56 <= round(got1[0], 2) <= 0.62, got1
+
+
+def test_fit_and_score_keras_model_in_gridsearchcv():
+    config = train_model.get_config()
+    regressor = KerasGClassifier(config, optimizer='adam',
+                                 metrics=[], batch_size=32,
+                                 epochs=10)
+
+    df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+    X = df.iloc[:, 0:8].values.astype(float)
+    y = df.iloc[:, 8].values
+
+    scorer = SCORERS['balanced_accuracy']
+    cv = KFold(n_splits=5)
+
+    new_params = {
+        'layers_0_Dense__config__kernel_initializer__config__seed': [0],
+        'layers_1_Dense__config__kernel_initializer__config__seed': [0]
+    }
+    fit_params = {'shuffle': False}
+
+    grid = GridSearchCV(regressor, param_grid=new_params, scoring=scorer,
+                        cv=cv, n_jobs=2, refit=False)
+
+    grid.fit(X, y, **fit_params)
+
+    got1 = grid.best_score_
+
+    assert 0.62 <= round(got1, 2) <= 0.64, got1

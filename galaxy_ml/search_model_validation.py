@@ -22,10 +22,14 @@ from sklearn import (cluster, compose, decomposition, ensemble,
 from sklearn.exceptions import FitFailedWarning
 from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score, cross_validate
+from sklearn.model_selection import _search
 
 from utils import (SafeEval, get_cv, get_scoring, get_X_y,
                    load_model, read_columns, try_get_attr)
 
+
+_fit_and_score = try_get_attr('model_validations', '_fit_and_score')
+setattr(_search, '_fit_and_score', _fit_and_score)
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = './cached'

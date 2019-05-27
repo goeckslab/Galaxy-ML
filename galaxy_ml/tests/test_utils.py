@@ -1,7 +1,7 @@
 import sys
 import os
-
 from nose.tools import raises
+
 
 galaxy_ml_folder = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(galaxy_ml_folder)
@@ -18,4 +18,3 @@ def test_try_get_attr_2():
     try_get_attr('sklearn.utils', 'check_X_y')
     try_get_attr('preprocessors', 'check_X_y')
     try_get_attr('preprocessors', '_get_quantiles')
-

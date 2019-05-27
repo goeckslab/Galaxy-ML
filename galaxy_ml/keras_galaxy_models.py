@@ -11,6 +11,9 @@ import numpy as np
 import tensorflow as tf
 from abc import ABCMeta
 from keras import backend as K
+from keras.callbacks import (EarlyStopping, LearningRateScheduler,
+                             TensorBoard, RemoteMonitor,
+                             ModelCheckpoint, TerminateOnNaN)
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
@@ -71,6 +74,30 @@ class KerasAdamax(Adamax, BaseOptimizer):
 
 
 class KerasNadam(Nadam, BaseOptimizer):
+    pass
+
+
+class KerasEarlyStopping(EarlyStopping, BaseEstimator):
+    pass
+
+
+class KerasLearningRateScheduler(LearningRateScheduler, BaseEstimator):
+    pass
+
+
+class KerasTensorBoard(TensorBoard, BaseEstimator):
+    pass
+
+
+class KerasRemoteMonitor(RemoteMonitor, BaseEstimator):
+    pass
+
+
+class KerasModelCheckpoint(ModelCheckpoint, BaseEstimator):
+    pass
+
+
+class KerasTerminateOnNaN(TerminateOnNaN, BaseEstimator):
     pass
 
 
@@ -660,7 +687,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """
     Scikit-learn classifier API for Keras
     """
-    def fit(self, X, y, class_weight=None, **kwargs):
+    def fit(self, X, y, class_weight=None, validation_data=None, **kwargs):
         """
         Parameters:
         -----------
@@ -679,8 +706,8 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
             raise ValueError('Invalid shape for y: ' + str(y.shape))
         self.n_classes_ = len(self.classes_)
 
-        if class_weight is not None:
-            kwargs['class_weight'] = class_weight
+        kwargs.update({'class_weight': class_weight,
+                       'validation_data': validation_data})
 
         return super(KerasGClassifier, self)._fit(X, y, **kwargs)
 
@@ -730,9 +757,11 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
     """
     Scikit-learn API wrapper for Keras regressor
     """
-    def fit(self, X, y, **kwargs):
+    def fit(self, X, y, validation_data=None, **kwargs):
         X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.fit)
+
+        kwargs.update({'validation_data': validation_data})
 
         return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
@@ -839,7 +868,7 @@ class KerasBatchClassifier(KerasGClassifier):
         self.predict_batch_generator = predict_batch_generator
         self.n_jobs = n_jobs
 
-    def fit(self, X, y, class_weight=None, **kwargs):
+    def fit(self, X, y, class_weight=None, validation_data=None, **kwargs):
         """ fit the model
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
@@ -857,6 +886,8 @@ class KerasBatchClassifier(KerasGClassifier):
 
         if class_weight is not None:
             kwargs['class_weight'] = class_weight
+
+        kwargs['validation_data'] = validation_data
 
         config = self.config
 
