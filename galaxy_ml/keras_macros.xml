@@ -947,4 +947,83 @@
 	</xml>
 
 
+	<!-- Keras CallBacks -->
+
+	<xml name="keras_callbacks">
+		<repeat name="callbacks" min="1" max="5" title="callback">
+			<conditional name="callback_selection">
+				<param name="callback_type" type="select" label="Choose a callback">
+					<option value="None" selected="true">None</option>
+					<option value="EarlyStopping">EarlyStopping -- Stop training when a monitored quantity has stopped improving</option>
+					<!--option value="KerasTensorBoard">TensorBoard</option-->
+					<!--option value="KerasLearningRateScheduler">LearningRateScheduler</option-->
+					<option value="RemoteMonitor">RemoteMonitor -- Stream events to a server</option>
+					<option value="ModelCheckpoint">ModelCheckpoint -- Save the model after every epoch</option>
+					<option value="TerminateOnNaN">TerminateOnNaN -- Terminates training when a NaN loss is encountered.</option>
+					<option value="ReduceLROnPlateau">ReduceLROnPlateau -- Reduce learning rate when a metric has stopped improving</option>
+					<option value="CSVLogger">CSVLogger -- Streams epoch results to a csv file</option>
+				</param>
+				<when value="None"/>
+				<when value="EarlyStopping">
+					<expand macro="keras_callback_common_options">
+						<param argument="min_delta" type="float" value="0" optional="true" help="Minimum change in the monitored quantity to qualify as an improvement."/>
+						<param argument="patience" type="integer" value="0" min="0" help="Number of epochs with no improvement after which training will be stopped."/>
+						<param argument="baseline" type="float" value="" optional="true" help="Baseline value for the monitored quantity to reach. Training will stop if the model doesn't show improvement over the baseline."/>
+						<param argument="restore_best_weights" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Whether to restore model weights from the epoch with the best value of the monitored quantity"/>
+					</expand>
+				</when>
+				<!--when value="TensorBoard">
+					<param argument="histogram_freq" />
+					<param argument="batch_size" />
+					<param argument="write_graph" />
+					<param argument="write_grads" />
+					<param argument="write_images" />
+					<param argument="embeddings_layer_names" />
+					<param argument="embeddings_metadata" />
+					<param argument="embeddings_data" />
+					<param argument="update_freq" />
+				</when-->
+				<when value="RemoteMonitor">
+					<param argument="root" type="text" value="http://localhost:9000" help="Root url of the target server."/>
+					<param argument="path" type="text" value="/publish/epoch/end/" help="Path relative to root to which the events will be sent. E.g., root + '/publish/epoch/end/'"/>
+					<param argument="field" type="text" value="data" optional="true" help="JSON field under which the data will be stored. The field is used only if the payload is sent within a form (i.e. send_as_json is set to False)."/>
+					<param argument="headers" type="text" value="" optional="true" help="Dictionary; optional custom HTTP headers."/>
+					<param argument="send_as_json" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Whether the request should be send as application/json."/>
+				</when>
+				<when value="ModelCheckpoint">
+					<expand macro="keras_callback_common_options">
+						<param argument="save_best_only" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="If True, the latest best model according to the quantity monitored will not be overwritten."/>
+						<param argument="save_weights_only" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="If True, then only the model's weights will be saved, else the full model is saved."/>
+						<param argument="period" type="integer" value="1" min="1" help="Interval (number of epochs) between checkpoints."/>
+					</expand>
+				</when>
+				<when value="TerminateOnNaN"/>
+				<when value="ReduceLROnPlateau">
+					<expand macro="keras_callback_common_options">
+						<param argument="factor" type="float" value="0.1" help="Factor by which the learning rate will be reduced. new_lr = lr * factor"/>
+						<param argument="patience" type="integer" value="10" help="Number of epochs with no improvement after which learning rate will be reduced."/>
+						<param argument="min_delta" type="float" value="0.0001" help="Threshold for measuring the new optimum, to only focus on significant changes."/>
+						<param argument="cooldown" type="integer" value="0" help="Number of epochs to wait before resuming normal operation after lr has been reduced."/>
+						<param argument="min_lr" type="float" value="0" help="Lower bound on the learning rate."/>
+					</expand>
+				</when>
+				<when value="CSVLogger"/>
+			</conditional>
+		</repeat>
+	</xml>
+
+	<xml name="keras_callback_common_options">
+		<param argument="monitor" type="select" help="Quantity to be monitored.">
+			<option value="val_loss" selected="true">val_loss</option>
+			<option value="loss">loss</option>
+		</param>
+		<param argument="mode" type="select">
+			<option value="auto" selected="true">auto -- the direction is automatically inferred from the name of the monitored quantity</option>
+			<option value="min">min -- training will stop when the quantity monitored has stopped decreasing</option>
+			<option value="max">max -- training will stop when the quantity monitored has stopped increasing</option>
+		</param>
+		<yield/>
+	</xml>
+
+
 </macros>

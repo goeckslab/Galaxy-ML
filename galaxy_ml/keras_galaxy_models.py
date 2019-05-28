@@ -3,17 +3,19 @@ Galaxy wrapper for using Scikit-learn API with Keras models
 
 Author: Qiang Gu
 Email: guqiang01@gmail.com
-Date: 4/11/2019
+2019 - 2020
 """
 
 import collections
+import keras
 import numpy as np
 import tensorflow as tf
 from abc import ABCMeta
 from keras import backend as K
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              TensorBoard, RemoteMonitor,
-                             ModelCheckpoint, TerminateOnNaN)
+                             ModelCheckpoint, TerminateOnNaN,
+                             CSVLogger)
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
@@ -28,7 +30,10 @@ from sklearn.utils.validation import check_is_fitted
 from tensorflow import set_random_seed
 
 
-__all__ = ('check_params', 'SearchParam', 'KerasLayers', 'BaseKerasModel',
+__all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
+           'KerasLearningRateScheduler', 'KerasRemoteMonitor',
+           'KerasModelCheckpoint', 'KerasTerminateOnNaN',
+           'check_params', 'SearchParam', 'KerasLayers', 'BaseKerasModel',
            'KerasGClassifier', 'KerasGRegressor', 'KerasBatchClassifier')
 
 
@@ -98,6 +103,10 @@ class KerasModelCheckpoint(ModelCheckpoint, BaseEstimator):
 
 
 class KerasTerminateOnNaN(TerminateOnNaN, BaseEstimator):
+    pass
+
+
+class KerasCSVLogger(CSVLogger, BaseEstimator):
     pass
 
 
@@ -332,6 +341,17 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     batch_size : int
         fit_param, from Keras
 
+    callbacks : None or list of dict
+        each dict contains one type of callback configuration.
+        e.g. {"callback_selection":
+                {"callback_type": "EarlyStopping",
+                 "monitor": "val_loss"
+                 "baseline": None,
+                 "min_delta": 0.0,
+                 "patience": 10,
+                 "mode": "auto",
+                 "restore_best_weights": False}}
+
     seed : None or int, default 0
         backend random seed
     """
@@ -340,7 +360,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  metrics=[], lr=None, momentum=None, decay=None,
                  nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=0, **fit_params):
+                 batch_size=None, seed=0, callbacks=None, **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -349,6 +369,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.epochs = epochs
         self.batch_size = batch_size
         self.seed = seed
+        self.callbacks = callbacks
         self.fit_params = fit_params
         # TODO support compile parameters
 
@@ -497,6 +518,51 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         return rval
 
+    @property
+    def generate_callbacks(self):
+        """ return list of callback objects from parameters.
+        suppose correct input format.
+
+        Notes
+        -----
+        For `filepath`, `log_dir`, `filename`,
+        if None, `os.getcwd()` is used.
+        """
+        if not self.callbacks:
+            return None
+
+        callbacks = []
+        for cb in self.callbacks:
+            params = cb['callback_selection']
+            callback_type = params.pop('callback_type')
+
+            curr_dir = __import__('os').getcwd()
+
+            if callback_type == 'None':
+                continue
+            elif callback_type == 'ModelCheckpoint':
+                if not params.get('filepath', None):
+                    params['filepath'] = \
+                        __import__('os').path.join(curr_dir, 'weights.hdf5')
+            elif callback_type == 'TensorBoard':
+                if not params.get('log_dir', None):
+                    params['log_dir'] = \
+                        __import__('os').path.join(curr_dir, 'logs')
+            elif callback_type == 'CSVLogger':
+                if not params:
+                    params['filename'] = \
+                        __import__('os').path.join(curr_dir, 'log.csv')
+                    params['separator'] = '\t'
+                    params['append'] = True
+
+            klass = getattr(keras.callbacks, callback_type)
+            obj = klass(**params)
+            callbacks.append(obj)
+
+        if not callbacks:
+            return None
+        return callbacks
+
     def _fit(self, X, y, **kwargs):
         config = self.config
 
@@ -519,8 +585,10 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             y = to_categorical(y)
 
         fit_params = self.fit_params
-        fit_params.update(
-            dict(epochs=self.epochs, batch_size=self.batch_size))
+        callbacks = self.generate_callbacks
+        fit_params.update(dict(epochs=self.epochs,
+                               batch_size=self.batch_size,
+                               callbacks=callbacks))
         fit_params.update(kwargs)
 
         # set tensorflow random seed

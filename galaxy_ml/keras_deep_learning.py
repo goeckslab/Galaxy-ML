@@ -181,6 +181,91 @@ def get_functional_model(config):
     return Model(inputs=input_layers, outputs=output_layers)
 
 
+def config_keras_model(inputs, outfile):
+    """ config keras model layers and output JSON
+
+    Parameters
+    ----------
+    inputs : dict
+        loaded galaxy tool parameters from `keras_model_config`
+        tool.
+    outfile : str
+        Path to galaxy dataset containing keras model JSON.
+    """
+    model_type = inputs['model_selection']['model_type']
+    layers_config = inputs['model_selection']
+
+    if model_type == 'sequential':
+        model = get_sequential_model(layers_config)
+    else:
+        model = get_functional_model(layers_config)
+
+    json_string = model.to_json()
+
+    with open(outfile, 'w') as f:
+        f.write(json_string)
+
+
+def build_keras_model(inputs, outfile, infile_json,
+                      infile_weights=None):
+    """ for `keras_model_builder` tool
+
+    Parameters
+    ----------
+    inputs : dict
+        loaded galaxy tool parameters from `keras_model_builder`
+        tool.
+    outfile : str
+        Path to galaxy dataset containing keras_galaxy model.
+    infile_json : str
+        Path to dataset containing keras model JSON
+    infile_weights : str or None
+        If string, path to dataset containing model weights.
+    """
+    with open(infile_json, 'r') as f:
+        json_model = json.load(f)
+
+    config = json_model['config']
+
+    options = {}
+
+    if json_model['class_name'] == 'Sequential':
+        options['model_type'] = 'sequential'
+        klass = Sequential
+    elif json_model['class_name'] == 'Model':
+        options['model_type'] = 'functional'
+        klass = Model
+    else:
+        raise ValueError("Unknow Keras model class: %s"
+                         % json_model['class_name'])
+
+    # load prefitted model
+    if inputs['mode_selection']['mode_type'] == 'prefitted':
+        estimator = klass.from_config(config)
+        estimator.load_weights(infile_weights)
+    # build train model
+    else:
+        cls_name = inputs['mode_selection']['learning_type']
+        klass = try_get_attr('keras_galaxy_models', cls_name)
+
+        options['loss'] = (inputs['mode_selection']
+                           ['compile_params']['loss'])
+        options['optimizer'] =\
+            (inputs['mode_selection']['compile_params']
+             ['optimizer_selection']['optimizer_type']).lower()
+
+        options.update((inputs['mode_selection']['compile_params']
+                        ['optimizer_selection']['optimizer_options']))
+        options.update(inputs['mode_selection']['fit_params'])
+
+        estimator = klass(config, **options)
+
+    print(repr(estimator))
+    # save model by pickle
+    with open(outfile, 'wb') as f:
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+
+
 if __name__ == '__main__':
     import json
     import pickle
@@ -199,63 +284,14 @@ if __name__ == '__main__':
         infile_json = sys.argv[4]
     if len(sys.argv) > 5:
         infile_weights = sys.argv[5]
+    else:
+        infile_weights = None
 
     # for keras_model_builder tool
     if tool_id == 'keras_model_builder':
-        with open(infile_json, 'r') as f:
-            json_model = json.load(f)
-
-        config = json_model['config']
-
-        options = {}
-
-        if json_model['class_name'] == 'Sequential':
-            options['model_type'] = 'sequential'
-            klass = Sequential
-        elif json_model['class_name'] == 'Model':
-            options['model_type'] = 'functional'
-            klass = Model
-        else:
-            raise ValueError("Unknow Keras model class: %s"
-                             % json_model['class_name'])
-
-        # load prefitted model
-        if inputs['mode_selection']['mode_type'] == 'prefitted':
-            estimator = klass.from_config(config)
-            estimator.load_weights(infile_weights)
-        # build train model
-        else:
-            cls_name = inputs['mode_selection']['learning_type']
-            klass = try_get_attr('keras_galaxy_models', cls_name)
-
-            options['loss'] = (inputs['mode_selection']
-                               ['compile_params']['loss'])
-            options['optimizer'] =\
-                (inputs['mode_selection']['compile_params']
-                 ['optimizer_selection']['optimizer_type']).lower()
-
-            options.update((inputs['mode_selection']['compile_params']
-                            ['optimizer_selection']['optimizer_options']))
-            options.update(inputs['mode_selection']['fit_params'])
-
-            estimator = klass(config, **options)
-
-        print(repr(estimator))
-        # save model by pickle
-        with open(outfile, 'wb') as f:
-            pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+        build_keras_model(inputs, outfile, infile_json,
+                          infile_weights=infile_weights)
 
     # for keras_model_config tool
     else:
-        model_type = inputs['model_selection']['model_type']
-        layers_config = inputs['model_selection']
-
-        if model_type == 'sequential':
-            model = get_sequential_model(layers_config)
-        else:
-            model = get_functional_model(layers_config)
-
-        json_string = model.to_json()
-
-        with open(outfile, 'w') as f:
-            f.write(json_string)
+        config_keras_model(inputs, outfile)

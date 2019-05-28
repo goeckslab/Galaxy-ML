@@ -8,16 +8,19 @@ import warnings
 from keras.models import Sequential
 from keras import layers
 from keras.layers import Dense, Activation
+from sklearn.base import clone
+from sklearn.metrics import SCORERS
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from tensorflow import set_random_seed
+
 from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
     check_params, SearchParam, KerasLayers,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
     KerasBatchClassifier)
 from galaxy_ml.preprocessors import ImageBatchGenerator
+from galaxy_ml.model_validations import _fit_and_score
 
-from sklearn.base import clone
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
-from tensorflow import set_random_seed
 
 warnings.simplefilter('ignore')
 
@@ -724,3 +727,51 @@ def test_keras_batch_classifier_get_params():
             print("%s: %s" % (k, v))
 
     assert got == expect, got
+
+
+def test_keras_galaxy_model_callbacks():
+    config = train_model.get_config()
+
+    cbacks = [
+        {'callback_selection':
+            {'monitor': 'val_loss', 'min_delta': 0.001,
+             'callback_type': 'ReduceLROnPlateau',
+             'min_lr': 0.0, 'patience': 10, 'cooldown': 0,
+             'mode': 'auto', 'factor': 0.2}},
+        {'callback_selection':
+            {'callback_type': 'TerminateOnNaN'}},
+        {'callback_selection':
+            {'callback_type': 'CSVLogger',
+             'filename': './tests/log.cvs',
+             'separator': '\t', 'append': True}},
+        {'callback_selection':
+            {'baseline': None, 'min_delta': 0.,
+             'callback_type': 'EarlyStopping', 'patience': 10,
+             'mode': 'auto', 'restore_best_weights': True,
+             'monitor': 'val_loss'}},
+        {'callback_selection':
+            {'monitor': 'val_loss', 'save_best_only': True,
+             'period': 1, 'save_weights_only': True,
+             'filepath': './tests/weights.hdf5',
+             'callback_type': 'ModelCheckpoint', 'mode': 'auto'}}]
+
+    regressor = KerasGClassifier(config, optimizer='adam',
+                                 metrics=[], batch_size=32,
+                                 epochs=500,
+                                 callbacks=cbacks)
+
+    scorer = SCORERS['accuracy']
+    train, test = next(KFold(n_splits=5).split(X, y))
+
+    new_params = {
+        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
+        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+    }
+    parameters = new_params
+    fit_params = {'shuffle': False}
+
+    got1 = _fit_and_score(regressor, X, y, scorer, train, test,
+                          verbose=0, parameters=parameters,
+                          fit_params=fit_params)
+
+    assert 0.69 <= round(got1[0], 2) <= 0.74, got1

@@ -111,6 +111,7 @@
         <section name="fit_params" title="Fit Parameters" expanded="true">
           <param name="epochs" type="integer" value="1" min="1" label="epochs"/>
           <param name="batch_size" type="integer" value="" optional="true" label="batch_size" help="Integer or blank for None"/>
+          <expand macro="keras_callbacks"/>
         </section>
         <param name="random_seed" type="integer" value="0" label="Random Seed" help="Integer or blank for None"/>
       </when>
