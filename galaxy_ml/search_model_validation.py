@@ -232,7 +232,8 @@ def main(inputs, infile_estimator, infile1, infile2,
             sep='\t',
             header=header,
             parse_dates=True)
-    y = y.ravel()
+    if len(y.shape) == 2 and y.shape[1] == 1:
+        y = y.ravel()
 
     optimizer = params['search_schemes']['selected_search_scheme']
     optimizer = getattr(model_selection, optimizer)

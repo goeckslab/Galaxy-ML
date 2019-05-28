@@ -1,10 +1,10 @@
 <tool id="keras_model_builder" name="Keras Model Builder" version="@VERSION@">
   <description>constructs a deep learning model with sciki-learn APIs</description>
   <macros>
-		<import>main_macros.xml</import>
+    <import>main_macros.xml</import>
     <import>keras_macros.xml</import>
   </macros>
-	<expand macro="python_requirements"/>
+  <expand macro="python_requirements"/>
   <expand macro="macro_stdio"/>
   <version_command>echo "@VERSION@"</version_command>
   <command>
@@ -37,6 +37,7 @@
         </param>
         <section name="compile_params" title="Compile Parameters" expanded="true">
           <param name="loss" type="select" label="Select a loss function">
+            <option value="binary_crossentropy" selected="true">binary_crossentropy</option>
             <option value="mean_squared_error">mse / MSE/ mean_squared_error</option>
             <option value="mean_absolute_error">mae / MAE / mean_absolute_error</option>
             <option value="mean_absolute_percentage_error">mape / MAPE / mean_absolute_percentage_error</option>
@@ -45,9 +46,8 @@
             <option value="hinge">hinge</option>
             <option value="categorical_hinge">categorical_hinge</option>
             <option value="logcosh">logcosh</option>
-            <option value="categorical_crossentropy" selected="true">categorical_crossentropy</option>
+            <option value="categorical_crossentropy">categorical_crossentropy</option>
             <option value="sparse_categorical_crossentropy">sparse_categorical_crossentropy</option>
-            <option value="binary_crossentropy">binary_crossentropy</option>
             <option value="kullback_leibler_divergence">kld / KLD / kullback_leibler_divergence</option>
             <option value="poisson">poisson</option>
             <option value="cosine_proximity">cosine / cosine_proximity</option>
@@ -111,6 +111,7 @@
         <section name="fit_params" title="Fit Parameters" expanded="true">
           <param name="epochs" type="integer" value="1" min="1" label="epochs"/>
           <param name="batch_size" type="integer" value="" optional="true" label="batch_size" help="Integer or blank for None"/>
+          <param name="validation_freq" type="integer" value="1" optional="true" label="validation_freq" help="Integer only at current moment. If an integer, specifies how many training epochs to run before a new validation run is performed."/>
           <expand macro="keras_callbacks"/>
         </section>
         <param name="random_seed" type="integer" value="0" label="Random Seed" help="Integer or blank for None"/>
@@ -120,7 +121,7 @@
         <param name="infile_weights" type="data" format="h5" label="Select the dataset containing keras layers weights"/>
       </when>
     </conditional>
-	</inputs>
+  </inputs>
   <outputs>
     <data format="zip" name="outfile" label="Keras Model Builder  on ${on_string}"/>
   </outputs>
@@ -135,7 +136,7 @@
       </conditional>
       <output name="outfile" file="keras_model01" compare="sim_size" delta="5"/>
     </test>
-		<test>
+    <test>
       <conditional name="mode_selection">
         <param name="infile_json" value="keras02.json" ftype="json"/>
         <section name="compile_params">

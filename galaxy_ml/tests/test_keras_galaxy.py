@@ -11,6 +11,7 @@ from keras.layers import Dense, Activation
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.model_selection import _search
 from tensorflow import set_random_seed
 
 from galaxy_ml.keras_galaxy_models import (
@@ -755,7 +756,7 @@ def test_keras_galaxy_model_callbacks():
              'filepath': './tests/weights.hdf5',
              'callback_type': 'ModelCheckpoint', 'mode': 'auto'}}]
 
-    regressor = KerasGClassifier(config, optimizer='adam',
+    estimator = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
                                  epochs=500,
                                  callbacks=cbacks)
@@ -770,8 +771,55 @@ def test_keras_galaxy_model_callbacks():
     parameters = new_params
     fit_params = {'shuffle': False}
 
-    got1 = _fit_and_score(regressor, X, y, scorer, train, test,
+    got1 = _fit_and_score(estimator, X, y, scorer, train, test,
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
     assert 0.69 <= round(got1[0], 2) <= 0.74, got1
+
+
+def test_keras_galaxy_model_callbacks_girdisearch():
+
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    GridSearchCV = getattr(_search, 'GridSearchCV')
+
+    config = train_model.get_config()
+    cbacks = [
+        {'callback_selection':
+            {'monitor': 'val_loss', 'min_delta': 0.001,
+             'callback_type': 'ReduceLROnPlateau',
+             'min_lr': 0.0, 'patience': 10, 'cooldown': 0,
+             'mode': 'auto', 'factor': 0.2}},
+        {'callback_selection':
+            {'callback_type': 'TerminateOnNaN'}},
+        {'callback_selection':
+            {'callback_type': 'CSVLogger',
+             'filename': './tests/log.cvs',
+             'separator': '\t', 'append': True}},
+        {'callback_selection':
+            {'baseline': None, 'min_delta': 0.,
+             'callback_type': 'EarlyStopping', 'patience': 10,
+             'mode': 'auto', 'restore_best_weights': True,
+             'monitor': 'val_loss'}}]
+    estimator = KerasGClassifier(config, optimizer='adam',
+                                 metrics=[], batch_size=32,
+                                 epochs=500,
+                                 callbacks=cbacks)
+
+    scorer = SCORERS['balanced_accuracy']
+    cv = KFold(n_splits=5)
+
+    new_params = {
+        'layers_0_Dense__config__kernel_initializer__config__seed': [0],
+        'layers_1_Dense__config__kernel_initializer__config__seed': [0]
+    }
+    fit_params = {'shuffle': False}
+
+    grid = GridSearchCV(estimator, param_grid=new_params, scoring=scorer,
+                        cv=cv, n_jobs=2, refit=False, error_score=np.NaN)
+
+    grid.fit(X, y, **fit_params)
+
+    got1 = grid.best_score_
+
+    assert 0.65 <= round(got1, 2) <= 0.70, got1
