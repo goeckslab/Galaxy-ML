@@ -259,7 +259,6 @@ class RepeatedOrderedKFold(_RepeatedSplits):
 #####################################################################
 #####################################################################
 
-import inspect
 import numbers
 import time
 from sklearn.exceptions import FitFailedWarning
@@ -363,18 +362,20 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
     ##########################################################
     # Changes on sklearn.model_selection._search
-    valid_fit_args = inspect.getfullargspec(estimator.fit).args
+    estimator_params = estimator.get_params()
 
     try:
         if y_train is None:
             estimator.fit(X_train, **fit_params)
-        elif 'validation_data' not in valid_fit_args:
-            estimator.fit(X_train, y_train, **fit_params)
         else:
-            # for keras models
-            estimator.fit(X_train, y_train,
-                          validation_data=(X_test, y_test),
-                          **fit_params)
+            for param in estimator_params.keys():
+                # suppose work for both pipeline or single
+                # keras model
+                if param.endswith('validation_data'):
+                    fit_params.update(
+                        {param: (X_test, y_test)})
+                    break
+            estimator.fit(X_train, y_train, **fit_params)
     # Changes end
     ##########################################################
 

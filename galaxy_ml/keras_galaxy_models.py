@@ -15,7 +15,7 @@ from keras import backend as K
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              TensorBoard, RemoteMonitor,
                              ModelCheckpoint, TerminateOnNaN,
-                             CSVLogger)
+                             CSVLogger, ReduceLROnPlateau)
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
@@ -34,7 +34,7 @@ __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
            'KerasLearningRateScheduler', 'KerasRemoteMonitor',
            'KerasModelCheckpoint', 'KerasTerminateOnNaN',
            'check_params', 'SearchParam', 'KerasLayers', 'BaseKerasModel',
-           'KerasGClassifier', 'KerasGRegressor', 'KerasBatchClassifier')
+           'KerasGClassifier', 'KerasGRegressor', 'KerasGBatchClassifier')
 
 
 class BaseOptimizer(BaseEstimator):
@@ -342,7 +342,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         fit_param, from Keras
 
     callbacks : None or list of dict
-        each dict contains one type of callback configuration.
+        fit_param, each dict contains one type of callback configuration.
         e.g. {"callback_selection":
                 {"callback_type": "EarlyStopping",
                  "monitor": "val_loss"
@@ -352,6 +352,9 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "mode": "auto",
                  "restore_best_weights": False}}
 
+    validation_data : None or tuple of arrays, (X_test, y_test)
+        fit_param
+
     seed : None or int, default 0
         backend random seed
     """
@@ -360,7 +363,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  metrics=[], lr=None, momentum=None, decay=None,
                  nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=0, callbacks=None, **fit_params):
+                 batch_size=None, seed=0, callbacks=None,
+                 validation_data=None, **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -370,6 +374,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.batch_size = batch_size
         self.seed = seed
         self.callbacks = callbacks
+        self.validation_data = validation_data
         self.fit_params = fit_params
         # TODO support compile parameters
 
@@ -519,7 +524,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         return rval
 
     @property
-    def generate_callbacks(self):
+    def _callbacks(self):
         """ return list of callback objects from parameters.
         suppose correct input format.
 
@@ -586,9 +591,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         fit_params = self.fit_params
         callbacks = self.generate_callbacks
+        validation_data = self.validation_data
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
-                               callbacks=callbacks))
+                               callbacks=callbacks,
+                               validation_data=validation_data))
         fit_params.update(kwargs)
 
         # set tensorflow random seed
@@ -755,7 +762,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """
     Scikit-learn classifier API for Keras
     """
-    def fit(self, X, y, class_weight=None, validation_data=None, **kwargs):
+    def fit(self, X, y, class_weight=None, **kwargs):
         """
         Parameters:
         -----------
@@ -774,8 +781,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
             raise ValueError('Invalid shape for y: ' + str(y.shape))
         self.n_classes_ = len(self.classes_)
 
-        kwargs.update({'class_weight': class_weight,
-                       'validation_data': validation_data})
+        kwargs.update({'class_weight': class_weight})
 
         return super(KerasGClassifier, self)._fit(X, y, **kwargs)
 
@@ -825,11 +831,9 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
     """
     Scikit-learn API wrapper for Keras regressor
     """
-    def fit(self, X, y, validation_data=None, **kwargs):
+    def fit(self, X, y, **kwargs):
         X, y = check_X_y(X, y, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.fit)
-
-        kwargs.update({'validation_data': validation_data})
 
         return super(KerasGRegressor, self)._fit(X, y, **kwargs)
 
@@ -851,7 +855,7 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
         return -loss
 
 
-class KerasBatchClassifier(KerasGClassifier):
+class KerasGBatchClassifier(KerasGClassifier):
     """
     keras classifier with batch generator
 
@@ -862,7 +866,7 @@ class KerasBatchClassifier(KerasGClassifier):
 
     train_batch_generator: instance of batch generator
 
-    array_converter: instance of to_array class
+    to_array_converter: instance of to_array class
 
     train_batch_generator: instance of batch generator (default=None)
         if None, same as train_batch_generator
@@ -913,30 +917,47 @@ class KerasBatchClassifier(KerasGClassifier):
     batch_size : int
         fit_param, from Keras
 
+    callbacks : None or list of dict
+        each dict contains one type of callback configuration.
+        e.g. {"callback_selection":
+                {"callback_type": "EarlyStopping",
+                 "monitor": "val_loss"
+                 "baseline": None,
+                 "min_delta": 0.0,
+                 "patience": 10,
+                 "mode": "auto",
+                 "restore_best_weights": False}}
+
+    validation_data : None or tuple of arrays, (X_test, y_test)
+        fit_param
+
     seed : None or int, default 0
         backend random seed
     """
     def __init__(self, config, train_batch_generator,
-                 array_converter, predict_batch_generator=None,
+                 to_array_converter, predict_batch_generator=None,
                  model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None,
                  momentum=None, decay=None, nesterov=None, rho=None,
                  epsilon=None, amsgrad=None, beta_1=None,
                  beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=0, n_jobs=1, **fit_params):
-        super(KerasBatchClassifier, self).__init__(
+                 batch_size=None, seed=0, n_jobs=1,
+                 callbacks=None, validation_data=None,
+                 **fit_params):
+        super(KerasGBatchClassifier, self).__init__(
             config, model_type='sequential', optimizer='sgd',
             loss='binary_crossentropy', metrics=[], lr=None,
             momentum=None, decay=None, nesterov=None, rho=None,
             epsilon=None, amsgrad=None, beta_1=None, beta_2=None,
             schedule_decay=None, epochs=1, batch_size=None,
-            seed=0, **fit_params)
+            seed=0, callbacks=callbacks,
+            validation_data=validation_data, **fit_params)
         self.train_batch_generator = train_batch_generator
-        self.array_converter = array_converter
+        self.to_array_converter = to_array_converter
         self.predict_batch_generator = predict_batch_generator
         self.n_jobs = n_jobs
 
-    def fit(self, X, y, class_weight=None, validation_data=None, **kwargs):
+    def fit(self, X, y, class_weight=None, **kwargs):
         """ fit the model
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
@@ -954,8 +975,6 @@ class KerasBatchClassifier(KerasGClassifier):
 
         if class_weight is not None:
             kwargs['class_weight'] = class_weight
-
-        kwargs['validation_data'] = validation_data
 
         config = self.config
 
@@ -978,19 +997,27 @@ class KerasBatchClassifier(KerasGClassifier):
             y = to_categorical(y)
 
         fit_params = self.fit_params
+        batch_size = self.batch_size
+        epochs = self.epochs
+        n_jobs = self.n_jobs
+        validation_data = self.validation_data
+
+        fit_params.update(dict(
+            steps_per_epoch=X.shape[0]/batch_size,
+            epochs=epochs,
+            workers=n_jobs,
+            use_multiprocessing=n_jobs > 1,
+            validation_data=validation_data))
+
+        # kwargs from function `fit ` override object initiation values.
         fit_params.update(kwargs)
 
         # set tensorflow random seed
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
 
-        batch_size = self.batch_size
-        epochs = self.epochs
-        n_jobs = self.n_jobs
         self.model_.fit_generator(
             self.train_batch_generator.flow(X, y, batch_size=batch_size),
-            steps_per_epoch=X.shape[0]/batch_size, epochs=epochs,
-            workers=n_jobs, use_multiprocessing=True if n_jobs > 1 else False,
             **fit_params)
 
         return self
