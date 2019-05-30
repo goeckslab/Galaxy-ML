@@ -590,7 +590,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             y = to_categorical(y)
 
         fit_params = self.fit_params
-        callbacks = self.generate_callbacks
+        callbacks = self._callbacks
         validation_data = self.validation_data
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,

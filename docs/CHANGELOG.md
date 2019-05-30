@@ -7,11 +7,12 @@
 - Adds `sklearn.ensemble.VotingClassifier` and `VotingRegressor` (will be available sklearn v0.21).
 - Enhances security of `try_get_attr` by adding `check_def` argument.
 - Adds `__all__` attribute together with `try_get_attr` to manage custom module and names.
+- Adds keras callbacks. Now supports `EarlyStopping`, `RemoteMonitor`, `TerminateOnNaN`, `ReduceLROnPlateau` and partially support `ModelCheckpoint`, `CSVLogger`.
 
 #### Changes
 
 - Pumps `stacking_ensembles` too to version 0.2.0.
-- 
+- Changes `KerasBatchClassifier` to `KerasGBatchClassifier`.
 
 #### Bug Fixes
 

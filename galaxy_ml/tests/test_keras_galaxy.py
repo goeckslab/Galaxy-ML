@@ -18,7 +18,7 @@ from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
     check_params, SearchParam, KerasLayers,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
-    KerasBatchClassifier)
+    KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.model_validations import _fit_and_score
 
@@ -321,13 +321,15 @@ def test_get_params_base_keras_model():
 
     expect = {
         'amsgrad': None, 'batch_size': None,
-        'beta_1': None, 'beta_2': None, 'decay': 0,
+        'beta_1': None, 'beta_2': None,
+        'callbacks': None, 'decay': 0,
         'epochs': 1, 'epsilon': None,
         'loss': 'binary_crossentropy', 'lr': 0.01,
         'metrics': [], 'model_type': 'sequential',
         'momentum': 0, 'nesterov': False,
         'optimizer': 'sgd', 'rho': None,
-        'schedule_decay': None, 'seed': 0}
+        'schedule_decay': None, 'seed': 0,
+        'validation_data': None}
 
     assert got == expect, got
 
@@ -363,27 +365,32 @@ def test_get_params_keras_g_classifier():
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
     expect = [
-        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay',
-        'epochs', 'epsilon', 'loss', 'lr', 'metrics', 'model_type',
-        'momentum', 'nesterov', 'optimizer', 'rho', 'schedule_decay',
-        'seed', 'layers_0_Dense__config__kernel_initializer__config__seed',
+        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'callbacks',
+        'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
+        'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+        'rho', 'schedule_decay', 'seed', 'validation_data',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
 
 
 def test_gridsearchcv_keras_g_classifier():
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    GridSearchCV = getattr(_search, 'GridSearchCV')
+
     config = train_model.get_config()
-    classifier = KerasGClassifier(config, optimizer='adam', metrics=[])
+    classifier = KerasGClassifier(config, optimizer='adam',
+                                  batch_size=32, metrics=[])
 
     param_grid = dict(
         epochs=[60],
         batch_size=[20],
-        lr=[0.03],
-        layers_1_Dense__config__kernel_initializer__config__seed=[42],
+        lr=[0.003],
+        layers_1_Dense__config__kernel_initializer__config__seed=[999],
         layers_0_Dense__config__kernel_initializer__config__seed=[999]
     )
-    cv = StratifiedKFold(n_splits=3)
+    cv = StratifiedKFold(n_splits=5)
 
     grid = GridSearchCV(classifier, param_grid, cv=cv,
                         scoring='accuracy', refit=True)
@@ -398,12 +405,13 @@ def test_gridsearchcv_keras_g_classifier():
     got6 = (grid_result.best_estimator_.config['layers'][1]['config']
             ['kernel_initializer']['config']['seed'])
 
-    assert got1 == 0.65, got1
-    assert got2 == 0.03, got2
+    print(grid_result.best_score_)
+    assert got1 == 0.68, got1
+    assert got2 == 0.003, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
     assert got5 == 999, got5
-    assert got6 == 42, got6
+    assert got6 == 999, got6
 
 
 def test_get_params_keras_g_regressor():
@@ -414,10 +422,11 @@ def test_get_params_keras_g_regressor():
     got = [x for x in got if not x.startswith('layers') or x.endswith('seed')]
 
     expect = [
-        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'config', 'decay',
-        'epochs', 'epsilon', 'loss', 'lr', 'metrics', 'model_type',
-        'momentum', 'nesterov', 'optimizer', 'rho', 'schedule_decay',
-        'seed', 'layers_0_Dense__config__kernel_initializer__config__seed',
+        'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'callbacks',
+        'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
+        'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+        'rho', 'schedule_decay', 'seed', 'validation_data',
+        'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
     assert got == expect, got
@@ -430,8 +439,8 @@ def test_gridsearchcv_keras_g_regressor():
     param_grid = dict(
         epochs=[60],
         batch_size=[20],
-        lr=[0.03],
-        layers_1_Dense__config__kernel_initializer__config__seed=[42],
+        lr=[0.002],
+        layers_1_Dense__config__kernel_initializer__config__seed=[999],
         layers_0_Dense__config__kernel_initializer__config__seed=[999]
     )
     cv = KFold(n_splits=3)
@@ -448,12 +457,12 @@ def test_gridsearchcv_keras_g_regressor():
     got6 = (grid_result.best_estimator_.config['layers'][1]['config']
             ['kernel_initializer']['config']['seed'])
 
-    assert got1 == -0.54, got1
-    assert got2 == 0.03, got2
+    assert -0.04 <= got1 <= 0.04, got1
+    assert got2 == 0.002, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
     assert got5 == 999, got5
-    assert got6 == 42, got6
+    assert got6 == 999, got6
 
 
 def test_check_params():
@@ -500,6 +509,7 @@ def test_funtional_model_get_params():
         'batch_size': None,
         'beta_1': None,
         'beta_2': None,
+        'callbacks': None,
         'decay': 0,
         'epochs': 1,
         'epsilon': None,
@@ -513,6 +523,7 @@ def test_funtional_model_get_params():
         'rho': None,
         'schedule_decay': None,
         'seed': 0,
+        'validation_data': None,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',
         'layers_1_Conv2D__config': {
@@ -685,7 +696,7 @@ def test_keras_batch_classifier_get_params():
     config = model.get_config()
     batch_generator = ImageBatchGenerator()
     array_convertor = None
-    classifier = KerasBatchClassifier(
+    classifier = KerasGBatchClassifier(
         config, batch_generator, array_convertor, model_type='sequential')
 
     params = classifier.get_params()
@@ -693,13 +704,14 @@ def test_keras_batch_classifier_get_params():
            if not key.startswith(('config', 'layers'))}
 
     got.pop('train_batch_generator', None)
-    expect = {'amsgrad': None, 'array_converter': None, 'batch_size': None,
-              'beta_1': None, 'beta_2': None, 'decay': 0, 'epochs': 1,
-              'epsilon': None, 'loss': 'binary_crossentropy',
+    expect = {'amsgrad': None, 'batch_size': None, 'beta_1': None,
+              'beta_2': None, 'callbacks': None, 'decay': 0,
+              'epochs': 1, 'epsilon': None, 'loss': 'binary_crossentropy',
               'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
               'momentum': 0, 'n_jobs': 1, 'nesterov': False,
               'optimizer': 'sgd', 'predict_batch_generator': None,
               'rho': None, 'schedule_decay': None, 'seed': 0,
+              'to_array_converter': None,
               'train_batch_generator__brightness_range': None,
               'train_batch_generator__channel_shift_range': 0.0,
               'train_batch_generator__cval': 0.0,
@@ -721,7 +733,8 @@ def test_keras_batch_classifier_get_params():
               'train_batch_generator__width_shift_range': 0.0,
               'train_batch_generator__zca_epsilon': 1e-06,
               'train_batch_generator__zca_whitening': False,
-              'train_batch_generator__zoom_range': [1.0, 1.0]}
+              'train_batch_generator__zoom_range': [1.0, 1.0],
+              'validation_data': None}
 
     for k, v in got.items():
         if k not in expect:
@@ -765,8 +778,8 @@ def test_keras_galaxy_model_callbacks():
     train, test = next(KFold(n_splits=5).split(X, y))
 
     new_params = {
-        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
-        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+        'layers_0_Dense__config__kernel_initializer__config__seed': 42,
+        'layers_1_Dense__config__kernel_initializer__config__seed': 42
     }
     parameters = new_params
     fit_params = {'shuffle': False}
@@ -810,8 +823,8 @@ def test_keras_galaxy_model_callbacks_girdisearch():
     cv = KFold(n_splits=5)
 
     new_params = {
-        'layers_0_Dense__config__kernel_initializer__config__seed': [0],
-        'layers_1_Dense__config__kernel_initializer__config__seed': [0]
+        'layers_0_Dense__config__kernel_initializer__config__seed': [42],
+        'layers_1_Dense__config__kernel_initializer__config__seed': [42]
     }
     fit_params = {'shuffle': False}
 
@@ -822,4 +835,4 @@ def test_keras_galaxy_model_callbacks_girdisearch():
 
     got1 = grid.best_score_
 
-    assert 0.65 <= round(got1, 2) <= 0.70, got1
+    assert 0.64 <= round(got1, 2) <= 0.70, got1

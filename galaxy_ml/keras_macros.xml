@@ -987,7 +987,14 @@
           <param argument="root" type="text" value="http://localhost:9000" help="Root url of the target server."/>
           <param argument="path" type="text" value="/publish/epoch/end/" help="Path relative to root to which the events will be sent. E.g., root + '/publish/epoch/end/'"/>
           <param argument="field" type="text" value="data" optional="true" help="JSON field under which the data will be stored. The field is used only if the payload is sent within a form (i.e. send_as_json is set to False)."/>
-          <param argument="headers" type="text" value="" optional="true" help="Dictionary; optional custom HTTP headers."/>
+          <param argument="headers" type="text" value="" optional="true" help="Dictionary; optional custom HTTP headers.">
+            <sanitizer>
+              <valid initial="default">
+                <add value="{"/>
+                <add value="}"/>
+              </valid>
+            </sanitizer>
+          </param>
           <param argument="send_as_json" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Whether the request should be send as application/json."/>
         </when>
         <when value="ModelCheckpoint">
