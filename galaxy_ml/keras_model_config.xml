@@ -728,8 +728,10 @@
   <help>
       <![CDATA[
 **Help**
+
 **What it does**
-Creates a deep learning architecture using Keras deep leanrning library by adding different types of layers in a sequential manner. Different types of layers include Dense, Dropout, Convolutional, Activation and so on. These layers are added one after another which generates a deep architecture.
+
+Creates a deep learning architecture using Keras deep learning library by adding different types of layers in a sequential manner. Different types of layers include Dense, Dropout, Convolutional, Activation and so on. These layers are added one after another which generates a deep architecture.
 
 **Return**
 
