@@ -735,7 +735,7 @@ Creates a deep learning architecture using Keras deep learning library by adding
 
 **Return**
 
-A JSON file containing the information of all the layers and their respective attributes
+A JSON file containing the information of all the layers and their respective attributes.
 
 **How to create an architecture using this tool?**
 
