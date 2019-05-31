@@ -159,7 +159,7 @@
       <output name="outfile" file="keras_prefitted01.zip" compare="sim_size" delta="5"/>
     </test>
   </tests>
-    <help>
+  <help>
       <![CDATA[
 **Help**
 
