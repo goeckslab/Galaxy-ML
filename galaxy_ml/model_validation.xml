@@ -1,5 +1,5 @@
-<tool id="sklearn_model_validation" name="Model Validation" version="@VERSION@">
-    <description>evaluates estimator performance by cross-validation</description>
+<tool id="sklearn_model_validation" name="Evaluate deep learning architecture" version="@VERSION@">
+    <description>performance by cross-validation</description>
     <macros>
         <import>main_macros.xml</import>
     </macros>
@@ -31,14 +31,9 @@ from sklearn import (
     feature_selection, gaussian_process, kernel_approximation, metrics,
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
-from sklearn.model_selection import _validation
 
 sys.path.insert(0, '$__tool_directory__')
 from utils import SafeEval, get_cv, get_scoring, load_model, read_columns
-from model_validations import _fit_and_score
-
-
-setattr(_validation, '_fit_and_score', _fit_and_score)
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
@@ -108,20 +103,18 @@ with open('$infile_pipeline', 'rb') as pipeline_handler:
 ## Set up validator, run pipeline through validator and return results.
 
 validator = params['model_validation_functions']['selected_function']
-validator = getattr(_validation, validator)
+validator = getattr(model_selection, validator)
 
 selected_function = params['model_validation_functions']['selected_function']
 
 if selected_function == 'cross_validate':
     res = validator(pipeline, X, y, **options)
-    stat = {}
-    for k, v in res.items():
-        if k.startswith('test'):
-            stat['mean_' + k] = np.mean(v)
-            stat['std_' + k] = np.std(v)
-    res.update(stat)
     rval = pd.DataFrame(res)
-    rval = rval[sorted(rval.columns)]
+    col_rename = {}
+    for col in rval.columns:
+        if col.endswith('_primary'):
+            col_rename[col] = col[:-7] + primary_scoring
+    rval.rename(inplace=True, columns=col_rename)
 elif selected_function == 'cross_val_predict':
     predicted = validator(pipeline, X, y, **options)
     if len(predicted.shape) == 1:
@@ -235,7 +228,7 @@ rval.to_csv(path_or_buf='$outfile', sep='\t', header=True, index=False)
             <param name="col2" value="6"/>
             <output name="outfile">
                 <assert_contents>
-                    <has_n_columns n="6"/>
+                    <has_n_columns n="4"/>
                     <has_text text="0.9999961390418067"/>
                     <has_text text="0.9944541531269271"/>
                     <has_text text="0.9999193322454393"/>
