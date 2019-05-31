@@ -9,6 +9,7 @@ import scipy
 import sklearn
 import skrebate
 import sys
+import time
 import warnings
 import xgboost
 
@@ -646,3 +647,39 @@ def check_def(mod, name):
         raise NameError("%s is not a defined class or "
                         "function in module file %s"
                         % (name, mod_file))
+
+
+def get_module(module):
+    """ return module from a module name.
+
+    Parameters
+    ----------
+    module : str
+        module name
+    """
+    mod = sys.modules.get(module, None)
+    if mod:
+        return mod
+
+    # suggest install this library manually
+    if module == 'pyfaidx':
+        try:
+            exec('import pyfaidx')
+        except ImportError:
+            __import__('os').system(
+                "pip install pyfaidx==0.5.5.2")
+            time.sleep(10)
+            try:
+                exec('import pyfaidx')
+            except ImportError:
+                raise ImportError(
+                    "module pyfaidx is not installed. "
+                    "Galaxy attemped to install but failed."
+                    "Please Contact Admin for manual "
+                    "installation.")
+
+        return sys.modules['pyfaidx']
+
+    if module == 'externals.selene_sdk':
+        exec('from externals import selene_sdk')
+        return sys.modules['externals.selene_sdk']

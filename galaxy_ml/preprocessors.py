@@ -13,15 +13,12 @@ from sklearn.preprocessing.data import _handle_zeros_in_scale
 from sklearn.utils import check_array, safe_indexing
 from sklearn.utils.validation import (check_is_fitted, check_X_y,
                                       FLOAT_DTYPES)
+
 try:
-    import pyfaidx
+    from utils import get_module
 except ImportError:
-    rval = __import__('os').system("pip install pyfaidx==0.5.5.2")
-    if rval != 0:
-        raise ImportError("module pyfaidx is not installed. "
-                          "Galaxy attemped to install but failed."
-                          "Please Contact Admin for manual "
-                          "installation.")
+    from .utils import get_module
+
 try:
     # tools should pick up here
     from externals import selene_sdk
@@ -214,7 +211,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         All sequences are expected to be in the same length, but sometimes not.
         If True, all sequences use the same length of first entry by either
         padding or truncating. If False, raise ValueError if different seuqnce
-        lengthes are found.
+        lengths are found.
     """
     BASE_TO_INDEX = {
         'A': 0, 'C': 1, 'G': 2, 'T': 3,
@@ -249,6 +246,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         if not self.fasta_path:
             raise ValueError("`fasta_path` can't be None!")
 
+        pyfaidx = get_module('pyfaidx')
         fasta_file = pyfaidx.Fasta(self.fasta_path)
         # set up the sequence_length from the first entry
         sequence_length = len(fasta_file[int(X[0, 0])])
@@ -308,3 +306,192 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
 
 class ImageBatchGenerator(ImageDataGenerator, BaseEstimator):
     pass
+
+
+##############################################################
+from keras_preprocessing.image import Iterator
+
+
+class FastaIterator(Iterator, BaseEstimator):
+    """Base class for fasta sequence iterators.
+
+    Parameters
+    ----------
+    n : int
+        Total number of samples
+    batch_size: int
+        Size of batch
+    shuffle : bool
+        Whether to shuffle data between epoch
+    seed : int
+        Random seed number for data shuffling
+    """
+    white_list_formats = {'fasta', 'fa'}
+
+    def __init__(self, n, batch_size=32, shuffle=True, seed=0):
+        super(FastaIterator, self).__init__(n, batch_size, shuffle, seed)
+
+
+class FastaToArrayIterator(FastaIterator):
+    """Iterator yielding Numpy array from fasta sequences
+
+    Parameters
+    ----------
+    X : array
+        Contains sequence indexes in the fasta file
+    y : array
+        Target labels or values
+    fasta_file : object
+        Instance of pyfaidx.Fasta
+    batch_size : int, default=32
+    shuffle : bool, default=True
+        Whether to shuffle the data between epochs
+    sample_weight : None or array
+        Sample weight
+    seed : int
+        Random seed for data shuffling
+    n_bases: int, default=4
+        4 for DNA, 20 for protein
+    seq_length: int, default=1000
+        Output sequence length
+    """
+    def __init__(self, X, y, fasta_file, batch_size=32,
+                 shuffle=True, sample_weight=None, seed=None,
+                 n_bases=4, seq_length=1000):
+        X, y = check_X_y(X, y)
+
+        if sample_weight is not None:
+            sample_weight = check_array(self.sample_weight, copy=True)
+            if X.shape[0] != sample_weight.shape[0]:
+                raise ValueError(
+                    "`X` and `sample_weight` "
+                    "should have the same length. "
+                    "Found: x.shape = %s, sample_weight.shape = %s" %
+                    (X.shape, sample_weight.shape))
+
+        self.X = X
+        self.y = y
+        self.fasta_file = fasta_file
+        self.sample_weight = sample_weight
+        self.n_bases = n_bases
+        self.seq_length = seq_length
+
+        super(FastaToArrayIterator, self).__init__(
+            X.shape[0], batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        print(index_array)
+        index_array = np.asarray(index_array)
+        n_samples = index_array.shape[0]
+        batch_x = np.zeros((n_samples,
+                            self.seq_length,
+                            self.n_bases), dtype='float32')
+        for i in np.arange(n_samples):
+            seq_idx = self.X[index_array[i], 0]
+            if isinstance(seq_idx, np.number):
+                seq_idx = int(seq_idx.item())
+            batch_x[i] = self.apply_transform(seq_idx)
+        batch_y = self.y[index_array]
+
+        if not self.sample_weight:
+            return batch_x, batch_y
+        else:
+            batch_sample_weight = self.sample_weight[index_array]
+            return batch_x, batch_y, batch_sample_weight
+
+    def apply_transform(self, idx):
+        cur_sequence = self.fasta_file[idx]
+        if len(cur_sequence) > self.seq_length:
+            cur_sequence = selene_sdk.predict._common._truncate_sequence(
+                cur_sequence,
+                self.seq_length)
+
+        elif len(cur_sequence) < self.seq_length:
+            cur_sequence = selene_sdk.predict._common._pad_sequence(
+                cur_sequence,
+                self.seq_length,
+                FastaDNABatchGenerator.UNK_BASE)
+
+        cur_sequence_encodeing = selene_sdk.sequences._sequence.\
+            _fast_sequence_to_encoding(
+                str(cur_sequence),
+                FastaDNABatchGenerator.BASE_TO_INDEX,
+                self.n_bases)
+
+        return cur_sequence_encodeing
+
+
+class FastaDNABatchGenerator(BaseEstimator):
+    """Fasta squence batch generator, online transformation of sequences
+        to array.
+
+    Parameters
+    ----------
+    fasta_path : str
+        File path to fasta file.
+    batch_size : int, default=32
+    shuffle : bool, default=True
+        Whether to shuffle the data between epochs
+    sample_weight : None or array
+        Sample weight
+    seed : int
+        Random seed for data shuffling
+    """
+    BASE_TO_INDEX = {
+        'A': 0, 'C': 1, 'G': 2, 'T': 3,
+        'a': 0, 'c': 1, 'g': 2, 't': 3,
+    }
+
+    UNK_BASE = 'N'
+
+    def __init__(self, fasta_path, seq_length=1000, shuffle=True, seed=None):
+        self.fasta_path = fasta_path
+        self.seq_length = seq_length
+        self.shuffle = shuffle
+        self.seed = seed
+        self.n_bases = 4
+
+    @property
+    def fasta_file(self):
+        return get_module('pyfaidx').Fasta(self.fasta_path)
+
+    def flow(self, X, y, batch_size=32, sample_weight=None):
+        return FastaToArrayIterator(X, y, self.fasta_file,
+                                    batch_size=batch_size,
+                                    shuffle=self.shuffle,
+                                    sample_weight=sample_weight,
+                                    seed=self.seed,
+                                    n_bases=self.n_bases,
+                                    seq_length=self.seq_length)
+
+
+class FastaProteinBatchGenerator(FastaDNABatchGenerator):
+    """Fasta squence batch generator, online transformation of sequences
+        to array.
+
+    Parameters
+    ----------
+    fasta_path : str
+        File path to fasta file.
+    batch_size : int, default=32
+    shuffle : bool, default=True
+        Whether to shuffle the data between epochs
+    sample_weight : None or array
+        Sample weight
+    seed : int
+        Random seed for data shuffling
+    """
+    BASE_TO_INDEX = {
+        'A': 0, 'R': 1, 'N': 2, 'D': 3, 'C': 4, 'E': 5, 'Q': 6,
+        'G': 7, 'H': 8, 'I': 9, 'L': 10, 'K': 11, 'M': 12, 'F': 13,
+        'P': 14, 'S': 15, 'T': 16, 'W': 17, 'Y': 18, 'V': 19
+    }
+
+    UNK_BASE = 'X'
+
+    def __init__(self, fasta_path, seq_length=1000, shuffle=True, seed=None):
+        super(FastaProteinBatchGenerator, self).__init__(
+            fasta_path=fasta_path, seq_length=seq_length,
+            shuffle=shuffle, seed=seed
+        )
+        self.n_bases = 20

@@ -866,8 +866,6 @@ class KerasGBatchClassifier(KerasGClassifier):
 
     train_batch_generator: instance of batch generator
 
-    to_array_converter: instance of to_array class
-
     train_batch_generator: instance of batch generator (default=None)
         if None, same as train_batch_generator
 
@@ -935,7 +933,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         backend random seed
     """
     def __init__(self, config, train_batch_generator,
-                 to_array_converter, predict_batch_generator=None,
+                 predict_batch_generator=None,
                  model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None,
                  momentum=None, decay=None, nesterov=None, rho=None,
@@ -953,11 +951,10 @@ class KerasGBatchClassifier(KerasGClassifier):
             seed=0, callbacks=callbacks,
             validation_data=validation_data, **fit_params)
         self.train_batch_generator = train_batch_generator
-        self.to_array_converter = to_array_converter
         self.predict_batch_generator = predict_batch_generator
         self.n_jobs = n_jobs
 
-    def fit(self, X, y, class_weight=None, **kwargs):
+    def fit(self, X, y, class_weight=None, sample_weight=None, **kwargs):
         """ fit the model
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
@@ -1017,7 +1014,8 @@ class KerasGBatchClassifier(KerasGClassifier):
             set_random_seed(self.seed)
 
         self.model_.fit_generator(
-            self.train_batch_generator.flow(X, y, batch_size=batch_size),
+            self.train_batch_generator.flow(X, y, batch_size=batch_size,
+                                            sample_weight=sample_weight),
             **fit_params)
 
         return self

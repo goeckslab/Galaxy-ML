@@ -20,6 +20,7 @@ from galaxy_ml.keras_galaxy_models import (
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageBatchGenerator
+from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.model_validations import _fit_and_score
 
 
@@ -695,9 +696,8 @@ def test_image_batch_generator_get_params():
 def test_keras_batch_classifier_get_params():
     config = model.get_config()
     batch_generator = ImageBatchGenerator()
-    array_convertor = None
     classifier = KerasGBatchClassifier(
-        config, batch_generator, array_convertor, model_type='sequential')
+        config, batch_generator, model_type='sequential')
 
     params = classifier.get_params()
     got = {key: value for key, value in params.items()
@@ -836,3 +836,35 @@ def test_keras_galaxy_model_callbacks_girdisearch():
     got1 = grid.best_score_
 
     assert 0.64 <= round(got1, 2) <= 0.70, got1
+
+
+def test_keras_batch_classifier_get_params_2():
+    config = model.get_config()
+    fasta_path = './test-data/regulatory_mutations.fa'
+    batch_generator = FastaDNABatchGenerator(fasta_path,
+                                             seq_length=1000,
+                                             seed=42)
+    classifier = KerasGBatchClassifier(config, batch_generator,
+                                       model_type='sequential')
+
+    params = classifier.get_params()
+    got = {key: value for key, value in params.items()
+           if not key.startswith(('config', 'layers'))
+           and not key.endswith('generator')}
+
+    expect = {
+        'amsgrad': None, 'batch_size': None,
+        'beta_1': None, 'beta_2': None,
+        'callbacks': None, 'decay': 0, 'epochs': 1,
+        'epsilon': None, 'loss': 'binary_crossentropy',
+        'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
+        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+        'optimizer': 'sgd', 'rho': None,
+        'schedule_decay': None, 'seed': 0,
+        'train_batch_generator__fasta_path':
+            './test-data/regulatory_mutations.fa',
+        'train_batch_generator__seed': 42,
+        'train_batch_generator__seq_length': 1000,
+        'train_batch_generator__shuffle': True,
+        'validation_data': None}
+    assert got == expect, got
