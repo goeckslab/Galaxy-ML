@@ -434,11 +434,10 @@ class FastaDNABatchGenerator(BaseEstimator):
     ----------
     fasta_path : str
         File path to fasta file.
-    batch_size : int, default=32
+    seq_length : int, default=1000
+        Sequence length, number of bases.
     shuffle : bool, default=True
         Whether to shuffle the data between epochs
-    sample_weight : None or array
-        Sample weight
     seed : int
         Random seed for data shuffling
     """
@@ -476,11 +475,10 @@ class FastaProteinBatchGenerator(FastaDNABatchGenerator):
     ----------
     fasta_path : str
         File path to fasta file.
-    batch_size : int, default=32
+    seq_length : int, default=1000
+        Sequence length, number of bases.
     shuffle : bool, default=True
         Whether to shuffle the data between epochs
-    sample_weight : None or array
-        Sample weight
     seed : int
         Random seed for data shuffling
     """

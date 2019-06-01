@@ -181,6 +181,20 @@ def get_functional_model(config):
     return Model(inputs=input_layers, outputs=output_layers)
 
 
+def get_batch_generator(config):
+    """Construct keras online data generator from Galaxy tool parameters
+
+    Parameters
+    -----------
+    config : dictionary, galaxy tool parameters loaded by JSON
+    """
+    generator_type = config.pop('generator_type')
+    klass = try_get_attr('preprocessors', generator_type)
+    config['fasta_path'] = 'to_be_determined'
+
+    return klass(**config)
+
+
 def config_keras_model(inputs, outfile):
     """ config keras model layers and output JSON
 
@@ -206,8 +220,8 @@ def config_keras_model(inputs, outfile):
         f.write(json_string)
 
 
-def build_keras_model(inputs, outfile, infile_json,
-                      infile_weights=None):
+def build_keras_model(inputs, outfile, infile_json, infile_weights=None,
+                      batch_mode=False):
     """ for `keras_model_builder` tool
 
     Parameters
@@ -221,6 +235,8 @@ def build_keras_model(inputs, outfile, infile_json,
         Path to dataset containing keras model JSON
     infile_weights : str or None
         If string, path to dataset containing model weights.
+    batch_mode : bool, default=False
+        Whether to build online batch classifier.
     """
     with open(infile_json, 'r') as f:
         json_model = json.load(f)
@@ -258,6 +274,10 @@ def build_keras_model(inputs, outfile, infile_json,
                         ['optimizer_selection']['optimizer_options']))
         options.update(inputs['mode_selection']['fit_params'])
 
+        if batch_mode:
+            generator = get_batch_generator(inputs['mode_selection']
+                                            ['generator_selection'])
+            options['train_batch_generator'] = generator
         estimator = klass(config, **options)
 
     print(repr(estimator))
@@ -291,6 +311,11 @@ if __name__ == '__main__':
     if tool_id == 'keras_model_builder':
         build_keras_model(inputs, outfile, infile_json,
                           infile_weights=infile_weights)
+
+    elif tool_id == 'keras_batch_models':
+        build_keras_model(inputs, outfile, infile_json,
+                          infile_weights=infile_weights,
+                          batch_mode=True)
 
     # for keras_model_config tool
     else:

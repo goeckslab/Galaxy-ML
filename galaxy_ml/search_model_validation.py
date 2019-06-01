@@ -25,7 +25,8 @@ from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search
 
 from utils import (SafeEval, get_cv, get_scoring, get_X_y,
-                   load_model, read_columns, try_get_attr)
+                   load_model, read_columns, try_get_attr,
+                   get_module)
 
 
 _fit_and_score = try_get_attr('model_validations', '_fit_and_score')
@@ -161,7 +162,8 @@ def _eval_search_params(params_builder):
 
 
 def main(inputs, infile_estimator, infile1, infile2,
-         outfile_result, outfile_object=None, groups=None):
+         outfile_result, outfile_object=None, groups=None,
+         ref_seq=None, interval=None, fasta_file=None):
     """
     Parameter
     ---------
@@ -185,6 +187,15 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     groups : str
         File path to dataset containing groups labels
+
+    ref_seq : str
+        File path to dataset containing genome sequence file
+
+    interval : str
+        File path to dataset containing interval file
+
+    fasta_file : str
+        File path to dataset containing fasta file
     """
 
     warnings.simplefilter('ignore')
@@ -197,7 +208,12 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     params_builder = params['search_schemes']['search_params_builder']
 
+    with open(infile_estimator, 'rb') as estimator_handler:
+        estimator = load_model(estimator_handler)
+    estimator_params = estimator.get_params()
+
     input_type = params['input_options']['selected_input']
+    # tabular input
     if input_type == 'tabular':
         header = 'infer' if params['input_options']['header1'] else None
         column_option = (params['input_options']['column_selector_options_1']
@@ -214,9 +230,30 @@ def main(inputs, infile_estimator, infile1, infile2,
                 sep='\t',
                 header=header,
                 parse_dates=True).astype(float)
-    else:
+    # sparse input
+    elif input_type == 'sparse':
         X = mmread(open(infile1, 'r'))
 
+    # fasta_file input
+    elif input_type == 'seq_fasta':
+        pyfaidx = get_module('pyfaidx')
+        sequences = pyfaidx.Fasta(fasta_file)
+        n_seqs = len(sequences.keys())
+        X = np.arange(n_seqs)[:, np.newaxis]
+        for param in estimator_params.keys():
+            if param.endswith('fasta_path'):
+                estimator.set_params(
+                    **{param: fasta_file})
+        else:
+            raise ValueError(
+                "The selected estimator doesn't support "
+                "fasta file input! Please consider using "
+                "KerasGBatchClassifier with "
+                "FastaDNABatchGenerator/FastaProteinBatchGenerator "
+                "or having GenomeOneHotEncoder/ProteinOneHotEncoder "
+                "in pipeline!")
+
+    # Get target y
     header = 'infer' if params['input_options']['header2'] else None
     column_option = (params['input_options']['column_selector_options_2']
                      ['selected_column_selector_option2'])
@@ -234,6 +271,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             parse_dates=True)
     if len(y.shape) == 2 and y.shape[1] == 1:
         y = y.ravel()
+    # end y
 
     optimizer = params['search_schemes']['selected_search_scheme']
     optimizer = getattr(model_selection, optimizer)
@@ -255,9 +293,6 @@ def main(inputs, infile_estimator, infile1, infile2,
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
 
-    with open(infile_estimator, 'rb') as estimator_handler:
-        estimator = load_model(estimator_handler)
-
     # handle memory
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
     # cache iraps_core fits could increase search speed significantly
@@ -265,7 +300,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         estimator.set_params(memory=memory)
     else:
         # For iraps buried in pipeline
-        for p, v in estimator.get_params().items():
+        for p, v in estimator_params.items():
             if p.endswith('memory'):
                 # for case of `__irapsclassifier__memory`
                 if len(p) > 8 and p[:-8].endswith('irapsclassifier'):
@@ -404,11 +439,15 @@ if __name__ == '__main__':
     aparser.add_argument("-e", "--estimator", dest="infile_estimator")
     aparser.add_argument("-X", "--infile1", dest="infile1")
     aparser.add_argument("-y", "--infile2", dest="infile2")
-    aparser.add_argument("-r", "--outfile_result", dest="outfile_result")
+    aparser.add_argument("-O", "--outfile_result", dest="outfile_result")
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
     aparser.add_argument("-g", "--groups", dest="groups")
+    aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
+    aparser.add_argument("-b", "--interval", dest="interval")
+    aparser.add_argument("-f", "--fasta_file", dest="fasta_file")
     args = aparser.parse_args()
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
-         groups=args.groups)
+         groups=args.groups, ref_seq=args.ref_seq, interval=args.interval,
+         fasta_file=args.fasta_file)

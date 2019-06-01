@@ -883,7 +883,7 @@ class KerasGBatchClassifier(KerasGClassifier):
 
     train_batch_generator: instance of batch generator
 
-    train_batch_generator: instance of batch generator (default=None)
+    predict_batch_generator: instance of batch generator (default=None)
         if None, same as train_batch_generator
 
     model_type : str
@@ -976,7 +976,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
         check_classification_targets(y)
-        check_params(kwargs, Model.fit)
+        check_params(kwargs, Model.fit_generator)
 
         if len(y.shape) == 2 and y.shape[1] > 1:
             self.classes_ = np.arange(y.shape[1])
@@ -1049,7 +1049,7 @@ class KerasGBatchClassifier(KerasGClassifier):
     def _predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
-        check_params(kwargs, Model.predict)
+        check_params(kwargs, Model.predict_generator)
 
         if self.predict_batch_generator is None:
             predict_batch_generator = self.train_batch_generator
@@ -1073,7 +1073,7 @@ class KerasGBatchClassifier(KerasGClassifier):
     def score(self, X, y, **kwargs):
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         y = np.searchsorted(self.classes_, y)
-        check_params(kwargs, Model.evaluate)
+        check_params(kwargs, Model.evaluate_generator)
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
