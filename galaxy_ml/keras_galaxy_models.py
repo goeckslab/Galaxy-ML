@@ -10,6 +10,7 @@ import collections
 import keras
 import numpy as np
 import tensorflow as tf
+import warnings
 from abc import ABCMeta
 from keras import backend as K
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
@@ -338,8 +339,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     epochs : int
         fit_param from Keras
 
-    batch_size : int
-        fit_param, from Keras
+    batch_size : None or int, default=None
+        fit_param, if None, will default to 32
 
     callbacks : None or list of dict
         fit_param, each dict contains one type of callback configuration.
@@ -593,7 +594,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         callbacks = self._callbacks
         validation_data = self.validation_data
         fit_params.update(dict(epochs=self.epochs,
-                               batch_size=self.batch_size,
+                               batch_size=self.batch_size or 32,
                                callbacks=callbacks,
                                validation_data=validation_data))
         fit_params.update(kwargs)
@@ -629,16 +630,16 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if 'config' in params:
             setattr(self, 'config', params.pop('config'))
 
-        # 2. replace individual layer or non-layer parameters
+        # 2. replace individual layer or non-layer top level parameters
         named_layers = self.named_layers
-        names = []
+        layer_names = []
         named_layers_dict = {}
         if named_layers:
-            names, _ = zip(*named_layers)
+            layer_names, _ = zip(*named_layers)
             named_layers_dict = dict(named_layers)
         for name in list(six.iterkeys(params)):
             if '__' not in name:
-                for i, layer_name in enumerate(names):
+                for i, layer_name in enumerate(layer_names):
                     # replace layer
                     if layer_name == name:
                         new_val = params.pop(name)
@@ -648,7 +649,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                             self.config['layers'][i] = new_val
                         break
                 else:
-                    # replace non-layer parameter
+                    # replace non-layer top level parameter
                     if name not in valid_params:
                         raise ValueError(
                             "Invalid parameter %s for estimator %s. "
@@ -657,13 +658,24 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                             % (name, self))
                     setattr(self, name, params.pop(name))
 
-            elif not name.startswith('layers'):
-                # suppose all other parameters are layers parameters,
-                # raise error otherwise
+        # replace nested non-layer parameters
+        nested_params = collections.defaultdict(dict)  # grouped by prefix
+        # update params
+        valid_params = self.get_params(deep=True)
+        for name in list(six.iterkeys(params)):
+            if name.startswith('layers'):
+                continue
+
+            key, delim, sub_key = name.partition('__')
+            if key not in valid_params:
                 raise ValueError("Invalid parameter %s for estimator %s. "
                                  "Check the list of available parameters "
                                  "with `estimator.get_params().keys()`." %
                                  (name, self))
+            nested_params[key][sub_key] = params.pop(name)
+
+        for key, sub_params in nested_params.items():
+            valid_params[key].set_params(**sub_params)
 
         # 3. replace layer parameter
         search_params = [SearchParam(k, v) for k, v in six.iteritems(params)]
@@ -785,27 +797,32 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
 
         return super(KerasGClassifier, self)._fit(X, y, **kwargs)
 
-    def predict_proba(self, X, **kwargs):
+    def _predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.predict)
 
-        probs = self.model_.predict(X, **kwargs)
-        if probs.shape[1] == 1:
+        preds = self.model_.predict(X, **kwargs)
+        return preds
+
+    def predict_proba(self, X, **kwargs):
+        probas = self._predict(X, **kwargs)
+        if probas.min() < 0. or probas.max() > 1.:
+            warnings.warn('Network returning invalid probability values. '
+                          'The last layer might not normalize predictions '
+                          'into probabilities '
+                          '(like softmax or sigmoid would).')
+        if probas.shape[1] == 1:
             # first column is probability of class 0 and second is of class 1
-            probs = np.hstack([1 - probs, probs])
-        return probs
+            probas = np.hstack([1 - probas, probas])
+        return probas
 
     def predict(self, X, **kwargs):
-        check_is_fitted(self, 'model_')
-        X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
-        check_params(kwargs, Model.predict)
-
-        proba = self.model_.predict(X, **kwargs)
-        if proba.shape[-1] > 1:
-            classes = proba.argmax(axis=-1)
+        probas = self._predict(X, **kwargs)
+        if probas.shape[-1] > 1:
+            classes = probas.argmax(axis=-1)
         else:
-            classes = (proba > 0.5).astype('int32')
+            classes = (probas > 0.5).astype('int32')
         return self.classes_[classes]
 
     def score(self, X, y, **kwargs):
@@ -912,8 +929,8 @@ class KerasGBatchClassifier(KerasGClassifier):
     epochs : int
         fit_param from Keras
 
-    batch_size : int
-        fit_param, from Keras
+    batch_size : None or int, default=None
+        fit_param, if None, will default to 32
 
     callbacks : None or list of dict
         each dict contains one type of callback configuration.
@@ -943,12 +960,12 @@ class KerasGBatchClassifier(KerasGClassifier):
                  callbacks=None, validation_data=None,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
-            config, model_type='sequential', optimizer='sgd',
-            loss='binary_crossentropy', metrics=[], lr=None,
-            momentum=None, decay=None, nesterov=None, rho=None,
-            epsilon=None, amsgrad=None, beta_1=None, beta_2=None,
-            schedule_decay=None, epochs=1, batch_size=None,
-            seed=0, callbacks=callbacks,
+            config, model_type=model_type, optimizer=optimizer,
+            loss=loss, metrics=metrics, lr=lr, momentum=momentum,
+            decay=decay, nesterov=nesterov, rho=rho, epsilon=epsilon,
+            amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
+            schedule_decay=schedule_decay, epochs=epochs,
+            batch_size=batch_size, seed=seed, callbacks=callbacks,
             validation_data=validation_data, **fit_params)
         self.train_batch_generator = train_batch_generator
         self.predict_batch_generator = predict_batch_generator
@@ -994,13 +1011,13 @@ class KerasGBatchClassifier(KerasGClassifier):
             y = to_categorical(y)
 
         fit_params = self.fit_params
-        batch_size = self.batch_size
+        batch_size = self.batch_size or 32
         epochs = self.epochs
         n_jobs = self.n_jobs
         validation_data = self.validation_data
 
         fit_params.update(dict(
-            steps_per_epoch=X.shape[0]/batch_size,
+            steps_per_epoch=(X.shape[0] + batch_size - 1) // batch_size,
             epochs=epochs,
             workers=n_jobs,
             use_multiprocessing=n_jobs > 1,
@@ -1009,6 +1026,15 @@ class KerasGBatchClassifier(KerasGClassifier):
         # kwargs from function `fit ` override object initiation values.
         fit_params.update(kwargs)
 
+        validation_data = fit_params.get('validation_data', None)
+        if validation_data:
+            if self.predict_batch_generator is None:
+                predict_batch_generator = self.train_batch_generator
+            else:
+                predict_batch_generator = self.predict_batch_generator
+            fit_params['validation_data'] = \
+                predict_batch_generator.flow(*validation_data,
+                                             batch_size=batch_size)
         # set tensorflow random seed
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
@@ -1020,7 +1046,7 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         return self
 
-    def predict_proba(self, X, **kwargs):
+    def _predict(self, X, **kwargs):
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         check_params(kwargs, Model.predict)
@@ -1030,17 +1056,19 @@ class KerasGBatchClassifier(KerasGClassifier):
         else:
             predict_batch_generator = self.predict_batch_generator
 
-        batch_size = self.batch_size
+        batch_size = self.batch_size or 32
         n_jobs = self.n_jobs
-        probs = self.model_.predict_generator(
+        preds = self.model_.predict_generator(
             predict_batch_generator.flow(X, batch_size=batch_size),
-            n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
+            workers=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
             **kwargs)
 
-        if probs.shape[1] == 1:
-            # first column is probability of class 0 and second is of class 1
-            probs = np.hstack([1 - probs, probs])
-        return probs
+        if preds.min() < 0. or preds.max() > 1.:
+            warnings.warn('Network returning invalid probability values. '
+                          'The last layer might not normalize predictions '
+                          'into probabilities '
+                          '(like softmax or sigmoid would).')
+        return preds
 
     def score(self, X, y, **kwargs):
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
@@ -1056,7 +1084,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             predict_batch_generator = self.predict_batch_generator
 
         n_jobs = self.n_jobs
-        batch_size = self.batch_size
+        batch_size = self.batch_size or 32
         outputs = self.model_.evaluate_generator(
             predict_batch_generator.flow(X, y, batch_size=batch_size),
             n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,

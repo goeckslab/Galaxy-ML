@@ -5,12 +5,14 @@ import os
 import pandas as pd
 import tempfile
 import warnings
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras import layers
 from keras.layers import Dense, Activation
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import _search
 from tensorflow import set_random_seed
 
@@ -21,6 +23,7 @@ from galaxy_ml.keras_galaxy_models import (
     KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
+from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.model_validations import _fit_and_score
 
 
@@ -711,7 +714,6 @@ def test_keras_batch_classifier_get_params():
               'momentum': 0, 'n_jobs': 1, 'nesterov': False,
               'optimizer': 'sgd', 'predict_batch_generator': None,
               'rho': None, 'schedule_decay': None, 'seed': 0,
-              'to_array_converter': None,
               'train_batch_generator__brightness_range': None,
               'train_batch_generator__channel_shift_range': 0.0,
               'train_batch_generator__cval': 0.0,
@@ -838,7 +840,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
     assert 0.64 <= round(got1, 2) <= 0.70, got1
 
 
-def test_keras_batch_classifier_get_params_2():
+def test_keras_fasta_batch_classifier():
     config = model.get_config()
     fasta_path = './test-data/regulatory_mutations.fa'
     batch_generator = FastaDNABatchGenerator(fasta_path,
@@ -868,3 +870,85 @@ def test_keras_batch_classifier_get_params_2():
         'train_batch_generator__shuffle': True,
         'validation_data': None}
     assert got == expect, got
+
+
+def test_keras_fasta_protein_batch_classifier():
+
+    inputs = keras.Input(shape=(500, 20), name='protein')
+    x = layers.Conv1D(32, 3, activation='relu')(inputs)
+    x = layers.Conv1D(64, 3, activation='relu')(x)
+    block_1_output = layers.MaxPooling1D(3)(x)
+
+    x = layers.Conv1D(64, 3, activation='relu', padding='same')(block_1_output)
+    x = layers.Conv1D(64, 3, activation='relu', padding='same')(x)
+    block_2_output = layers.add([x, block_1_output])
+
+    x = layers.Conv1D(64, 3, activation='relu', padding='same')(block_2_output)
+    x = layers.Conv1D(64, 3, activation='relu', padding='same')(x)
+    block_3_output = layers.add([x, block_2_output])
+
+    x = layers.Conv1D(64, 3, activation='relu')(block_3_output)
+    x = layers.GlobalAveragePooling1D()(x)
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(1, activation='softmax')(x)
+
+    model = Model(inputs=inputs, outputs=outputs)
+
+    config = model.get_config()
+    fasta_path = "None"
+    batch_generator = FastaProteinBatchGenerator(fasta_path,
+                                                 seq_length=500,
+                                                 seed=42)
+    classifier = KerasGBatchClassifier(config, batch_generator,
+                                       model_type='functional',
+                                       epochs=3)
+
+    params = classifier.get_params()
+    got = {}
+    for key, value in params.items():
+        if not key.startswith('layers') \
+                and not key.startswith('config') \
+                and not key.endswith('generator'):
+            got[key] = value
+
+    expect = {
+        'amsgrad': None, 'batch_size': None, 'beta_1': None,
+        'beta_2': None, 'callbacks': None, 'decay': 0,
+        'epochs': 3, 'epsilon': None, 'loss': 'binary_crossentropy',
+        'lr': 0.01, 'metrics': [], 'model_type': 'functional',
+        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+        'optimizer': 'sgd', 'rho': None, 'schedule_decay': None,
+        'seed': 0, 'train_batch_generator__fasta_path': 'None',
+        'train_batch_generator__seed': 42,
+        'train_batch_generator__seq_length': 500,
+        'train_batch_generator__shuffle': True,
+        'validation_data': None}
+    assert got == expect, got
+
+    cloned_clf = clone(classifier)
+    new_params = {
+        'train_batch_generator__fasta_path':
+            'test-data/uniprot_sprot_10000L.fasta'
+    }
+    cloned_clf.set_params(**new_params)
+
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    GridSearchCV = getattr(_search, 'GridSearchCV')
+
+    # X = np.arange(560118)[:, np.newaxis]
+    X1 = np.arange(1000)[:, np.newaxis]
+    # y = np.random.randint(2, size=560118)
+    y1 = np.random.randint(2, size=1000)
+    cv = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=123)
+
+    scoring = {
+        'acc': SCORERS['accuracy'],
+        'ba_acc': SCORERS['balanced_accuracy']
+    }
+
+    grid = GridSearchCV(cloned_clf, {}, cv=cv, scoring=scoring,
+                        refit=False, error_score='raise')
+
+    grid.fit(X1, y1)
+    print(grid.cv_results_)

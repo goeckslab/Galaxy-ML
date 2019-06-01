@@ -1,6 +1,8 @@
 import numpy as np
 import warnings
 
+from sklearn.base import clone
+
 from galaxy_ml.externals.selene_sdk.sequences._sequence import\
     _fast_sequence_to_encoding
 from galaxy_ml.preprocessors import GenomeOneHotEncoder
@@ -69,7 +71,7 @@ def test_fasta_iterator():
     assert params == expect, params
 
     wl_formats = iterator.white_list_formats
-    assert wl_formats == {'fasta'}, wl_formats
+    assert wl_formats == {'fa', 'fasta'}, wl_formats
 
 
 def test_fasta_to_array_iterator_params():
@@ -81,9 +83,10 @@ def test_fasta_to_array_iterator_params():
 
     params = list(toarray_iterator.get_params().keys())
 
-    expect1 = ['X', 'batch_size', 'fasta_file',
-               'n_bases', 'sample_weight', 'seed',
-               'seq_length', 'shuffle', 'y']
+    expect1 = ['X', 'base_to_index', 'batch_size',
+               'fasta_file', 'n_bases', 'sample_weight',
+               'seed', 'seq_length', 'shuffle',
+               'unk_base', 'y']
 
     assert params == expect1, params
 
@@ -169,3 +172,5 @@ def test_fasta_protein_batch_generator():
 
     assert params == expect1, params
     assert generator.n_bases == 20, generator.n_bases
+
+    cloned_generator = clone(generator)
