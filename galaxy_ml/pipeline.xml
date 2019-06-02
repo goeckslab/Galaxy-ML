@@ -17,6 +17,7 @@
             <![CDATA[
 import imblearn
 import json
+import pandas as pd
 import pickle
 import pprint
 import skrebate
@@ -31,7 +32,8 @@ from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
 
 sys.path.insert(0, '$__tool_directory__')
-from utils import SafeEval, feature_selector, get_estimator, try_get_attr
+from utils import (SafeEval, feature_selector, get_estimator,
+                   try_get_attr, get_search_params)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -178,6 +180,7 @@ with open('$outfile', 'wb') as out_handler:
     final_est = pipeline_steps[-1]
     print(final_est)
     pickle.dump(final_est, out_handler, pickle.HIGHEST_PROTOCOL)
+out_obj = final_est
 #else:
 if has_imblearn:
     pipeline = imb_make_pipeline(*pipeline_steps)
@@ -187,6 +190,13 @@ pprint.pprint(pipeline.named_steps)
 
 with open('$outfile', 'wb') as out_handler:
     pickle.dump(pipeline, out_handler, pickle.HIGHEST_PROTOCOL)
+out_obj = pipeline
+#end if
+
+#if $get_params
+results = get_search_params(out_obj)
+df = pd.DataFrame(results, columns=['', 'Parameter', 'Value'])
+df.to_csv('$outfile_params', sep='\t', index=False)
 #end if
             ]]>
         </configfile>
@@ -276,9 +286,14 @@ with open('$outfile', 'wb') as out_handler:
             <option value="Pipeline_Builder" selected="true">Pipeline</option>
             <option value="Final_Estimator_Builder">Final Estimator</option>
         </param>
+        <param name="get_params" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Output parameters for searchCV?"
+                help="Optional. Tunable parameters could be obtained through `estimator_attributes` tool."/>
     </inputs>
     <outputs>
         <data format="zip" name="outfile" label="${output_type}"/>
+        <data format="tabular" name="outfile_params" label="get_params for ${output_type}">
+            <filter>get_params</filter>
+        </data>
     </outputs>
     <tests>
         <test>
