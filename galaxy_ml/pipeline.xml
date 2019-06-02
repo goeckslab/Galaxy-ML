@@ -139,6 +139,12 @@ def get_component(input_json, check_none=False):
             options['discretize'] = input_json['discretize']
         IRAPSClassifier = try_get_attr('iraps_classifier','IRAPSClassifier')
         obj = IRAPSClassifier(iraps_core, **options)
+    elif input_json['component_type'] == 'preprocessors':
+        encoder_selection = input_json['encoder_selection']
+        encoder_type = encoder_selection.pop('encoder_type')
+        klass = try_get_attr('preprocessors', encoder_type)
+        obj = klass(**encoder_selection)
+
     if 'n_jobs' in obj.get_params():
         obj.set_params( n_jobs=N_JOBS )
     return obj, is_imblearn
@@ -198,6 +204,7 @@ with open('$outfile', 'wb') as out_handler:
                     <option value="skrebate">SK-rebate feature selection</option>
                     <option value="imblearn">imbalanced-learn sampling</option>
                     <option value="IRAPS">IRAPS -- feature selector and classifier</option>
+                    <option value="preprocessors">Bio- sequence encoders</option>
                 </param>
                 <when value="None"/>
                 <when value="pre_processor">
@@ -232,6 +239,9 @@ with open('$outfile', 'wb') as out_handler:
                     <param argument="fc_thres" type="float" value="0.1" label="fold change threshold" help="Float. default=0.1"/>
                     <param argument="occurrence" type="float" value="0.7" label="reservation factor" help="Float. default=0.7"/>
                     <param argument="discretize" type="float" value="-1" label="The z_score threshold to discretize target value" help="Float. default=-1"/>
+                </when>
+                <when value="preprocessors">
+                    <expand macro="preprocessors_sequence_encoders"/>
                 </when>
             </conditional>
         </repeat>
@@ -471,6 +481,23 @@ with open('$outfile', 'wb') as out_handler:
             </section>
             <param name="output_type" value="Final_Estimator_Builder"/>
             <output name="outfile" file="pipeline15" compare="sim_size" delta="5"/>
+        </test>
+        <test>
+            <conditional name="component_selector">
+                <param name="component_type" value="preprocessors"/>
+                <conditional name="encoder_selection">
+                    <param name="encoder_type" value="GenomeOneHotEncoder"/>
+                    <param name="seq_length" value="1000"/>
+                    <param name="padding" value="True"/>
+                </conditional>
+            </conditional>
+            <section name="final_estimator">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="custom_estimator"/>
+                    <param name="c_estimator" value="keras_model02" ftype="zip"/>
+                </conditional>
+            </section>
+            <output name="outfile" file="pipeline16" compare="sim_size" delta="5"/>
         </test>
     </tests>
     <help>

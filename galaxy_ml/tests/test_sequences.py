@@ -9,6 +9,7 @@ from galaxy_ml.preprocessors import GenomeOneHotEncoder
 from galaxy_ml.preprocessors import FastaIterator, FastaToArrayIterator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
+from galaxy_ml.preprocessors import ProteinOneHotEncoder
 
 try:
     import pyfaidx
@@ -174,3 +175,19 @@ def test_fasta_protein_batch_generator():
     assert generator.n_bases == 20, generator.n_bases
 
     cloned_generator = clone(generator)
+
+
+def test_protein_one_hot_encoder():
+    fasta_path = './test-data/uniprot_sprot_10000L.fasta'
+    coder = ProteinOneHotEncoder(fasta_path=fasta_path, padding=True)
+    X = np.zeros((20, 1))
+    X[:, 0] = np.arange(20)
+    y = np.random.randint(2, size=20)
+
+    coder.fit(X)
+    trans = coder.transform(X)
+    # np.save('./test-data/sequence_encoding02.npy', trans)
+
+    expect = np.load('./test-data/sequence_encoding02.npy')
+
+    assert np.array_equal(trans, expect), trans

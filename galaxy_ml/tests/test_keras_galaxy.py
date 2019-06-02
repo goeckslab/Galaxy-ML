@@ -929,7 +929,7 @@ def test_keras_fasta_protein_batch_classifier():
     cloned_clf = clone(classifier)
     new_params = {
         'train_batch_generator__fasta_path':
-            'test-data/uniprot_sprot_10000L.fasta'
+            './test-data/uniprot_sprot_10000L.fasta'
     }
     cloned_clf.set_params(**new_params)
 

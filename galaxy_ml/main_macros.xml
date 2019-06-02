@@ -1792,6 +1792,26 @@
     </section>
   </xml>
 
+  <xml name="preprocessors_sequence_encoders">
+    <conditional name="encoder_selection">
+        <param name="encoder_type" type="select" label="Choose the sequence encoder class">
+            <option value="GenomeOneHotEncoder">GenomeOneHotEncoder</option>
+            <option value="ProteinOneHotEncoder">ProteinOneHotEncoder</option>
+        </param>
+        <when value="GenomeOneHotEncoder">
+            <expand macro="preprocessors_sequence_encoder_arguments"/>
+        </when>
+        <when value="ProteinOneHotEncoder">
+            <expand macro="preprocessors_sequence_encoder_arguments"/>
+        </when>
+    </conditional>
+  </xml>
+
+  <xml name="preprocessors_sequence_encoder_arguments">
+    <param argument="seq_length" type="integer" value="" min="0" optional="true" help="Integer. Sequence length"/>
+    <param argument="padding" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" help="Whether to pad or truncate sequence to meet the sequence length."/>
+  </xml>
+
   <!-- Outputs -->
 
   <xml name="output">
