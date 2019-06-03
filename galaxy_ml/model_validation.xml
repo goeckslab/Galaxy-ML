@@ -34,7 +34,8 @@ from sklearn import (
 from sklearn.model_selection import _validation
 
 sys.path.insert(0, '$__tool_directory__')
-from utils import SafeEval, get_cv, get_scoring, load_model, read_columns
+from utils import (SafeEval, get_cv, get_scoring, load_model,
+                   read_columns, get_module)
 from model_validations import _fit_and_score
 
 
@@ -71,7 +72,25 @@ if input_type == 'tabular':
             sep='\t',
             header=header,
             parse_dates=True).astype(float)
-else:
+elif input_type == 'seq_fasta':
+    fasta_file = '$input_options.fasta_file'
+    pyfaidx = get_module('pyfaidx')
+    sequences = pyfaidx.Fasta(fasta_file)
+    n_seqs = len(sequences.keys())
+    X = np.arange(n_seqs)[:, np.newaxis]
+    for param in estimator_params.keys():
+        if param.endswith('fasta_path'):
+            estimator.set_params(
+                **{param: fasta_file})
+    else:
+        raise ValueError(
+            "The selected estimator doesn't support "
+            "fasta file input! Please consider using "
+            "KerasGBatchClassifier with "
+            "FastaDNABatchGenerator/FastaProteinBatchGenerator "
+            "or having GenomeOneHotEncoder/ProteinOneHotEncoder "
+            "in pipeline!")
+elif input_type == 'sparse':
     X = mmread('$input_options.infile1')
 
 header = 'infer' if params['input_options']['header2'] else None
