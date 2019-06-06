@@ -1,5 +1,5 @@
-<tool id="sklearn_model_validation" name="Evaluate deep learning architecture" version="@VERSION@">
-    <description>performance by cross-validation</description>
+<tool id="sklearn_model_validation" name="Evaluate scikit-learn and deep learning models" version="@VERSION@">
+    <description>performances by cross-validation</description>
     <macros>
         <import>main_macros.xml</import>
     </macros>

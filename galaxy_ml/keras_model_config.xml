@@ -1,4 +1,4 @@
-<tool id="keras_model_config" name="Create a deep learning architecture" version="@VERSION@">
+<tool id="keras_model_config" name="Create a deep learning model architecture" version="@VERSION@">
   <description>using Keras</description>
   <macros>
     <import>main_macros.xml</import>
@@ -731,7 +731,7 @@
 
 **What it does**
 
-Creates a deep learning architecture using Keras deep learning library by adding different types of layers in a sequential manner. Different types of layers include Dense, Dropout, Convolutional, Activation and so on. These layers are added one after another which generates a deep architecture.
+Creates a deep learning architecture using Keras deep learning library by adding different types of layers in a sequential manner. Different types of layers include Dense, Dropout, Convolutional, Activation and so on. These layers are added one after another which generates a deep architecture. Moreover, it also offers functional API (where layers are callable and can be chained) for advanced users to create complex models.
 
 **Return**
 
