@@ -1,0 +1,23 @@
+site_name: Galaxy-ML Documentation
+theme: readthedocs
+docs_dir: sources
+repo_url: https://github.com/ohsu-comp-bio/Galaxy-ML
+site_url: https://ohsu-comp-bio.github.io/Galaxy-ML/
+site_description: 'Documentation for Galaxy-ML, make machine learning simpler with Galaxy.'
+
+google_analytics: ['UA-141380533-1', 'ohsu-comp-bio.github.io/Galaxy-ML/']
+
+nav:
+- Home: index.md
+- APIs:
+    - preprocessors: APIs/preprocessors.md
+    - feature_selectors: APIs/feature-selectors.md
+    - iraps_classifier: APIs/iraps-classifier.md
+    - binarize estimators/scorers: APIs/binarize-target.md
+    - keras_galaxy_models: APIs/keras-galaxy-models.md
+    - model_validations: APIs/model-validations.md
+    - model_persistent: APIs/model-persistent.md
+    - utils: APIs/utils.md
+- Releases:
+    - Change Log: CHANGELOG.md
+

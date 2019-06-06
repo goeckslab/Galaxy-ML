@@ -209,7 +209,7 @@ class SearchParam(object):
 
 class KerasLayers(six.with_metaclass(ABCMeta, BaseEstimator)):
     """
-    Parameters:
+    Parameters
     -----------
     name: str
     layers: list of dict, the configuration of model
@@ -295,53 +295,37 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     ----------
     config : dictionary
         from `model.get_config()`
-
     model_type : str
         'sequential' or 'functional'
-
     optimizer : str, default 'sgd'
         'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
-
     loss : str, default 'binary_crossentropy'
         same as Keras `loss`
-
     metrics : list of strings, default []
-
     lr : None or float
         optimizer parameter, default change with `optimizer`
-
     momentum : None or float
         for optimizer `sgd` only, ignored otherwise
-
     nesterov : None or bool
         for optimizer `sgd` only, ignored otherwise
-
     decay : None or float
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-
     epsilon : None or float
         optimizer parameter, default change with `optimizer`
-
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
-
     beta_1 : None or float
         optimizer parameter, default change with `optimizer`
-
     beta_2 : None or float
         optimizer parameter, default change with `optimizer`
-
     schedule_decay : None or float
         optimizer parameter, default change with `optimizer`
-
     epochs : int
         fit_param from Keras
-
     batch_size : None or int, default=None
         fit_param, if None, will default to 32
-
     callbacks : None or list of dict
         fit_param, each dict contains one type of callback configuration.
         e.g. {"callback_selection":
@@ -352,10 +336,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-
     validation_data : None or tuple of arrays, (X_test, y_test)
         fit_param
-
     seed : None or int, default 0
         backend random seed
     """
@@ -874,64 +856,46 @@ class KerasGRegressor(BaseKerasModel, RegressorMixin):
 
 class KerasGBatchClassifier(KerasGClassifier):
     """
-    keras classifier with batch generator
+    keras classifier with batch data generator
 
     Parameters
     ----------
     config : dictionary
         from `model.get_config()`
-
-    train_batch_generator: instance of batch generator
-
-    predict_batch_generator: instance of batch generator (default=None)
+    train_batch_generator: instance of batch data generator
+    predict_batch_generator: instance of batch data generator (default=None)
         if None, same as train_batch_generator
-
     model_type : str
         'sequential' or 'functional'
-
     optimizer : str, default 'sgd'
         'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
-
     loss : str, default 'binary_crossentropy'
         same as Keras `loss`
-
     metrics : list of strings, default []
-
     lr : None or float
         optimizer parameter, default change with `optimizer`
-
     momentum : None or float
         for optimizer `sgd` only, ignored otherwise
-
     nesterov : None or bool
         for optimizer `sgd` only, ignored otherwise
-
     decay : None or float
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-
     epsilon : None or float
         optimizer parameter, default change with `optimizer`
-
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
-
     beta_1 : None or float
         optimizer parameter, default change with `optimizer`
-
     beta_2 : None or float
         optimizer parameter, default change with `optimizer`
-
     schedule_decay : None or float
         optimizer parameter, default change with `optimizer`
-
     epochs : int
         fit_param from Keras
-
     batch_size : None or int, default=None
         fit_param, if None, will default to 32
-
     callbacks : None or list of dict
         each dict contains one type of callback configuration.
         e.g. {"callback_selection":
@@ -942,10 +906,8 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-
     validation_data : None or tuple of arrays, (X_test, y_test)
         fit_param
-
     seed : None or int, default 0
         backend random seed
     """

@@ -55,19 +55,14 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
     ----------
     n_iter : int
         sample count
-
     positive_thres : float
         z_score shreshold to discretize positive target values
-
     negative_thres : float
         z_score threshold to discretize negative target values
-
     verbose : int
         0 or geater, if not 0, print progress
-
     n_jobs : int, default=1
         The number of CPUs to use to do the computation.
-
     pre_dispatch : int, or string.
         Controls the number of jobs that get dispatched during parallel
         execution. Reducing this number can be useful to avoid an
@@ -81,7 +76,6 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
               spawned
             - A string, giving an expression as a function of n_jobs,
               as in '2*n_jobs'
-
     random_state : int or None
     """
 
@@ -227,13 +221,13 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
 
     Parameters
     ----------
-    iraps_core: object
-    p_thres: float, threshold for p_values
-    fc_thres: float, threshold for fold change or mean difference
-    occurrence: float, occurrence rate selected by set of p_thres and fc_thres
-    discretize: float, threshold of z_score to discretize target value
-    memory: None, str or joblib.Memory object
-    min_signature_features: int, the mininum number of features in a signature
+    iraps_core : object
+    p_thres : float, threshold for p_values
+    fc_thres : float, threshold for fold change or mean difference
+    occurrence : float, occurrence rate selected by set of p_thres and fc_thres
+    discretize : float, threshold of z_score to discretize target value
+    memory : None, str or joblib.Memory object
+    min_signature_features : int, the mininum number of features in a signature
     """
 
     def __init__(self, iraps_core, p_thres=1e-4, fc_thres=0.1,
@@ -345,26 +339,22 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    classifier: object
+    classifier : object
         Estimator object such as derived from sklearn `ClassifierMixin`.
-
-    z_score: float, default=-1.0
+    z_score : float, default=-1.0
         Threshold value based on z_score. Will be ignored when
         fixed_value is set
-
-    value: float, default=None
+    value : float, default=None
         Threshold value
-
-    less_is_positive: boolean, default=True
+    less_is_positive : boolean, default=True
         When target is less the threshold value, it will be converted
         to True, False otherwise.
 
     Attributes
     ----------
-    classifier_: object
+    classifier_ : object
         Fitted classifier
-
-    discretize_value: float
+    discretize_value : float
         The threshold value used to discretize True and False targets
     """
 
@@ -436,7 +426,6 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
-
     def __call__(self, clf, X, y, sample_weight=None):
         clf_name = clf.__class__.__name__
         # support pipeline object
@@ -493,26 +482,22 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    regressor: object
+    regressor : object
         Estimator object such as derived from sklearn `RegressionMixin`.
-
-    z_score: float, default=-1.0
+    z_score : float, default=-1.0
         Threshold value based on z_score. Will be ignored when
         fixed_value is set
-
-    value: float, default=None
+    value : float, default=None
         Threshold value
-
-    less_is_positive: boolean, default=True
+    less_is_positive : boolean, default=True
         When target is less the threshold value, it will be converted
         to True, False otherwise.
 
     Attributes
     ----------
-    regressor_: object
+    regressor_ : object
         Fitted regressor
-
-    discretize_value: float
+    discretize_value : float
         The threshold value used to discretize True and False targets
     """
 
@@ -585,27 +570,23 @@ class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
 
     Parameters
     ----------
-    transformer: object
+    transformer : object
         Estimator object such as derived from sklearn `TransformerMixin`,
         including feature_selector and preprocessor
-
-    z_score: float, default=-1.0
+    z_score : float, default=-1.0
         Threshold value based on z_score. Will be ignored when
         fixed_value is set
-
-    value: float, default=None
+    value : float, default=None
         Threshold value
-
-    less_is_positive: boolean, default=True
+    less_is_positive : boolean, default=True
         When target is less the threshold value, it will be converted
         to True, False otherwise.
 
     Attributes
     ----------
-    transformer_: object
+    transformer_ : object
         Fitted regressor
-
-    discretize_value: float
+    discretize_value : float
         The threshold value used to discretize True and False targets
     """
     def __init__(self, transformer, z_score=-1, value=None,

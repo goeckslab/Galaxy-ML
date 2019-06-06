@@ -104,33 +104,28 @@ def train_test_split(*arrays, **options):
     *arrays : sequence of indexables with same length / shape[0]
         Allowed inputs are lists, numpy arrays, scipy-sparse
         matrices or pandas dataframes.
-
     test_size : float, int or None, optional (default=None)
         If float, should be between 0.0 and 1.0 and represent the proportion
         of the dataset to include in the test split. If int, represents the
         absolute number of test samples. If None, the value is set to the
         complement of the train size. If ``train_size`` is also None, it will
         be set to 0.25.
-
     train_size : float, int, or None, (default=None)
         If float, should be between 0.0 and 1.0 and represent the
         proportion of the dataset to include in the train split. If
         int, represents the absolute number of train samples. If None,
         the value is automatically set to the complement of the test size.
-
     random_state : int, RandomState instance or None, optional (default=None)
         If int, random_state is the seed used by the random number generator;
         If RandomState instance, random_state is the random number generator;
         If None, the random number generator is the RandomState instance used
         by `np.random`.
-
     shuffle : None or str (default='simple')
         How to shuffle the data before splitting.
         None, no shuffle.
         For str, one of 'simple', 'stratified' and 'group', corresponding to
         `ShuffleSplit`, `StratifiedShuffleSplit` and `GroupShuffleSplit`,
         respectively.
-
     labels : array-like or None (default=None)
         Ignored if shuffle is None or 'simple'.
         When shuffle='stratified', this array is used as class labels.
@@ -213,8 +208,8 @@ class OrderedKFold(_BaseKFold):
     ----------
     n_splits : int, default=3
         Number of folds. Must be at least 2.
-    shuffle: bool
-    random_state: None or int
+    shuffle : bool
+    random_state : None or int
     """
 
     def __init__(self, n_splits=3, shuffle=False, random_state=None):
@@ -245,10 +240,8 @@ class RepeatedOrderedKFold(_RepeatedSplits):
     ----------
     n_splits : int, default=5
         Number of folds. Must be at least 2.
-
     n_repeats : int, default=5
         Number of times cross-validator to be repeated.
-
     random_state: int, RandomState instance or None. Optional
     """
     def __init__(self, n_splits=5, n_repeats=5, random_state=None):

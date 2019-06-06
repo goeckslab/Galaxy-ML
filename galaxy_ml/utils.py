@@ -310,6 +310,15 @@ def get_X_y(params, file1, file2):
 
 class SafeEval(Interpreter):
     """Customized symbol table for safely literal eval
+
+    Parameters
+    ----------
+    load_scipy : bool, default=False
+        Whether to load globals from scipy
+    load_numpy : bool, default=False
+        Whether to load globals from numpy
+    load_estimators : bool, default=False
+        Whether to load globals for sklearn estimators
     """
     def __init__(self, load_scipy=False, load_numpy=False,
                  load_estimators=False):

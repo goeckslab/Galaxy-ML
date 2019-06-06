@@ -27,10 +27,10 @@
       <when value="train_model">
         <param name="infile_json" type="data" format="json" label="Select the dataset containing model configurations (JSON)"/>
         <param name="learning_type" type="select" label="Select a learning class">
-          <option value="KerasGBatchClassifier">KerasGBatchClassifier -- Build a training model with batch generator</option>
+          <option value="KerasGBatchClassifier">KerasGBatchClassifier -- Build a training model with batch data generator</option>
         </param>
         <conditional name="generator_selection">
-          <param name="generator_type" type="select" label="Select a data batch generator">
+          <param name="generator_type" type="select" label="Select a batch data generator">
             <option value="FastaDNABatchGenerator">FastaDNABatchGenerator -- Online transformation of DNA sequences</option>
             <option value="FastaProteinBatchGenerator">FastaProteinBatchGenerator -- Online transformation of Protein sequences</option>
             <!--option value="ImageBatchGenerator">ImageBatchGenerator - Online transformation of images</option-->

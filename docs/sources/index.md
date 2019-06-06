@@ -1,4 +1,3 @@
-
 # Galaxy-ML
 Galaxy-ML is a web machine learning end-to-end pipeline building framework, with special support to biomedical data. Under the management of unified scikit-learn APIs, cutting-edge machine learning libraries are combined together to provide thousands of different pipelines suitable for various needs. In the form of [Galalxy](https://github.com/galaxyproject/galaxy) tools, Galaxy-ML provides scalabe, reproducible and transparent machine learning computations.
 

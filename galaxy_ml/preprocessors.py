@@ -216,7 +216,7 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         If True, all sequences use the same length of first entry by either
         padding or truncating. If False, raise ValueError if different seuqnce
         lengths are found.
-    seq_length: None or int
+    seq_length : None or int
         Sequence length. If None, determined by the the first entry.
     """
     BASE_TO_INDEX = {
@@ -328,7 +328,7 @@ class ProteinOneHotEncoder(GenomeOneHotEncoder):
         If True, all sequences use the same length of first entry by either
         padding or truncating. If False, raise ValueError if different seuqnce
         lengths are found.
-    seq_length: None or int
+    seq_length : None or int
         Sequence length. If None, determined by the the first entry.
     """
     BASE_TO_INDEX = {
@@ -397,7 +397,7 @@ class FastaIterator(Iterator, BaseEstimator, Sequence):
     ----------
     n : int
         Total number of samples
-    batch_size: int
+    batch_size : int
         Size of batch
     shuffle : bool
         Whether to shuffle data between epoch
@@ -428,7 +428,7 @@ class FastaToArrayIterator(FastaIterator):
         Sample weight
     seed : int
         Random seed for data shuffling
-    n_bases: int, default=4
+    n_bases : int, default=4
         4 for DNA, 20 for protein
     seq_length : int, default=1000
         Output sequence length
@@ -500,7 +500,7 @@ class FastaToArrayIterator(FastaIterator):
 
 
 class FastaDNABatchGenerator(BaseEstimator):
-    """Fasta squence batch generator, online transformation of sequences
+    """Fasta squence batch data generator, online transformation of sequences
         to array.
 
     Parameters
@@ -541,7 +541,7 @@ class FastaDNABatchGenerator(BaseEstimator):
 
 
 class FastaProteinBatchGenerator(FastaDNABatchGenerator):
-    """Fasta squence batch generator, online transformation of sequences
+    """Fasta squence batch data generator, online transformation of sequences
         to array.
 
     Parameters
