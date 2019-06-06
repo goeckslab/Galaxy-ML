@@ -862,8 +862,8 @@ class KerasGBatchClassifier(KerasGClassifier):
     ----------
     config : dictionary
         from `model.get_config()`
-    train_batch_generator: instance of batch data generator
-    predict_batch_generator: instance of batch data generator (default=None)
+    train_batch_generator : instance of batch data generator
+    predict_batch_generator : instance of batch data generator (default=None)
         if None, same as train_batch_generator
     model_type : str
         'sequential' or 'functional'
