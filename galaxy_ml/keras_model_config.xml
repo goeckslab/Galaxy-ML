@@ -1,5 +1,5 @@
-<tool id="keras_model_config" name="Keras Model Configuration" version="@VERSION@">
-  <description>builds model structure and outputs config</description>
+<tool id="keras_model_config" name="Create a deep learning model architecture" version="@VERSION@">
+  <description>using Keras</description>
   <macros>
     <import>main_macros.xml</import>
     <import>keras_macros.xml</import>
@@ -728,6 +728,23 @@
   <help>
       <![CDATA[
 **Help**
+
+**What it does**
+
+Creates a deep learning architecture using Keras deep learning library by adding different types of layers in a sequential manner. Different types of layers include Dense, Dropout, Convolutional, Activation and so on. These layers are added one after another which generates a deep architecture. Moreover, it also offers functional API (where layers are callable and can be chained) for advanced users to create complex models.
+
+**Return**
+
+A JSON file containing the information of all the layers and their respective attributes.
+
+**How to create an architecture using this tool?**
+
+1. Choose the model type. For example - "Sequential". It means that all the layers will be linearly stacked.
+2. Add "Input shape" value. This is the dimensionality (number of columns) of the dataset excluding the 'target' or 'label' column.
+3. Add layers using "Insert layer" button. Choose the layers and attributes (using advanced options) suited to the dataset. For example - Choose 'Dense' for adding a dense layer to the architecture and insert an integer under "Units" which are the number of neurons for this layer. Higher the number of units, the stronger is the architecture. Please be noted that the higher values of units may lead to overfitting and lower values may lead to underfitting. This is one of the hyperparameters of the architecture which needs to be tuned for a dataset.
+4. Execute the tool to get a JSON string of the architecture.
+
+
       ]]>
   </help>
   <citations>

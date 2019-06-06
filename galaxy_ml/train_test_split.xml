@@ -81,9 +81,18 @@
         </test>
     </tests>
     <help><![CDATA[
-Input: a tabular file. Header is allowed.
+**Help**
 
-Output: two tabular files containing training and testing set, respectively.
+**What it does**
+
+Splits a dataset into two sets - train and test. The 'train' set is used by a machine/deep learning algorithm to learn a trained model. This robustness of the trained model is 
+evaluated using the 'test' set.
+
+**Input** 
+A tabular file. Column headers are allowed.
+
+**Output**
+Two tabular files containing training and testing sets, respectively.
 
     ]]></help>
     <expand macro="sklearn_citation"/>

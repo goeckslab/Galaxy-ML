@@ -1,5 +1,5 @@
-<tool id="keras_model_builder" name="Keras Model Builder" version="@VERSION@">
-  <description>constructs a deep learning model with sciki-learn APIs</description>
+<tool id="keras_model_builder" name="Create deep learning model" version="@VERSION@">
+  <description>with an optimizer, loss function and fit parameters</description>
   <macros>
     <import>main_macros.xml</import>
     <import>keras_macros.xml</import>
@@ -85,6 +85,24 @@
   <help>
       <![CDATA[
 **Help**
+
+**What it does**
+
+Creates an estimator object (classifier or regressor) by using the architecture JSON from 'Create architecture' tool and adding an optimizer, loss function and other fit parameters. The fit parameters include the number of training epochs and batch size. Multiple attributes of an optimizer can also be set. A pre-trained deep learning model can also be used with this tool.
+
+**Return**
+
+An estimator object which can be used to train on a dataset.
+
+**How to compile the architecture using this tool?**
+
+1. Choose the architecture building mode. For example - choose "Build a training model".
+2. Attach an architecture JSON file (obtained after executing "Create architecture" tool) which contains information about multiple layers.
+3. Select a loss function. For example - for classification tasks, choose 'cross entropy' losses and for regression tasks, choose 'mean squared' or 'mean absolute' losses.
+4. Choose an optimizer which minimizes the loss computed by the loss function. Multiple attributes of the chosen optimizer can be modified. 'RMSProp' and 'Adam' are some of the popular optimizers.
+5. Insert the number of iterations (epochs) and the size of training batches (batch_size).
+6. Execute the tool to get a compiled estimator object.
+
       ]]>
   </help>
   <citations>
