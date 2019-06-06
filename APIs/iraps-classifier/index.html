@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>iraps_classifier - Galaxy-ML Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "iraps_classifier";
+    var mkdocs_page_input_path = "APIs/iraps-classifier.md";
+    var mkdocs_page_url = "/Galaxy-ML/APIs/iraps-classifier/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-141380533-1', 'goeckslab.github.io/Galaxy-ML/');
+      ga('send', 'pageview');
+  </script>
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Galaxy-ML Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">APIs</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../preprocessors/">preprocessors</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../feature-selectors/">feature_selectors</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">iraps_classifier</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#irapscore">IRAPSCore</a></li>
+    
+
+    <li class="toctree-l3"><a href="#irapsclassifier">IRAPSClassifier</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../binarize-target/">binarize estimators/scorers</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../keras-galaxy-models/">keras_galaxy_models</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-validations/">model_validations</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-persistent/">model_persistent</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../utils/">utils</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Releases</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../CHANGELOG/">Change Log</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Galaxy-ML Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>APIs &raquo;</li>
+        
+      
+    
+    <li>iraps_classifier</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/goeckslab/Galaxy-ML/edit/master/docs/APIs/iraps-classifier.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L2">[source]</a></span></p>
+<h2 id="irapscore">IRAPSCore</h2>
+<pre><code class="python">galaxy_ml.iraps_classifier.IRAPSCore(n_iter=1000, positive_thres=-1, negative_thres=0, verbose=0, n_jobs=1, pre_dispatch='2*n_jobs', random_state=None)
+</code></pre>
+
+<p>Base class of IRAPSClassifier
+From sklearn BaseEstimator:
+get_params()
+set_params()</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>n_iter</strong>: int<br>
+        sample count</li>
+<li><strong>positive_thres</strong>: float<br>
+        z_score shreshold to discretize positive target values</li>
+<li><strong>negative_thres</strong>: float<br>
+        z_score threshold to discretize negative target values</li>
+<li><strong>verbose</strong>: int<br>
+        0 or geater, if not 0, print progress</li>
+<li><strong>n_jobs</strong>: int, default=1<br>
+        The number of CPUs to use to do the computation.</li>
+<li><strong>pre_dispatch</strong>: int, or string.<br>
+        Controls the number of jobs that get dispatched during parallel
+        execution. Reducing this number can be useful to avoid an
+        explosion of memory consumption when more jobs get dispatched
+        than CPUs can process. This parameter can be:
+            - None, in which case all the jobs are immediately
+              created and spawned. Use this for lightweight and
+              fast-running jobs, to avoid delays due to on-demand
+              spawning of the jobs
+            - An int, giving the exact number of total jobs that are
+              spawned
+            - A string, giving an expression as a function of n_jobs,
+              as in '2*n_jobs'</li>
+<li><strong>random_state</strong>: int or None<br></li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L3">[source]</a></span></p>
+<h2 id="irapsclassifier">IRAPSClassifier</h2>
+<pre><code class="python">galaxy_ml.iraps_classifier.IRAPSClassifier(iraps_core, p_thres=0.0001, fc_thres=0.1, occurrence=0.8, discretize=-1, memory=None, min_signature_features=1)
+</code></pre>
+
+<p>Extend the bases of both sklearn feature_selector and classifier.
+From sklearn BaseEstimator:
+get_params()
+set_params()
+From sklearn _BaseFilter:
+get_support()
+fit_transform(X)
+transform(X)
+From sklearn RegressorMixin:
+score(X, y): R2
+New:
+predict(X)
+predict_label(X)
+get_signature()
+Properties:
+discretize_value</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>iraps_core</strong>: object<br></li>
+<li><strong>p_thres</strong>: float, threshold for p_values<br></li>
+<li><strong>fc_thres</strong>: float, threshold for fold change or mean difference<br></li>
+<li><strong>occurrence</strong>: float, occurrence rate selected by set of p_thres and fc_thres<br></li>
+<li><strong>discretize</strong>: float, threshold of z_score to discretize target value<br></li>
+<li><strong>memory</strong>: None, str or joblib.Memory object<br></li>
+<li><strong>min_signature_features</strong>: int, the mininum number of features in a signature<br></li>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../binarize-target/" class="btn btn-neutral float-right" title="binarize estimators/scorers">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../feature-selectors/" class="btn btn-neutral" title="feature_selectors"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/goeckslab/Galaxy-ML/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../feature-selectors/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../binarize-target/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>

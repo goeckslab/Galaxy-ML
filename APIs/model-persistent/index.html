@@ -7,16 +7,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   
-  <link rel="shortcut icon" href="/Galaxy-ML/img/favicon.ico">
-  <title>Galaxy-ML Documentation</title>
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>model_persistent - Galaxy-ML Documentation</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
-  <link rel="stylesheet" href="/Galaxy-ML/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="/Galaxy-ML/css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
   
-  <script src="/Galaxy-ML/js/jquery-2.1.1.min.js" defer></script>
-  <script src="/Galaxy-ML/js/modernizr-2.8.3.min.js" defer></script>
+  <script>
+    // Current page data
+    var mkdocs_page_name = "model_persistent";
+    var mkdocs_page_input_path = "APIs/model-persistent.md";
+    var mkdocs_page_url = "/Galaxy-ML/APIs/model-persistent/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
   <script>hljs.initHighlightingOnLoad();</script> 
   
@@ -39,9 +46,9 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
       <div class="wy-side-nav-search">
-        <a href="/Galaxy-ML/." class="icon icon-home"> Galaxy-ML Documentation</a>
+        <a href="../.." class="icon icon-home"> Galaxy-ML Documentation</a>
         <div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="/Galaxy-ML//search.html" method="get">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
   </form>
 </div>
@@ -53,7 +60,7 @@
           
             <li class="toctree-l1">
 		
-    <a class="" href="/Galaxy-ML/.">Home</a>
+    <a class="" href="../..">Home</a>
 	    </li>
           
             <li class="toctree-l1">
@@ -62,35 +69,47 @@
     <ul class="subnav">
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/preprocessors/">preprocessors</a>
+    <a class="" href="../preprocessors/">preprocessors</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/feature-selectors/">feature_selectors</a>
+    <a class="" href="../feature-selectors/">feature_selectors</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/iraps-classifier/">iraps_classifier</a>
+    <a class="" href="../iraps-classifier/">iraps_classifier</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/binarize-target/">binarize estimators/scorers</a>
+    <a class="" href="../binarize-target/">binarize estimators/scorers</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/keras-galaxy-models/">keras_galaxy_models</a>
+    <a class="" href="../keras-galaxy-models/">keras_galaxy_models</a>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/model-validations/">model_validations</a>
+    <a class="" href="../model-validations/">model_validations</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">model_persistent</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#jpicklererror">JPicklerError</a></li>
+    
+
+    <li class="toctree-l3"><a href="#modeltodict">ModelToDict</a></li>
+    
+
+    <li class="toctree-l3"><a href="#dicttomodel">DictToModel</a></li>
+    
+
+    </ul>
                 </li>
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/APIs/model-persistent/">model_persistent</a>
-                </li>
-                <li class="">
-                    
-    <a class="" href="/Galaxy-ML/APIs/utils/">utils</a>
+    <a class="" href="../utils/">utils</a>
                 </li>
     </ul>
 	    </li>
@@ -101,7 +120,7 @@
     <ul class="subnav">
                 <li class="">
                     
-    <a class="" href="/Galaxy-ML/CHANGELOG/">Change Log</a>
+    <a class="" href="../../CHANGELOG/">Change Log</a>
                 </li>
     </ul>
 	    </li>
@@ -116,7 +135,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="/Galaxy-ML/.">Galaxy-ML Documentation</a>
+        <a href="../..">Galaxy-ML Documentation</a>
       </nav>
 
       
@@ -124,10 +143,19 @@
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="/Galaxy-ML/.">Docs</a> &raquo;</li>
+    <li><a href="../..">Docs</a> &raquo;</li>
     
+      
+        
+          <li>APIs &raquo;</li>
+        
+      
     
+    <li>model_persistent</li>
     <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/goeckslab/Galaxy-ML/edit/master/docs/APIs/model-persistent.md"
+          class="icon icon-github"> Edit on GitHub</a>
       
     </li>
   </ul>
@@ -136,15 +164,39 @@
           <div role="main">
             <div class="section">
               
+                <p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/model_persist.py#L54">[source]</a></span></p>
+<h2 id="jpicklererror">JPicklerError</h2>
+<pre><code class="python">galaxy_ml.model_persist.JPicklerError()
+</code></pre>
 
-  <h1 id="404-page-not-found">404</h1>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/model_persist.py#L58">[source]</a></span></p>
+<h2 id="modeltodict">ModelToDict</h2>
+<pre><code class="python">galaxy_ml.model_persist.ModelToDict()
+</code></pre>
 
-  <p><strong>Page not found</strong></p>
+<p>Follow the track of python <code>pickle</code>
+Turn a scikit-learn model to a JSON-compatiable dictionary</p>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/model_persist.py#L270">[source]</a></span></p>
+<h2 id="dicttomodel">DictToModel</h2>
+<pre><code class="python">galaxy_ml.model_persist.DictToModel()
+</code></pre>
 
-
+<p>Rebuild a scikit-learn model from dict data generated by ModelToDict.save</p>
+              
             </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../utils/" class="btn btn-neutral float-right" title="utils">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../model-validations/" class="btn btn-neutral" title="model_validations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -170,12 +222,16 @@
           <a href="https://github.com/goeckslab/Galaxy-ML/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
       
       
+        <span><a href="../model-validations/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../utils/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
-    <script>var base_url = '/Galaxy-ML/';</script>
-    <script src="/Galaxy-ML/js/theme.js" defer></script>
-      <script src="/Galaxy-ML/search/main.js" defer></script>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
 
 </body>
 </html>
