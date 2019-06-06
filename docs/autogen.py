@@ -97,7 +97,7 @@ def class_to_source_link(cls):
     path = module_name.replace('.', '/')
     path += '.py'
     line = inspect.getsourcelines(cls)[-1]
-    link = ('https://github.com/ohsu-comp-bio/'
+    link = ('https://github.com/goeckslab/'
             'Galaxy-ML/blob/master/' + path + '#L' + str(line))
     return '[[source]](' + link + ')'
 

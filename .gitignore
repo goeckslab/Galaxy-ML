@@ -1,7 +1,7 @@
 # Python bytecode
 *.pyc
-Galaxy-ML/*.pyc
-Galaxy-ML/tests/*.pyc
+galaxy_ml/*.pyc
+galaxy_ml/tests/*.pyc
 
 # Notebook
 *.ipynb
@@ -9,4 +9,6 @@ Galaxy-ML/tests/*.pyc
 #
 .DS_Store
 
-
+#docs
+docs/site
+docs/sources

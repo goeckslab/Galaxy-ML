@@ -1,11 +1,11 @@
 site_name: Galaxy-ML Documentation
 theme: readthedocs
 docs_dir: sources
-repo_url: https://github.com/ohsu-comp-bio/Galaxy-ML
-site_url: https://ohsu-comp-bio.github.io/Galaxy-ML/
+repo_url: https://github.com/goeckslab/Galaxy-ML/
+site_url: https://goeckslab.github.io/Galaxy-ML/
 site_description: 'Documentation for Galaxy-ML, make machine learning simpler with Galaxy.'
 
-google_analytics: ['UA-141380533-1', 'ohsu-comp-bio.github.io/Galaxy-ML/']
+google_analytics: ['UA-141380533-1', 'goeckslab.github.io/Galaxy-ML/']
 
 nav:
 - Home: index.md
