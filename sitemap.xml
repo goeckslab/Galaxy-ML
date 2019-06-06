@@ -1,53 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/preprocessors/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/feature-selectors/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/iraps-classifier/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/binarize-target/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/keras-galaxy-models/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/model-validations/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/model-persistent/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/APIs/utils/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>https://ohsu-comp-bio.github.io/Galaxy-ML/CHANGELOG/</loc>
-     <lastmod>2019-06-05</lastmod>
+     <loc></loc>
+     
      <changefreq>daily</changefreq>
     </url>
 </urlset>
