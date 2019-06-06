@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>keras_galaxy_models - Galaxy-ML Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "keras_galaxy_models";
+    var mkdocs_page_input_path = "APIs/keras-galaxy-models.md";
+    var mkdocs_page_url = "/Galaxy-ML/APIs/keras-galaxy-models/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-141380533-1', 'ohsu-comp-bio.github.io/Galaxy-ML/');
+      ga('send', 'pageview');
+  </script>
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Galaxy-ML Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">APIs</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../preprocessors/">preprocessors</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../feature-selectors/">feature_selectors</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../iraps-classifier/">iraps_classifier</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../binarize-target/">binarize estimators/scorers</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">keras_galaxy_models</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#searchparam">SearchParam</a></li>
+    
+
+    <li class="toctree-l3"><a href="#keraslayers">KerasLayers</a></li>
+    
+
+    <li class="toctree-l3"><a href="#basekerasmodel">BaseKerasModel</a></li>
+    
+
+    <li class="toctree-l3"><a href="#kerasgclassifier">KerasGClassifier</a></li>
+    
+
+    <li class="toctree-l3"><a href="#kerasgregressor">KerasGRegressor</a></li>
+    
+
+    <li class="toctree-l3"><a href="#kerasgbatchclassifier">KerasGBatchClassifier</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-validations/">model_validations</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-persistent/">model_persistent</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../utils/">utils</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Releases</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../CHANGELOG/">Change Log</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Galaxy-ML Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>APIs &raquo;</li>
+        
+      
+    
+    <li>keras_galaxy_models</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/ohsu-comp-bio/Galaxy-ML/edit/master/docs/APIs/keras-galaxy-models.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L187">[source]</a></span></p>
+<h2 id="searchparam">SearchParam</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.SearchParam(s_param, value)
+</code></pre>
+
+<p>Sortable Wrapper class for search parameters</p>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L210">[source]</a></span></p>
+<h2 id="keraslayers">KerasLayers</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasLayers(name='sequential_1', layers=[])
+</code></pre>
+
+<p><strong>Parameters</strong></p>
+<pre><code>name: str
+layers: list of dict, the configuration of model
+</code></pre>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L290">[source]</a></span></p>
+<h2 id="basekerasmodel">BaseKerasModel</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.BaseKerasModel(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=0, callbacks=None, validation_data=None)
+</code></pre>
+
+<p>Base class for Galaxy Keras wrapper</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>config</strong>: dictionary<br>
+        from <code>model.get_config()</code></li>
+<li><strong>model_type</strong>: str<br>
+        'sequential' or 'functional'</li>
+<li><strong>optimizer</strong>: str, default 'sgd'<br>
+        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'</li>
+<li><strong>loss</strong>: str, default 'binary_crossentropy'<br>
+        same as Keras <code>loss</code></li>
+<li><strong>metrics</strong>: list of strings, default []<br></li>
+<li><strong>lr</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>momentum</strong>: None or float<br>
+        for optimizer <code>sgd</code> only, ignored otherwise</li>
+<li><strong>nesterov</strong>: None or bool<br>
+        for optimizer <code>sgd</code> only, ignored otherwise</li>
+<li><strong>decay</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>rho</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>epsilon</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>amsgrad</strong>: None or bool<br>
+        for optimizer <code>adam</code> only, ignored otherwise</li>
+<li><strong>beta_1</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>beta_2</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>schedule_decay</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>epochs</strong>: int<br>
+        fit_param from Keras</li>
+<li><strong>batch_size</strong>: None or int, default=None<br>
+        fit_param, if None, will default to 32</li>
+<li><strong>callbacks</strong>: None or list of dict<br>
+        fit_param, each dict contains one type of callback configuration.
+        e.g. {"callback_selection":
+                {"callback_type": "EarlyStopping",
+                 "monitor": "val_loss"
+                 "baseline": None,
+                 "min_delta": 0.0,
+                 "patience": 10,
+                 "mode": "auto",
+                 "restore_best_weights": False}}</li>
+<li><strong>validation_data</strong>: None or tuple of arrays, (X_test, y_test)<br>
+        fit_param</li>
+<li><strong>seed</strong>: None or int, default 0<br>
+        backend random seed</li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L755">[source]</a></span></p>
+<h2 id="kerasgclassifier">KerasGClassifier</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGClassifier(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=0, callbacks=None, validation_data=None)
+</code></pre>
+
+<p>Scikit-learn classifier API for Keras</p>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L829">[source]</a></span></p>
+<h2 id="kerasgregressor">KerasGRegressor</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGRegressor(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=0, callbacks=None, validation_data=None)
+</code></pre>
+
+<p>Scikit-learn API wrapper for Keras regressor</p>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L857">[source]</a></span></p>
+<h2 id="kerasgbatchclassifier">KerasGBatchClassifier</h2>
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGBatchClassifier(config, train_batch_generator, predict_batch_generator=None, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, epsilon=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=0, n_jobs=1, callbacks=None, validation_data=None)
+</code></pre>
+
+<p>keras classifier with batch data generator</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>config</strong>: dictionary<br>
+        from <code>model.get_config()</code>
+    train_batch_generator: instance of batch data generator
+    predict_batch_generator: instance of batch data generator (default=None)
+        if None, same as train_batch_generator</li>
+<li><strong>model_type</strong>: str<br>
+        'sequential' or 'functional'</li>
+<li><strong>optimizer</strong>: str, default 'sgd'<br>
+        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'</li>
+<li><strong>loss</strong>: str, default 'binary_crossentropy'<br>
+        same as Keras <code>loss</code></li>
+<li><strong>metrics</strong>: list of strings, default []<br></li>
+<li><strong>lr</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>momentum</strong>: None or float<br>
+        for optimizer <code>sgd</code> only, ignored otherwise</li>
+<li><strong>nesterov</strong>: None or bool<br>
+        for optimizer <code>sgd</code> only, ignored otherwise</li>
+<li><strong>decay</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>rho</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>epsilon</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>amsgrad</strong>: None or bool<br>
+        for optimizer <code>adam</code> only, ignored otherwise</li>
+<li><strong>beta_1</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>beta_2</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>schedule_decay</strong>: None or float<br>
+        optimizer parameter, default change with <code>optimizer</code></li>
+<li><strong>epochs</strong>: int<br>
+        fit_param from Keras</li>
+<li><strong>batch_size</strong>: None or int, default=None<br>
+        fit_param, if None, will default to 32</li>
+<li><strong>callbacks</strong>: None or list of dict<br>
+        each dict contains one type of callback configuration.
+        e.g. {"callback_selection":
+                {"callback_type": "EarlyStopping",
+                 "monitor": "val_loss"
+                 "baseline": None,
+                 "min_delta": 0.0,
+                 "patience": 10,
+                 "mode": "auto",
+                 "restore_best_weights": False}}</li>
+<li><strong>validation_data</strong>: None or tuple of arrays, (X_test, y_test)<br>
+        fit_param</li>
+<li><strong>seed</strong>: None or int, default 0<br>
+        backend random seed</li>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../model-validations/" class="btn btn-neutral float-right" title="model_validations">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../binarize-target/" class="btn btn-neutral" title="binarize estimators/scorers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/ohsu-comp-bio/Galaxy-ML/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../binarize-target/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../model-validations/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>

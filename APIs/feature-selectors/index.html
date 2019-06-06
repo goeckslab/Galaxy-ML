@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>feature_selectors - Galaxy-ML Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "feature_selectors";
+    var mkdocs_page_input_path = "APIs/feature-selectors.md";
+    var mkdocs_page_url = "/Galaxy-ML/APIs/feature-selectors/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-141380533-1', 'ohsu-comp-bio.github.io/Galaxy-ML/');
+      ga('send', 'pageview');
+  </script>
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Galaxy-ML Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">APIs</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../preprocessors/">preprocessors</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">feature_selectors</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#dyrfe">DyRFE</a></li>
+    
+
+    <li class="toctree-l3"><a href="#dyrfecv">DyRFECV</a></li>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../iraps-classifier/">iraps_classifier</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../binarize-target/">binarize estimators/scorers</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../keras-galaxy-models/">keras_galaxy_models</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-validations/">model_validations</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../model-persistent/">model_persistent</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../utils/">utils</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Releases</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../CHANGELOG/">Change Log</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Galaxy-ML Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>APIs &raquo;</li>
+        
+      
+    
+    <li>feature_selectors</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/ohsu-comp-bio/Galaxy-ML/edit/master/docs/APIs/feature-selectors.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/feature_selectors.py#L30">[source]</a></span></p>
+<h2 id="dyrfe">DyRFE</h2>
+<pre><code class="python">galaxy_ml.feature_selectors.DyRFE(estimator, n_features_to_select=None, step=1, verbose=0)
+</code></pre>
+
+<p>Mainly used with DyRFECV</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>estimator</strong>: object<br>
+        A supervised learning estimator with a <code>fit</code> method that provides
+        information about feature importance either through a <code>coef_</code>
+        attribute or through a <code>feature_importances_</code> attribute.</li>
+<li><strong>n_features_to_select</strong>: int or None (default=None)<br>
+        The number of features to select. If <code>None</code>, half of the features
+        are selected.</li>
+<li><strong>step</strong>: int, float or list, optional (default=1)<br>
+        If greater than or equal to 1, then <code>step</code> corresponds to the
+        (integer) number of features to remove at each iteration.
+        If within (0.0, 1.0), then <code>step</code> corresponds to the percentage
+        (rounded down) of features to remove at each iteration.
+        If list, a series of steps of features to remove at each iteration.
+        Iterations stops when steps finish</li>
+<li><strong>verbose</strong>: int, (default=0)<br>
+        Controls verbosity of output.</li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/ohsu-comp-bio/Galaxy-ML/blob/master/galaxy_ml/feature_selectors.py#L154">[source]</a></span></p>
+<h2 id="dyrfecv">DyRFECV</h2>
+<pre><code class="python">galaxy_ml.feature_selectors.DyRFECV(estimator, step=1, min_features_to_select=1, cv='warn', scoring=None, verbose=0, n_jobs=None)
+</code></pre>
+
+<p>Compared with RFECV, DyRFECV offers flexiable <code>step</code> to eleminate
+features, in the format of list, while RFECV supports only fixed number
+of <code>step</code>.</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>estimator</strong>: object<br>
+        A supervised learning estimator with a <code>fit</code> method that provides
+        information about feature importance either through a <code>coef_</code>
+        attribute or through a <code>feature_importances_</code> attribute.</li>
+<li><strong>step</strong>: int or float, optional (default=1)<br>
+        If greater than or equal to 1, then <code>step</code> corresponds to the
+        (integer) number of features to remove at each iteration.
+        If within (0.0, 1.0), then <code>step</code> corresponds to the percentage
+        (rounded down) of features to remove at each iteration.
+        If list, a series of step to remove at each iteration. iteration stopes
+        when finishing all steps
+        Note that the last iteration may remove fewer than <code>step</code> features in
+        order to reach <code>min_features_to_select</code>.</li>
+<li><strong>min_features_to_select</strong>: int, (default=1)<br>
+        The minimum number of features to be selected. This number of features
+        will always be scored, even if the difference between the original
+        feature count and <code>min_features_to_select</code> isn't divisible by
+        <code>step</code>.</li>
+<li>
+<p><strong>cv</strong>: int, cross-validation generator or an iterable, optional<br>
+        Determines the cross-validation splitting strategy.
+        Possible inputs for cv are:
+        - None, to use the default 3-fold cross-validation,
+        - integer, to specify the number of folds.
+        - :term:<code>CV splitter</code>,
+        - An iterable yielding (train, test) splits as arrays of indices.</p>
+<pre><code>For integer/None inputs, if ``y`` is binary or multiclass,
+:class:`sklearn.model_selection.StratifiedKFold` is used. If the
+estimator is a classifier or if ``y`` is neither binary nor multiclass,
+:class:`sklearn.model_selection.KFold` is used.
+Refer :ref:`User Guide &lt;cross_validation&gt;` for the various
+cross-validation strategies that can be used here.
+.. versionchanged:: 0.20
+    ``cv`` default value of None will change from 3-fold to 5-fold
+    in v0.22.
+</code></pre>
+</li>
+<li>
+<p><strong>scoring</strong>: string, callable or None, optional, (default=None)<br>
+        A string (see model evaluation documentation) or
+        a scorer callable object / function with signature
+        <code>scorer(estimator, X, y)</code>.</p>
+</li>
+<li><strong>verbose</strong>: int, (default=0)<br>
+        Controls verbosity of output.</li>
+<li><strong>n_jobs</strong>: int or None, optional (default=None)<br>
+        Number of cores to run in parallel while fitting across folds.
+        <code>None</code> means 1 unless in a :obj:<code>joblib.parallel_backend</code> context.
+        <code>-1</code> means using all processors. See :term:<code>Glossary &lt;n_jobs&gt;</code>
+        for more details.</li>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../iraps-classifier/" class="btn btn-neutral float-right" title="iraps_classifier">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../preprocessors/" class="btn btn-neutral" title="preprocessors"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/ohsu-comp-bio/Galaxy-ML/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../preprocessors/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../iraps-classifier/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>
