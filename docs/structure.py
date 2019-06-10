@@ -26,6 +26,7 @@ PAGES = [
             preprocessors.FastaIterator,
             preprocessors.FastaToArrayIterator,
             preprocessors.FastaDNABatchGenerator,
+            preprocessors.FastaRNABatchGenerator,
             preprocessors.FastaProteinBatchGenerator
 
         ]

@@ -31,11 +31,15 @@
         </param>
         <conditional name="generator_selection">
           <param name="generator_type" type="select" label="Select a batch data generator">
-            <option value="FastaDNABatchGenerator">FastaDNABatchGenerator -- Online transformation of DNA sequences</option>
+            <option value="FastaDNABatchGenerator" selected="true">FastaDNABatchGenerator -- Online transformation of DNA sequences</option>
+            <option value="FastaRNABatchGenerator">FastaRNABatchGenerator -- Online transformation of RNA sequences</option>
             <option value="FastaProteinBatchGenerator">FastaProteinBatchGenerator -- Online transformation of Protein sequences</option>
             <!--option value="ImageBatchGenerator">ImageBatchGenerator - Online transformation of images</option-->
           </param>
           <when value="FastaDNABatchGenerator">
+            <expand macro="params_fasta_dna_batch_generator"/>
+          </when>
+          <when value="FastaRNABatchGenerator">
             <expand macro="params_fasta_dna_batch_generator"/>
           </when>
           <when value="FastaProteinBatchGenerator">

@@ -93,10 +93,9 @@ def test_fasta_to_array_iterator_params():
 
     params = list(toarray_iterator.get_params().keys())
 
-    expect1 = ['X', 'base_to_index', 'batch_size',
-               'fasta_file', 'n_bases', 'sample_weight',
-               'seed', 'seq_length', 'shuffle',
-               'unk_base', 'y']
+    expect1 = ['X', 'batch_size', 'fasta_file',
+               'generator', 'n_bases', 'sample_weight',
+               'seed', 'seq_length', 'shuffle', 'y']
 
     assert params == expect1, params
 
@@ -118,11 +117,12 @@ def test_fasta_to_array_iterator_params():
 
 def test_fasta_to_array_iterator_transform():
 
+    generator = FastaDNABatchGenerator(sequence_path)
     fasta_file = pyfaidx.Fasta(sequence_path)
     X = np.arange(2, 8)[:, np.newaxis]
     y = np.array([1, 0, 0, 1, 0, 1])
     toarray_iterator = FastaToArrayIterator(
-        X, y, fasta_file, seed=42, n_bases=4)
+        X, generator, y=y, fasta_file=fasta_file, seed=42, n_bases=4)
 
     arr0 = toarray_iterator.apply_transform(0)
     expect2 = np.array([[0., 1., 0., 0.],
@@ -191,7 +191,6 @@ def test_protein_one_hot_encoder():
     coder = ProteinOneHotEncoder(fasta_path=fasta_path, padding=True)
     X = np.zeros((20, 1))
     X[:, 0] = np.arange(20)
-    y = np.random.randint(2, size=20)
 
     coder.fit(X)
     trans = coder.transform(X)

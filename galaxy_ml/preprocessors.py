@@ -35,7 +35,8 @@ except ImportError:
 __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
            'ProteinOneHotEncoder', 'ImageBatchGenerator',
            'FastaIterator', 'FastaToArrayIterator',
-           'FastaDNABatchGenerator', 'FastaProteinBatchGenerator')
+           'FastaDNABatchGenerator', 'FastaRNABatchGenerator',
+           'FastaProteinBatchGenerator')
 
 
 class Z_RandomOverSampler(BaseOverSampler):
@@ -425,6 +426,9 @@ class FastaToArrayIterator(FastaIterator):
     ----------
     X : array
         Contains sequence indexes in the fasta file
+    generator : object
+        instance of BatchGenerator, e.g.,  FastaDNABatchGenerator
+        or FastaProteinBatchGenerator
     y : array
         Target labels or values
     fasta_file : object
@@ -440,25 +444,18 @@ class FastaToArrayIterator(FastaIterator):
         4 for DNA, 20 for protein
     seq_length : int, default=1000
         Output sequence length
-    base_to_index : dict or None
-    unk_base : str or None
     """
-    def __init__(self, X, y=None, fasta_file=None, batch_size=32,
+    def __init__(self, X, generator, y=None, fasta_file=None, batch_size=32,
                  shuffle=True, sample_weight=None, seed=None,
-                 n_bases=4, seq_length=1000, base_to_index=None,
-                 unk_base=None):
+                 n_bases=4, seq_length=1000):
         X, y, sample_weight = indexable(X, y, sample_weight)
         self.X = X
+        self.generator = generator
         self.y = y
         self.fasta_file = fasta_file
         self.sample_weight = sample_weight
         self.n_bases = n_bases
         self.seq_length = seq_length
-        self.base_to_index = base_to_index or {
-            'A': 0, 'C': 1, 'G': 2, 'T': 3,
-            'a': 0, 'c': 1, 'g': 2, 't': 3,
-        }
-        self.unk_base = unk_base or 'N'
 
         super(FastaToArrayIterator, self).__init__(
             X.shape[0], batch_size, shuffle, seed)
@@ -496,12 +493,12 @@ class FastaToArrayIterator(FastaIterator):
             cur_sequence = selene_sdk.predict._common._pad_sequence(
                 cur_sequence,
                 self.seq_length,
-                self.unk_base)
+                self.generator.UNK_BASE)
 
         cur_sequence_encodeing = selene_sdk.sequences._sequence.\
             _fast_sequence_to_encoding(
                 cur_sequence,
-                self.base_to_index,
+                self.generator.BASE_TO_INDEX,
                 self.n_bases)
 
         return cur_sequence_encodeing
@@ -540,12 +537,39 @@ class FastaDNABatchGenerator(BaseEstimator):
 
     def flow(self, X, y=None, batch_size=32, sample_weight=None):
         return FastaToArrayIterator(
-            X, y=y, fasta_file=self.fasta_file, batch_size=batch_size,
-            shuffle=self.shuffle, sample_weight=sample_weight,
+            X, self, y=y, fasta_file=self.fasta_file,
+            batch_size=batch_size, shuffle=self.shuffle,
+            sample_weight=sample_weight,
             seed=self.seed, n_bases=self.n_bases,
-            seq_length=self.seq_length,
-            base_to_index=self.BASE_TO_INDEX,
-            unk_base=self.UNK_BASE)
+            seq_length=self.seq_length)
+
+
+class FastaRNABatchGenerator(FastaDNABatchGenerator):
+    """Fasta squence batch data generator, online transformation of sequences
+        to array.
+
+    Parameters
+    ----------
+    fasta_path : str
+        File path to fasta file.
+    seq_length : int, default=1000
+        Sequence length, number of bases.
+    shuffle : bool, default=True
+        Whether to shuffle the data between epochs
+    seed : int
+        Random seed for data shuffling
+    """
+    def __init__(self, fasta_path, seq_length=1000, shuffle=True, seed=None):
+        super(FastaRNABatchGenerator, self).__init__(
+            fasta_path=fasta_path, seq_length=seq_length,
+            shuffle=shuffle, seed=seed
+        )
+        self.n_bases = 4
+        self.BASE_TO_INDEX = {
+            'A': 0, 'C': 1, 'G': 2, 'U': 3,
+            'a': 0, 'c': 1, 'g': 2, 'u': 3,
+        }
+        self.UNK_BASE = 'N'
 
 
 class FastaProteinBatchGenerator(FastaDNABatchGenerator):
