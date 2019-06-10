@@ -209,8 +209,9 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
     Paramaters
     ----------
     fasta_path : str, default None
-        File path to the fasta file. There could two alternative ways to set up
-        `fasta_path`. 1) through fit_params; 2) set_params().
+        File path to the fasta file. There could two other ways to set up
+        `fasta_path`. 1) through fit_params; 2) set_params(). If fasta_path is
+        None, we suppose the sequences are contained in first column of X.
     padding : bool, default is False
         All sequences are expected to be in the same length, but sometimes not.
         If True, all sequences use the same length of first entry by either
@@ -250,25 +251,28 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
         if fasta_path:
             self.fasta_path = fasta_path
 
-        if not self.fasta_path:
-            raise ValueError("`fasta_path` can't be None!")
+        if self.fasta_path:
+            fasta_file = pyfaidx.Fasta(self.fasta_path)
+        else:
+            fasta_file = None
 
-        fasta_file = pyfaidx.Fasta(self.fasta_path)
         if not self.seq_length:
             # set up the sequence_length from the first entry
-            sequence_length = len(fasta_file[int(X[0, 0])])
+            sequence_length = len(fasta_file[int(X[0, 0])]) \
+                if fasta_file else len(str(X[0, 0]))
         else:
             sequence_length = self.seq_length
 
         if not self.padding:
-            for idx in X[:, 0]:
-                fasta_record = fasta_file[int(idx)]
-                if len(fasta_record) != sequence_length:
+            for idx in np.arange(X.shape[0]):
+                seq = fasta_file[int(X[idx, 0])] \
+                    if fasta_file else str(X[idx, 0])
+                if len(seq) != sequence_length:
                     raise ValueError("The first sequence record contains "
-                                     "%d bases, while %s contrain %d bases"
+                                     "%d bases, while %s contrains %d bases"
                                      % (sequence_length,
-                                        repr(fasta_record),
-                                        len(fasta_record)))
+                                        repr(seq),
+                                        len(seq)))
 
         self.fasta_file = fasta_file
         self.seq_length_ = sequence_length
@@ -291,8 +295,9 @@ class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
                                         self.seq_length_,
                                         4))
         for i in range(X.shape[0]):
-            cur_sequence = self.fasta_file[int(X[i, 0])]
-            cur_sequence = str(cur_sequence)
+            cur_sequence = str(self.fasta_file[int(X[i, 0])]) \
+                if self.fasta_file else str(X[i, 0])
+
             if len(cur_sequence) > self.seq_length_:
                 cur_sequence = selene_sdk.predict._common._truncate_sequence(
                     cur_sequence,
@@ -321,8 +326,9 @@ class ProteinOneHotEncoder(GenomeOneHotEncoder):
     Paramaters
     ----------
     fasta_path : str, default None
-        File path to the fasta file. There could two alternative ways to set up
-        `fasta_path`. 1) through fit_params; 2) set_params().
+         File path to the fasta file. There could two other ways to set up
+        `fasta_path`. 1) through fit_params; 2) set_params(). If fasta_path is
+        None, we suppose the sequences are contained in first column of X.
     padding : bool, default is False
         All sequences are expected to be in the same length, but sometimes not.
         If True, all sequences use the same length of first entry by either
@@ -356,7 +362,9 @@ class ProteinOneHotEncoder(GenomeOneHotEncoder):
                                         self.seq_length_,
                                         20))
         for i in range(X.shape[0]):
-            cur_sequence = self.fasta_file[int(X[i, 0])]
+            cur_sequence = str(self.fasta_file[int(X[i, 0])]) \
+                if self.fasta_file else str(X[i, 0])
+
             cur_sequence = str(cur_sequence)
             if len(cur_sequence) > self.seq_length_:
                 cur_sequence = selene_sdk.predict._common._truncate_sequence(

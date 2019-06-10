@@ -49,6 +49,7 @@ def test_fast_sequence_to_encoding():
 
 def test_gnome_one_hot_encoder():
     coder = GenomeOneHotEncoder(padding=False)
+    coder1 = clone(coder)
     X = np.zeros((20, 1))
     X[:, 0] = np.arange(20)
     coder.fit(X, fasta_path=sequence_path)
@@ -56,6 +57,14 @@ def test_gnome_one_hot_encoder():
     trans = coder.transform(X)
 
     expect = np.load('./test-data/sequence_encoding01.npy')
+
+    assert np.array_equal(trans, expect), trans
+
+    fasta_file = pyfaidx.Fasta(sequence_path)
+    X1 = np.array([str(fasta_file[i]) for i in range(20)])[:, np.newaxis]
+
+    coder1.fit(X1)
+    trans = coder1.transform(X1)
 
     assert np.array_equal(trans, expect), trans
 
@@ -189,5 +198,15 @@ def test_protein_one_hot_encoder():
     # np.save('./test-data/sequence_encoding02.npy', trans)
 
     expect = np.load('./test-data/sequence_encoding02.npy')
+
+    assert np.array_equal(trans, expect), trans
+
+    fasta_file = pyfaidx.Fasta(fasta_path)
+    X1 = np.array([str(fasta_file[i]) for i in range(20)])[:, np.newaxis]
+
+    coder.set_params(fasta_path=None)
+
+    coder.fit(X1)
+    trans = coder.transform(X1)
 
     assert np.array_equal(trans, expect), trans
