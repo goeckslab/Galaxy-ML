@@ -1,3 +1,23 @@
+### Version 0.7.0 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-09-2019)
+
+#### New Features
+
+- Adds `validation_data` into keras galaxy models and supports gridsearch and `model_validation`.
+- Adds fasta sequence batch generator and makes `FastaDNABatchGenerator`, `FastaRNABatchGenerator` and `FastaProteinBatchGenerator`.
+- Adds keras galaxy batch classifier and `generator.flow`.
+- Adds `keras_batch_models` tool.
+- Adds `GenomeOneHotEncoder` and `ProteinOneHotEncoder` to `pipeline`.
+- Adds API documentation at `https://goeckslab.github.io/Galaxy-ML/`.
+
+#### Changes
+
+-
+
+#### Bug Fixes
+
+-
+
+
 ### Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)
 
 #### New Features
