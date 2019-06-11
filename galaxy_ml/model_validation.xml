@@ -51,11 +51,8 @@ input_json_path = sys.argv[1]
 with open(input_json_path, 'r') as param_handler:
     params = json.load(param_handler)
 
-#if $model_validation_functions.options.cv_selector.selected_cv\
-        in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']:
-params['model_validation_functions']['options']['cv_selector']['groups_selector']['infile_g'] =\
-        '$model_validation_functions.options.cv_selector.groups_selector.infile_g'
-#end if
+## store readed dataframe object
+readed_df = {}
 
 input_type = params['input_options']['selected_input']
 if input_type == 'tabular':
@@ -65,33 +62,33 @@ if input_type == 'tabular':
         c = params['input_options']['column_selector_options_1']['col1']
     else:
         c = None
-    X = read_columns(
-            '$input_options.infile1',
-            c = c,
-            c_option = column_option,
-            sep='\t',
-            header=header,
-            parse_dates=True).astype(float)
-elif input_type == 'seq_fasta':
-    fasta_file = '$input_options.fasta_file'
-    pyfaidx = get_module('pyfaidx')
-    sequences = pyfaidx.Fasta(fasta_file)
-    n_seqs = len(sequences.keys())
-    X = np.arange(n_seqs)[:, np.newaxis]
-    for param in estimator_params.keys():
-        if param.endswith('fasta_path'):
-            estimator.set_params(
-                **{param: fasta_file})
-    else:
-        raise ValueError(
-            "The selected estimator doesn't support "
-            "fasta file input! Please consider using "
-            "KerasGBatchClassifier with "
-            "FastaDNABatchGenerator/FastaProteinBatchGenerator "
-            "or having GenomeOneHotEncoder/ProteinOneHotEncoder "
-            "in pipeline!")
+    infile1 = '$input_options.infile1'
+    df_key = infile1 + repr(header)
+    df = pd.read_csv(infile1, sep='\t', header=header, parse_dates=True)
+    readed_df[df_key] = df
+    X = read_columns(df, c=c, c_option=column_option).astype(float)
 elif input_type == 'sparse':
     X = mmread('$input_options.infile1')
+
+#if $input_options.selected_input == 'seq_fasta'
+fasta_file = '$input_options.fasta_file'
+pyfaidx = get_module('pyfaidx')
+sequences = pyfaidx.Fasta(fasta_file)
+n_seqs = len(sequences.keys())
+X = np.arange(n_seqs)[:, np.newaxis]
+for param in estimator_params.keys():
+    if param.endswith('fasta_path'):
+        estimator.set_params(
+            **{param: fasta_file})
+else:
+    raise ValueError(
+        "The selected estimator doesn't support "
+        "fasta file input! Please consider using "
+        "KerasGBatchClassifier with "
+        "FastaDNABatchGenerator/FastaProteinBatchGenerator "
+        "or having GenomeOneHotEncoder/ProteinOneHotEncoder "
+        "in pipeline!")
+#end if
 
 header = 'infer' if params['input_options']['header2'] else None
 column_option = params['input_options']['column_selector_options_2']['selected_column_selector_option2']
@@ -99,8 +96,12 @@ if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_na
     c = params['input_options']['column_selector_options_2']['col2']
 else:
     c = None
+infile2 = '$input_options.infile2'
+df_key = infile2 + repr(header)
+if df_key in readed_df:
+    infile2 = readed_df[df_key]
 y = read_columns(
-        '$input_options.infile2',
+        infile2,
         c = c,
         c_option = column_option,
         sep='\t',
@@ -110,6 +111,30 @@ y = y.ravel()
 
 ## handle options
 options = params['model_validation_functions']['options']
+
+#if $model_validation_functions.options.cv_selector.selected_cv\
+        in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']:
+infile_g = '$model_validation_functions.options.cv_selector.groups_selector.infile_g'
+header = 'infer' if options['cv_selector']['groups_selector']['header_g'] else None
+column_option = (options['cv_selector']['groups_selector']['column_selector_options_g']
+                        ['selected_column_selector_option_g'])
+if column_option in ['by_index_number', 'all_but_by_index_number',
+                     'by_header_name', 'all_but_by_header_name']:
+    c = (options['cv_selector']['groups_selector']['column_selector_options_g']['col_g'])
+else:
+    c = None
+df_key = infile_g + repr(header)
+if df_key in readed_df:
+    infile_g = readed_df[df_key]
+groups = read_columns(infile_g, c=c, c_option=column_option,
+                      sep='\t', header=header, parse_dates=True)
+groups = groups.ravel()
+options['cv_selector']['groups_selector'] = groups
+#end if
+
+## del readed_df
+del readed_df
+
 splitter, groups = get_cv( options.pop('cv_selector') )
 options['cv'] = splitter
 options['groups'] = groups

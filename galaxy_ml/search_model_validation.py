@@ -24,9 +24,8 @@ from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search
 
-from utils import (SafeEval, get_cv, get_scoring, get_X_y,
-                   load_model, read_columns, try_get_attr,
-                   get_module)
+from utils import (SafeEval, get_cv, get_scoring, load_model,
+                   read_columns, try_get_attr, get_module)
 
 
 _fit_and_score = try_get_attr('model_validations', '_fit_and_score')
@@ -197,20 +196,19 @@ def main(inputs, infile_estimator, infile1, infile2,
     fasta_file : str
         File path to dataset containing fasta file
     """
-
     warnings.simplefilter('ignore')
 
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
-    if groups:
-        (params['search_schemes']['options']['cv_selector']
-         ['groups_selector']['infile_g']) = groups
 
     params_builder = params['search_schemes']['search_params_builder']
 
     with open(infile_estimator, 'rb') as estimator_handler:
         estimator = load_model(estimator_handler)
     estimator_params = estimator.get_params()
+
+    # store readed dataframe object
+    readed_df = {}
 
     input_type = params['input_options']['selected_input']
     # tabular input
@@ -223,13 +221,13 @@ def main(inputs, infile_estimator, infile1, infile2,
             c = params['input_options']['column_selector_options_1']['col1']
         else:
             c = None
-        X = read_columns(
-                infile1,
-                c=c,
-                c_option=column_option,
-                sep='\t',
-                header=header,
-                parse_dates=True).astype(float)
+
+        df_key = infile1 + repr(header)
+        df = pandas.read_csv(infile1, sep='\t', header=header,
+                             parse_dates=True)
+        readed_df[df_key] = df
+
+        X = read_columns(df, c=c, c_option=column_option).astype(float)
     # sparse input
     elif input_type == 'sparse':
         X = mmread(open(infile1, 'r'))
@@ -262,6 +260,11 @@ def main(inputs, infile_estimator, infile1, infile2,
         c = params['input_options']['column_selector_options_2']['col2']
     else:
         c = None
+
+    df_key = infile2 + repr(header)
+    if df_key in readed_df:
+        infile2 = readed_df[df_key]
+
     y = read_columns(
             infile2,
             c=c,
@@ -279,6 +282,33 @@ def main(inputs, infile_estimator, infile1, infile2,
     # handle gridsearchcv options
     options = params['search_schemes']['options']
 
+    if groups:
+        header = 'infer' if (options['cv_selector']['groups_selector']
+                                    ['header_g']) else None
+        column_option = (options['cv_selector']['groups_selector']
+                                ['column_selector_options_g']
+                                ['selected_column_selector_option_g'])
+        if column_option in ['by_index_number', 'all_but_by_index_number',
+                             'by_header_name', 'all_but_by_header_name']:
+            c = (options['cv_selector']['groups_selector']
+                        ['column_selector_options_g']['col_g'])
+        else:
+            c = None
+
+        df_key = groups + repr(header)
+        if df_key in readed_df:
+            groups = readed_df[df_key]
+
+        groups = read_columns(
+                groups,
+                c=c,
+                c_option=column_option,
+                sep='\t',
+                header=header,
+                parse_dates=True)
+        groups = groups.ravel()
+        options['cv_selector']['groups_selector'] = groups
+
     splitter, groups = get_cv(options.pop('cv_selector'))
     options['cv'] = splitter
     options['n_jobs'] = N_JOBS
@@ -292,6 +322,9 @@ def main(inputs, infile_estimator, infile1, infile2,
         options['refit'] = primary_scoring
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
+
+    # del readed_df
+    del readed_df
 
     # handle memory
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)

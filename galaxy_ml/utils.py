@@ -1,4 +1,5 @@
 import ast
+import collections
 import json
 import imblearn
 import numpy as np
@@ -13,7 +14,6 @@ import time
 import warnings
 import xgboost
 
-from collections import Counter
 from asteval import Interpreter, make_symbol_table
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
@@ -139,20 +139,36 @@ def load_model(file):
 def read_columns(f, c=None, c_option='by_index_number',
                  return_df=False, **args):
     """Return array from a tabular dataset by various columns selection
+
+    Parameters
+    ----------
+    f : str or DataFrame object
+        If str, file path.
+    c : list of int or str
+        When integers, column indices; when str, list of column names.
+    c_option : str
+        One of ['by_index_number', 'by_header_name',
+                'all_but_by_index_number', 'all_but_by_header_name'].
+    return_df : bool
+        Whether to return the DataFrame object.
+    args : params for `pandas.read_csv`
     """
-    data = pandas.read_csv(f, **args)
+    if isinstance(f, str):
+        data = pandas.read_csv(f, **args)
+    else:
+        data = f
     if c_option == 'by_index_number':
         cols = list(map(lambda x: x - 1, c))
         data = data.iloc[:, cols]
-    if c_option == 'all_but_by_index_number':
+    elif c_option == 'all_but_by_index_number':
         cols = list(map(lambda x: x - 1, c))
-        data.drop(data.columns[cols], axis=1, inplace=True)
-    if c_option == 'by_header_name':
+        data = data.drop(data.columns[cols], axis=1, inplace=False)
+    elif c_option == 'by_header_name':
         cols = [e.strip() for e in c.split(',')]
         data = data[cols]
-    if c_option == 'all_but_by_header_name':
+    elif c_option == 'all_but_by_header_name':
         cols = [e.strip() for e in c.split(',')]
-        data.drop(cols, axis=1, inplace=True)
+        data = data.drop(cols, axis=1, inplace=False)
     y = data.values
     if return_df:
         return y, data
@@ -471,7 +487,8 @@ def get_cv(cv_json):
         return cv_json['n_splits'], None
 
     groups = cv_json.pop('groups_selector', None)
-    if groups is not None:
+    # if groups is array, return it
+    if groups is not None and isinstance(groups, collections.Mapping):
         infile_g = groups['infile_g']
         header = 'infer' if groups['header_g'] else None
         column_option = (groups['column_selector_options_g']
