@@ -365,7 +365,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         self.value = value
         self.less_is_positive = less_is_positive
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None, **fit_params):
         """
         Convert y to True and False labels and then fit the classifier
         with X and new y
@@ -391,10 +391,19 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
 
         self.classifier_ = clone(self.classifier)
 
+        keys = list(fit_params.keys())
+        for key in keys:
+            if not key.startswith('classifier__'):
+                raise ValueError("fit_params for BinarizeTargetClassifier "
+                                 "must start with `classifier__`")
+            fit_params[key[12:]] = fit_params.pop(key)
+
         if sample_weight is not None:
-            self.classifier_.fit(X, y_trans, sample_weight=sample_weight)
+            self.classifier_.fit(X, y_trans,
+                                 sample_weight=sample_weight,
+                                 **fit_params)
         else:
-            self.classifier_.fit(X, y_trans)
+            self.classifier_.fit(X, y_trans, **fit_params)
 
         if hasattr(self.classifier_, 'feature_importances_'):
             self.feature_importances_ = self.classifier_.feature_importances_
@@ -508,7 +517,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         self.value = value
         self.less_is_positive = less_is_positive
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None, **fit_params):
         """
         Calculate the discretize_value fit the regressor with traning data
 
@@ -528,10 +537,19 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
 
         self.regressor_ = clone(self.regressor)
 
+        keys = list(fit_params.keys())
+        for key in keys:
+            if not key.startswith('regressor__'):
+                raise ValueError("fit_params for BinarizeTargetClassifier "
+                                 "must start with `regressor__`")
+            fit_params[key[11:]] = fit_params.pop(key)
+
         if sample_weight is not None:
-            self.regressor_.fit(X, y, sample_weight=sample_weight)
+            self.regressor_.fit(X, y,
+                                sample_weight=sample_weight,
+                                **fit_params)
         else:
-            self.regressor_.fit(X, y)
+            self.regressor_.fit(X, y, **fit_params)
 
         # attach classifier attributes
         if hasattr(self.regressor_, 'feature_importances_'):
