@@ -1,4 +1,4 @@
-### Version 0.7.0 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-09-2019)
+### Version 0.7.1 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-11-2019)
 
 #### New Features
 
@@ -8,14 +8,18 @@
 - Adds `keras_batch_models` tool.
 - Adds `GenomeOneHotEncoder` and `ProteinOneHotEncoder` to `pipeline`.
 - Adds API documentation at `https://goeckslab.github.io/Galaxy-ML/`.
+- Extends `BinarizeTarget Classifier/Regressor` to support `fit_params`.
+- Modifies `read_columns` function to avoid repeated input file reading.
 
 #### Changes
 
--
+- Changes `model_validation` tool name.
+
 
 #### Bug Fixes
 
--
+- Fixes CV groups file issue in searchcv tool.
+- Fixes cheetah error in model_validation tool.
 
 
 ### Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)
