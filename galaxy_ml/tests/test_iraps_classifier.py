@@ -33,6 +33,6 @@ def test_iraps_classifier_1():
     stop_time = time.time()
     print("Time: %f " % (stop_time - start_time))
     ap_mean = result_clf['test_AP'].mean()
-    assert round(ap_mean, 4) == 0.2490, ap_mean
+    assert round(ap_mean, 4) == 0.2879, ap_mean
     roc_mean = result_clf['test_AUC'].mean()
-    assert round(roc_mean, 4) == 0.6961, roc_mean
+    assert round(roc_mean, 4) == 0.7038, roc_mean

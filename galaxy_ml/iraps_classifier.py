@@ -17,7 +17,6 @@ binarize_recall_scorer
 
 
 import numpy as np
-import random
 import warnings
 
 from abc import ABCMeta
@@ -30,7 +29,7 @@ from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._search import BaseSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.utils import as_float_array, check_X_y
+from sklearn.utils import as_float_array, check_X_y, check_random_state
 from sklearn.utils._joblib import Parallel, delayed
 from sklearn.utils.validation import (check_array, check_is_fitted,
                                       check_memory, column_or_1d)
@@ -108,27 +107,26 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         X: array-like (n_samples x n_features)
         y: 1-d array-like (n_samples)
         """
-        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
+        SAMPLE_SIZE = [0.25, 0.75]
 
-        def _stochastic_sampling(X, y, random_state=None, positive_thres=-1,
+        X, y = check_X_y(X, y, ['csr', 'csc'], multi_output=False)
+        n_samples = X.shape[0]
+        min_samples = int(n_samples * SAMPLE_SIZE[0])
+        max_samples = int(n_samples * SAMPLE_SIZE[1])
+        span = max_samples - min_samples
+
+        rng = check_random_state(self.random_state)
+
+        def iter_index():
+            for i in range(self.n_iter):
+                n_select = min_samples + int(span * rng.uniform(0, 1))
+                yield rng.choice(np.arange(n_samples), n_select, replace=False)
+
+        def _stochastic_sampling(X, y, index, positive_thres=-1,
                                  negative_thres=0):
             # each iteration select a random number of random subset of
             # training samples. this is somewhat different from the original
             # IRAPS method, but effect is almost the same.
-            SAMPLE_SIZE = [0.25, 0.75]
-            n_samples = X.shape[0]
-
-            if random_state is None:
-                n_select = random.randint(int(n_samples * SAMPLE_SIZE[0]),
-                                          int(n_samples * SAMPLE_SIZE[1]))
-                index = random.sample(list(range(n_samples)), n_select)
-            else:
-                n_select = random.Random(random_state).randint(
-                                    int(n_samples * SAMPLE_SIZE[0]),
-                                    int(n_samples * SAMPLE_SIZE[1]))
-                index = random.Random(random_state).sample(
-                                    list(range(n_samples)), n_select)
-
             X_selected, y_selected = X[index], y[index]
 
             # Spliting by z_scores.
@@ -167,19 +165,14 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
                             pre_dispatch=self.pre_dispatch)
-        if self.random_state is None:
-            res = parallel(delayed(_stochastic_sampling)(
-                    X, y, random_state=None,
-                    positive_thres=self.positive_thres,
-                    negative_thres=self.negative_thres)
-                        for i in range(self.n_iter))
-        else:
-            res = parallel(delayed(_stochastic_sampling)(
-                    X, y, random_state=seed,
-                    positive_thres=self.positive_thres,
-                    negative_thres=self.negative_thres)
-                        for seed in range(self.random_state,
-                                          self.random_state+self.n_iter))
+
+        res = parallel(delayed(_stochastic_sampling)(
+                X, y, index,
+                positive_thres=self.positive_thres,
+                negative_thres=self.negative_thres)
+                for index in iter_index())
+
+        # remove bads
         res = [_ for _ in res if _]
         if len(res) < 50:
             raise ValueError("too few (%d) valid feature lists "

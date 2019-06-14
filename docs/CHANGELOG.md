@@ -7,7 +7,7 @@
 #### Changes
 
 - Refactor fast array generators, introduced `fit` method.
-
+- Refactor iraps_classifier random index generator, reduce fit time by about 45%
 
 #### Bug Fixes
 
