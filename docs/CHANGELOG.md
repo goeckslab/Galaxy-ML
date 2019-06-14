@@ -1,3 +1,17 @@
+### Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-14-2019)
+
+#### New Features
+
+-
+
+#### Changes
+
+- Refactor fast array generators, introduced `fit` method.
+
+
+#### Bug Fixes
+
+
 ### Version 0.7.1 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-11-2019)
 
 #### New Features

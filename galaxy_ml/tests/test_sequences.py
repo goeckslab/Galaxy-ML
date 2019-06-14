@@ -85,46 +85,49 @@ def test_fasta_iterator():
 
 
 def test_fasta_to_array_iterator_params():
-    fasta_file = None
+    fasta_path = sequence_path
+    generator = FastaDNABatchGenerator(fasta_path)
+    generator.fit()
     X = np.arange(2, 8)[:, np.newaxis]
     y = np.array([1, 0, 0, 1, 0, 1])
     toarray_iterator = FastaToArrayIterator(
-        X, y, fasta_file, seed=42, n_bases=20)
+        X, generator, y=y, seed=42)
 
     params = list(toarray_iterator.get_params().keys())
 
-    expect1 = ['X', 'batch_size', 'fasta_file',
-               'generator', 'n_bases', 'sample_weight',
-               'seed', 'seq_length', 'shuffle', 'y']
+    expect1 = ['X', 'batch_size', 'generator__fasta_path',
+               'generator__seed', 'generator__seq_length',
+               'generator__shuffle', 'generator', 'sample_weight',
+               'seed', 'shuffle', 'y']
 
     assert params == expect1, params
 
     new_params = {
         'batch_size': 30,
-        'fasta_file': pyfaidx.Fasta(sequence_path),
-        'n_bases': 4
+        'seed': 999,
+        'generator__seq_length': 500
     }
 
     toarray_iterator.set_params(**new_params)
 
-    got1 = toarray_iterator.fasta_file
-    got2 = toarray_iterator.batch_size
-    got3 = toarray_iterator.n_bases
-    assert type(got1) == pyfaidx.Fasta, type(got1)
-    assert got2 == 30, got2
-    assert got3 == 4, got3
+    got1 = toarray_iterator.batch_size
+    got2 = toarray_iterator.seed
+    got3 = toarray_iterator.generator.seq_length
+    assert got1 == 30, got1
+    assert got2 == 999, got2
+    assert got3 == 500, got3
 
 
 def test_fasta_to_array_iterator_transform():
 
     generator = FastaDNABatchGenerator(sequence_path)
-    fasta_file = pyfaidx.Fasta(sequence_path)
+    generator.fit()
     X = np.arange(2, 8)[:, np.newaxis]
     y = np.array([1, 0, 0, 1, 0, 1])
     toarray_iterator = FastaToArrayIterator(
-        X, generator, y=y, fasta_file=fasta_file, seed=42, n_bases=4)
+        X, generator, y=y, seed=42)
 
-    arr0 = toarray_iterator.apply_transform(0)
+    arr0 = generator.apply_transform(0)
     expect2 = np.array([[0., 1., 0., 0.],
                         [0., 0., 1., 0.],
                         [0., 1., 0., 0.]])
