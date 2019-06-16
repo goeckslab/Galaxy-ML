@@ -459,7 +459,7 @@
   </xml>
 
   <xml name="inputs_seq_fasta">
-    <param name="fasta_file" type="data" format="fasta" label="Dataset containing fasta genomic/protein sequences" help="Sequences will be one-hot encoded to arrays."/>
+    <param name="fasta_path" type="data" format="fasta" label="Dataset containing fasta genomic/protein sequences" help="Sequences will be one-hot encoded to arrays."/>
     <expand macro="input_tabular_target"/>
   </xml>
 

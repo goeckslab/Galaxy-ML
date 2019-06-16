@@ -51,35 +51,40 @@ input_json_path = sys.argv[1]
 with open(input_json_path, 'r') as param_handler:
     params = json.load(param_handler)
 
-## store readed dataframe object
-readed_df = {}
+## load pipeline
+with open('$infile_pipeline', 'rb') as pipeline_handler:
+    pipeline = load_model(pipeline_handler)
 
-input_type = params['input_options']['selected_input']
-if input_type == 'tabular':
-    header = 'infer' if params['input_options']['header1'] else None
-    column_option = params['input_options']['column_selector_options_1']['selected_column_selector_option']
-    if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_name', 'all_but_by_header_name']:
-        c = params['input_options']['column_selector_options_1']['col1']
-    else:
-        c = None
-    infile1 = '$input_options.infile1'
-    df_key = infile1 + repr(header)
-    df = pd.read_csv(infile1, sep='\t', header=header, parse_dates=True)
-    readed_df[df_key] = df
-    X = read_columns(df, c=c, c_option=column_option).astype(float)
-elif input_type == 'sparse':
-    X = mmread('$input_options.infile1')
+## store read dataframe object
+loaded_df = {}
 
-#if $input_options.selected_input == 'seq_fasta'
-fasta_file = '$input_options.fasta_file'
+#if $input_options.selected_input == 'tabular'
+header = 'infer' if params['input_options']['header1'] else None
+column_option = params['input_options']['column_selector_options_1']['selected_column_selector_option']
+if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_name', 'all_but_by_header_name']:
+    c = params['input_options']['column_selector_options_1']['col1']
+else:
+    c = None
+infile1 = '$input_options.infile1'
+df_key = infile1 + repr(header)
+df = pd.read_csv(infile1, sep='\t', header=header, parse_dates=True)
+loaded_df[df_key] = df
+X = read_columns(df, c=c, c_option=column_option).astype(float)
+
+#elif $input_options.selected_input == 'sparse':
+X = mmread('$input_options.infile1')
+
+#elif $input_options.selected_input == 'seq_fasta'
+fasta_path = '$input_options.fasta_path'
 pyfaidx = get_module('pyfaidx')
-sequences = pyfaidx.Fasta(fasta_file)
+sequences = pyfaidx.Fasta(fasta_path)
 n_seqs = len(sequences.keys())
 X = np.arange(n_seqs)[:, np.newaxis]
-for param in estimator_params.keys():
+for param in pipeline.get_params().keys():
     if param.endswith('fasta_path'):
-        estimator.set_params(
-            **{param: fasta_file})
+        pipeline.set_params(
+            **{param: fasta_path})
+        break
 else:
     raise ValueError(
         "The selected estimator doesn't support "
@@ -98,8 +103,11 @@ else:
     c = None
 infile2 = '$input_options.infile2'
 df_key = infile2 + repr(header)
-if df_key in readed_df:
-    infile2 = readed_df[df_key]
+if df_key in loaded_df:
+    infile2 = loaded_df[df_key]
+else:
+    infile2 = pd.read_csv(infile2, sep='\t', header=header, parse_dates=True)
+    loaded_df[df_key] = infile2
 y = read_columns(
         infile2,
         c = c,
@@ -124,16 +132,16 @@ if column_option in ['by_index_number', 'all_but_by_index_number',
 else:
     c = None
 df_key = infile_g + repr(header)
-if df_key in readed_df:
-    infile_g = readed_df[df_key]
+if df_key in loaded_df:
+    infile_g = loaded_df[df_key]
 groups = read_columns(infile_g, c=c, c_option=column_option,
                       sep='\t', header=header, parse_dates=True)
 groups = groups.ravel()
 options['cv_selector']['groups_selector'] = groups
 #end if
 
-## del readed_df
-del readed_df
+## del loaded_df
+del loaded_df
 
 splitter, groups = get_cv( options.pop('cv_selector') )
 options['cv'] = splitter
@@ -144,10 +152,6 @@ if 'scoring' in options:
     options['scoring'] = get_scoring(options['scoring'])
 if 'pre_dispatch' in options and options['pre_dispatch'] == '':
     options['pre_dispatch'] = None
-
-## load pipeline
-with open('$infile_pipeline', 'rb') as pipeline_handler:
-    pipeline = load_model(pipeline_handler)
 
 ## Set up validator, run pipeline through validator and return results.
 

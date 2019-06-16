@@ -3,7 +3,7 @@ import collections
 import imblearn
 import json
 import numpy as np
-import pandas
+import pandas as pd
 import pickle
 import skrebate
 import sklearn
@@ -162,7 +162,7 @@ def _eval_search_params(params_builder):
 
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None, groups=None,
-         ref_seq=None, interval=None, fasta_file=None):
+         ref_seq=None, intervals=None, fasta_path=None):
     """
     Parameter
     ---------
@@ -190,10 +190,10 @@ def main(inputs, infile_estimator, infile1, infile2,
     ref_seq : str
         File path to dataset containing genome sequence file
 
-    interval : str
+    intervals : str
         File path to dataset containing interval file
 
-    fasta_file : str
+    fasta_path : str
         File path to dataset containing fasta file
     """
     warnings.simplefilter('ignore')
@@ -207,8 +207,8 @@ def main(inputs, infile_estimator, infile1, infile2,
         estimator = load_model(estimator_handler)
     estimator_params = estimator.get_params()
 
-    # store readed dataframe object
-    readed_df = {}
+    # store read dataframe object
+    loaded_df = {}
 
     input_type = params['input_options']['selected_input']
     # tabular input
@@ -223,9 +223,9 @@ def main(inputs, infile_estimator, infile1, infile2,
             c = None
 
         df_key = infile1 + repr(header)
-        df = pandas.read_csv(infile1, sep='\t', header=header,
-                             parse_dates=True)
-        readed_df[df_key] = df
+        df = pd.read_csv(infile1, sep='\t', header=header,
+                         parse_dates=True)
+        loaded_df[df_key] = df
 
         X = read_columns(df, c=c, c_option=column_option).astype(float)
     # sparse input
@@ -235,13 +235,14 @@ def main(inputs, infile_estimator, infile1, infile2,
     # fasta_file input
     elif input_type == 'seq_fasta':
         pyfaidx = get_module('pyfaidx')
-        sequences = pyfaidx.Fasta(fasta_file)
+        sequences = pyfaidx.Fasta(fasta_path)
         n_seqs = len(sequences.keys())
         X = np.arange(n_seqs)[:, np.newaxis]
         for param in estimator_params.keys():
             if param.endswith('fasta_path'):
                 estimator.set_params(
-                    **{param: fasta_file})
+                    **{param: fasta_path})
+                break
         else:
             raise ValueError(
                 "The selected estimator doesn't support "
@@ -262,8 +263,12 @@ def main(inputs, infile_estimator, infile1, infile2,
         c = None
 
     df_key = infile2 + repr(header)
-    if df_key in readed_df:
-        infile2 = readed_df[df_key]
+    if df_key in loaded_df:
+        infile2 = loaded_df[df_key]
+    else:
+        infile2 = pd.read_csv(infile2, sep='\t',
+                              header=header, parse_dates=True)
+        loaded_df[df_key] = infile2
 
     y = read_columns(
             infile2,
@@ -296,8 +301,8 @@ def main(inputs, infile_estimator, infile1, infile2,
             c = None
 
         df_key = groups + repr(header)
-        if df_key in readed_df:
-            groups = readed_df[df_key]
+        if df_key in loaded_df:
+            groups = loaded_df[df_key]
 
         groups = read_columns(
                 groups,
@@ -323,8 +328,8 @@ def main(inputs, infile_estimator, infile1, infile2,
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
 
-    # del readed_df
-    del readed_df
+    # del loaded_df
+    del loaded_df
 
     # handle memory
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
@@ -387,7 +392,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                 rval['std_' + k] = np.std(rval[k])
             if k.endswith('time'):
                 rval.pop(k)
-        rval = pandas.DataFrame(rval)
+        rval = pd.DataFrame(rval)
         rval = rval[sorted(rval.columns)]
         rval.to_csv(path_or_buf=outfile_result, sep='\t',
                     header=True, index=False)
@@ -434,7 +439,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         # no outer split
         if split_mode == 'no':
             # save results
-            cv_results = pandas.DataFrame(searcher.cv_results_)
+            cv_results = pd.DataFrame(searcher.cv_results_)
             cv_results = cv_results[sorted(cv_results.columns)]
             cv_results.to_csv(path_or_buf=outfile_result, sep='\t',
                               header=True, index=False)
@@ -455,7 +460,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                 test_score = {primary_scoring: test_score}
             for key, value in test_score.items():
                 test_score[key] = [value]
-            result_df = pandas.DataFrame(test_score)
+            result_df = pd.DataFrame(test_score)
             result_df.to_csv(path_or_buf=outfile_result, sep='\t',
                              header=True, index=False)
 
@@ -476,11 +481,11 @@ if __name__ == '__main__':
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
     aparser.add_argument("-g", "--groups", dest="groups")
     aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
-    aparser.add_argument("-b", "--interval", dest="interval")
-    aparser.add_argument("-f", "--fasta_file", dest="fasta_file")
+    aparser.add_argument("-b", "--intervals", dest="intervals")
+    aparser.add_argument("-f", "--fasta_path", dest="fasta_path")
     args = aparser.parse_args()
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
-         groups=args.groups, ref_seq=args.ref_seq, interval=args.interval,
-         fasta_file=args.fasta_file)
+         groups=args.groups, ref_seq=args.ref_seq, intervals=args.intervals,
+         fasta_path=args.fasta_path)
