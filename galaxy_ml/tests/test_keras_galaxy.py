@@ -961,11 +961,13 @@ def test_keras_fasta_protein_batch_classifier():
 
 
 def test_keras_genomic_intervals_batch_classifier():
-    ref_genome_path = '/selene/manuscript/case1/data/'\
+    # selene case1 genome file, file not uploaded
+    ref_genome_path = '/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
     intervals_path = './test-data/hg38_TF_intervals_2000.txt'
-    target_path = '/selene/manuscript/case1/data/'\
-        'GATA1_proery_bm.bed'
+    # selene case1 target bed file, file not uploaded
+    target_path = '/projects/selene/manuscript/case1/data/'\
+        'GATA1_proery_bm.bed.gz'
     seed = 42
     random_state = 0
 
@@ -993,21 +995,24 @@ def test_keras_genomic_intervals_batch_classifier():
     model.add(Dropout(0.5))
     model.add(Reshape((50880,)))
     model.add(Dense(1))
-    model.add(Activation('relu'))
-    model.add(Dense(1))
+    # model.add(Activation('relu'))
+    # model.add(Dense(1))
     model.add(Activation('sigmoid'))
 
     config = model.get_config()
 
     classifier = KerasGBatchClassifier(
         config, generator, optimizer='adam',
-        batch_size=64, n_jobs=2, epochs=2)
+        batch_size=64, n_jobs=1, epochs=10,
+        steps_per_epoch=20,
+        predict_sample_epochs=3,
+        metrics=['acc'])
 
     intervals = pd.read_csv(intervals_path, sep='\t', header=None)
     n_samples = intervals.shape[0]
     X = np.arange(n_samples)[:, np.newaxis]
 
-    cv = ShuffleSplit(2, test_size=0.4, random_state=123)
+    cv = ShuffleSplit(1, test_size=0.4, random_state=123)
     scoring = 'balanced_accuracy'
     param_grid = {}
 
@@ -1017,5 +1022,5 @@ def test_keras_genomic_intervals_batch_classifier():
                         cv=cv, refit=False, error_score='raise',
                         n_jobs=1)
     y = None
-    grid.fit(X, y, class_weight={0: 1, 1: 3})
+    grid.fit(X, y, class_weight={0: 1, 1: 3}, verbose=1)
     print(grid.cv_results_)

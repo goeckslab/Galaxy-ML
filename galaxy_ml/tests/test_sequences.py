@@ -96,10 +96,10 @@ def test_fasta_to_array_iterator_params():
 
     params = list(toarray_iterator.get_params().keys())
 
-    expect1 = ['X', 'batch_size', 'generator__fasta_path',
-               'generator__seed', 'generator__seq_length',
-               'generator__shuffle', 'generator', 'sample_weight',
-               'seed', 'shuffle', 'y']
+    expect1 =  ['X', 'batch_size', 'generator__fasta_path',
+                'generator__seed', 'generator__seq_length',
+                'generator__shuffle', 'generator', 'sample_weight',
+                'seed', 'shuffle', 'steps', 'y']
 
     assert params == expect1, params
 
@@ -229,10 +229,12 @@ def test_protein_one_hot_encoder():
 
 
 def test_genomic_interval_batch_generator():
-    ref_genome_path = './selene/manuscript/case1/data/'\
+    # selene case1 genome file, file not uploaded
+    ref_genome_path = '/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
     intervals_path = './test-data/hg38_TF_intervals_2000.txt'
-    target_path = '/selene/manuscript/case1/data/'\
+    # selene case1 target bed file, file not uploaded
+    target_path = '/projects/selene/manuscript/case1/data/'\
         'GATA1_proery_bm.bed.gz'
     seed = 42
     random_state = 0
@@ -331,7 +333,6 @@ def test_genomic_interval_batch_generator():
     # test steps_per_epoch
     generator2 = clone(generator)
     generator2.fit()
-    setattr(generator2, 'steps_per_epoch_', 3)
-    gen_flow2 = generator2.flow(X, batch_size=4)
+    gen_flow2 = generator2.flow(X, batch_size=4, steps=3)
 
     assert len(gen_flow2) == 3, len(gen_flow2)

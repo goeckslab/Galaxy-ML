@@ -946,10 +946,6 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         self.data_generator_ = self.data_batch_generator
         self.data_generator_.fit()
-        if self.steps_per_epoch and \
-                hasattr(self.data_generator_, 'steps_per_epoch_'):
-            setattr(self.data_generator_, 'steps_per_epoch_',
-                    self.steps_per_epoch)
 
         if y is not None:
             X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
@@ -1000,11 +996,13 @@ class KerasGBatchClassifier(KerasGClassifier):
         epochs = self.epochs
         n_jobs = self.n_jobs
         validation_data = self.validation_data
+        steps_per_epoch = self.steps_per_epoch
 
         fit_params.update(dict(
             epochs=epochs,
             workers=n_jobs,
             use_multiprocessing=n_jobs > 1,
+            steps_per_epoch=steps_per_epoch,
             validation_data=validation_data))
 
         # kwargs from function `fit ` override object initiation values.
@@ -1014,13 +1012,15 @@ class KerasGBatchClassifier(KerasGClassifier):
         if validation_data:
             fit_params['validation_data'] = \
                 self.data_generator_.flow(*validation_data,
-                                          batch_size=batch_size)
+                                          batch_size=batch_size,
+                                          shuffle=False)
         # set tensorflow random seed
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
 
         self.model_.fit_generator(
             self.data_generator_.flow(X, y, batch_size=batch_size,
+                                      steps=steps_per_epoch,
                                       sample_weight=sample_weight),
             **fit_params)
 
