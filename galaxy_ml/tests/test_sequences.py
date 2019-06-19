@@ -10,6 +10,7 @@ from galaxy_ml.preprocessors import FastaIterator, FastaToArrayIterator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import ProteinOneHotEncoder
+from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
 
 try:
     import pyfaidx
@@ -171,6 +172,19 @@ def test_fasta_dna_batch_generator():
     assert got3.tolist() == [0., 1., 0., 0.], got3
     assert np.array_equal(batch_y,  np.array([1, 0, 1])), batch_y
 
+    # test sample method
+    retrived_seq_encodings, _ = generator.sample(X, sample_size=3)
+
+    got4 = retrived_seq_encodings[0][3]
+    got5 = retrived_seq_encodings[1][4]
+    got6 = retrived_seq_encodings[2][7]
+
+    assert retrived_seq_encodings.shape == (3, 1000, 4), \
+        retrived_seq_encodings.shape
+    assert got4.tolist() == [0., 0., 0., 1.], got4
+    assert got5.tolist() == [0., 0., 1., 0.], got5
+    assert got6.tolist() == [1., 0., 0., 0.], got6
+
 
 def test_fasta_protein_batch_generator():
     fasta_path = None
@@ -212,3 +226,112 @@ def test_protein_one_hot_encoder():
     trans = coder.transform(X1)
 
     assert np.array_equal(trans, expect), trans
+
+
+def test_genomic_interval_batch_generator():
+    ref_genome_path = './selene/manuscript/case1/data/'\
+        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
+    intervals_path = './test-data/hg38_TF_intervals_2000.txt'
+    target_path = '/selene/manuscript/case1/data/'\
+        'GATA1_proery_bm.bed.gz'
+    seed = 42
+    random_state = 0
+
+    generator = GenomicIntervalBatchGenerator(
+        ref_genome_path=ref_genome_path,
+        intervals_path=intervals_path,
+        target_path=target_path,
+        seed=seed,
+        features=['Proery_BM|GATA1'],
+        sample_postive_tries=20,
+        random_state=random_state
+    )
+    generator1 = clone(generator)
+    got = list(generator1.get_params().keys())
+    expect = ['blacklist_regions', 'center_bin_to_predict',
+              'feature_thresholds', 'features', 'intervals_path',
+              'random_state', 'ref_genome_path', 'sample_postive_tries',
+              'seed', 'seq_length', 'shuffle', 'target_path']
+
+    assert got == expect, got
+
+    generator1.fit()
+
+    features_ = generator1.features_
+    n_features_ = generator1.n_features_
+    bin_radius_ = generator1.bin_radius_
+    start_radius_ = generator1.start_radius_
+    end_radius_ = generator1.end_radius_
+    surrounding_sequence_radius_ = generator1.surrounding_sequence_radius_
+    target_ = generator1.target_
+    sample_from_intervals_ = generator1.sample_from_intervals_
+    intervals_lengths_ = generator1.interval_lengths_
+
+    # test fit()
+    assert features_ == ['Proery_BM|GATA1'], features_
+    assert n_features_ == 1, n_features_
+    assert bin_radius_ == 100, bin_radius_
+    assert start_radius_ == 100, start_radius_
+    assert end_radius_ == 100, end_radius_
+    assert surrounding_sequence_radius_ == 400, surrounding_sequence_radius_
+    assert target_.__class__.__name__ == 'GenomicFeatures', \
+        target_.__class__.__name__
+    assert target_._feature_thresholds_vec == [0.5], \
+        target_._feature_thresholds_vec
+    assert target_.feature_thresholds == {'Proery_BM|GATA1': 0.5}, \
+        target_.feature_thresholds
+    assert len(sample_from_intervals_) == 1878, len(sample_from_intervals_)
+    assert sample_from_intervals_[0] == ('chr16', 19859514, 19860150), \
+        sample_from_intervals_[0]
+    assert len(intervals_lengths_) == 1878, len(intervals_lengths_)
+    assert intervals_lengths_[0] == 636, intervals_lengths_[0]
+
+    # test get_indices_and_probabilities()
+    X = np.arange(2, 10)[:, np.newaxis]
+    indices, weights = generator1.get_indices_and_probabilities(X)
+
+    assert np.array_equal(indices, np.array([2, 3, 4, 5, 6, 7, 8, 9])),\
+        indices
+    assert [round(w, 3) for w in weights] == \
+        [0.193, 0.023, 0.132, 0.049, 0.065, 0.195, 0.284, 0.058], weights
+
+    # test flow()
+    gen_flow = generator1.flow(X, batch_size=4)
+    batch_X, batch_y = next(gen_flow)
+
+    assert len(gen_flow) == 2, len(gen_flow)
+    assert batch_X.shape == (4, 1000, 4), batch_X.shape
+    assert batch_X[0][2].tolist() == [0, 0, 1, 0], batch_X[0][2]
+    assert batch_X[2][4].tolist() == [0, 1, 0, 0], batch_X[2][4]
+    assert batch_X[3][5].tolist() == [1, 0, 0, 0], batch_X[3][5]
+    assert batch_y.tolist() == [[0], [0], [1], [0]], batch_y
+
+    batch_X, batch_y = next(gen_flow)
+
+    assert batch_X.shape == (4, 1000, 4), batch_X.shape
+    assert batch_X[0][2].tolist() == [1, 0, 0, 0], batch_X[0][2]
+    assert batch_X[2][4].tolist() == [0, 0, 0, 1], batch_X[2][4]
+    assert batch_X[3][5].tolist() == [0, 0, 1, 0], batch_X[3][5]
+    assert batch_y.tolist() == [[0], [0], [0], [1]], batch_y
+
+    # test sample()
+    retrieved_seq_encodings, targets = generator1.sample(X, 10)
+
+    assert retrieved_seq_encodings.shape == (10, 1000, 4),\
+        retrieved_seq_encodings.shape
+    assert retrieved_seq_encodings[0][2].tolist() == [0, 1, 0, 0],\
+        retrieved_seq_encodings[0][2]
+    assert retrieved_seq_encodings[1][4].tolist() == [0, 0, 0, 1],\
+        retrieved_seq_encodings[1][4]
+    assert retrieved_seq_encodings[2][5].tolist() == [1, 0, 0, 0],\
+        retrieved_seq_encodings[2][5]
+    assert targets.tolist() == \
+        [[0], [1], [0], [0], [0], [0], [0], [0], [0], [1]], targets
+
+    # test steps_per_epoch
+    generator2 = clone(generator)
+    generator2.fit()
+    setattr(generator2, 'steps_per_epoch_', 3)
+    gen_flow2 = generator2.flow(X, batch_size=4)
+
+    assert len(gen_flow2) == 3, len(gen_flow2)

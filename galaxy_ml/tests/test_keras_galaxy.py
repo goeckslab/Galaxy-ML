@@ -7,12 +7,14 @@ import tempfile
 import warnings
 from keras.models import Sequential, Model
 from keras import layers
-from keras.layers import Dense, Activation
+from keras.layers import (Dense, Activation, Conv1D,
+                          MaxPool1D, Dropout, Reshape)
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import _search
 from tensorflow import set_random_seed
 
@@ -24,6 +26,7 @@ from galaxy_ml.keras_galaxy_models import (
 from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
+from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
 from galaxy_ml.model_validations import _fit_and_score
 
 
@@ -706,37 +709,39 @@ def test_keras_batch_classifier_get_params():
     got = {key: value for key, value in params.items()
            if not key.startswith(('config', 'layers'))}
 
-    got.pop('train_batch_generator', None)
-    expect = {'amsgrad': None, 'batch_size': None, 'beta_1': None,
-              'beta_2': None, 'callbacks': None, 'decay': 0,
-              'epochs': 1, 'epsilon': None, 'loss': 'binary_crossentropy',
-              'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
-              'momentum': 0, 'n_jobs': 1, 'nesterov': False,
-              'optimizer': 'sgd', 'predict_batch_generator': None,
-              'rho': None, 'schedule_decay': None, 'seed': 0,
-              'train_batch_generator__brightness_range': None,
-              'train_batch_generator__channel_shift_range': 0.0,
-              'train_batch_generator__cval': 0.0,
-              'train_batch_generator__data_format': 'channels_last',
-              'train_batch_generator__dtype': 'float32',
-              'train_batch_generator__featurewise_center': False,
-              'train_batch_generator__featurewise_std_normalization': False,
-              'train_batch_generator__fill_mode': 'nearest',
-              'train_batch_generator__height_shift_range': 0.0,
-              'train_batch_generator__horizontal_flip': False,
-              'train_batch_generator__preprocessing_function': None,
-              'train_batch_generator__rescale': None,
-              'train_batch_generator__rotation_range': 0,
-              'train_batch_generator__samplewise_center': False,
-              'train_batch_generator__samplewise_std_normalization': False,
-              'train_batch_generator__shear_range': 0.0,
-              'train_batch_generator__validation_split': None,
-              'train_batch_generator__vertical_flip': False,
-              'train_batch_generator__width_shift_range': 0.0,
-              'train_batch_generator__zca_epsilon': 1e-06,
-              'train_batch_generator__zca_whitening': False,
-              'train_batch_generator__zoom_range': [1.0, 1.0],
-              'validation_data': None}
+    got.pop('data_batch_generator', None)
+    expect = {
+        'amsgrad': None, 'batch_size': None, 'beta_1': None,
+        'beta_2': None, 'callbacks': None,
+        'data_batch_generator__brightness_range': None,
+        'data_batch_generator__channel_shift_range': 0.0,
+        'data_batch_generator__cval': 0.0,
+        'data_batch_generator__data_format': 'channels_last',
+        'data_batch_generator__dtype': 'float32',
+        'data_batch_generator__featurewise_center': False,
+        'data_batch_generator__featurewise_std_normalization': False,
+        'data_batch_generator__fill_mode': 'nearest',
+        'data_batch_generator__height_shift_range': 0.0,
+        'data_batch_generator__horizontal_flip': False,
+        'data_batch_generator__preprocessing_function': None,
+        'data_batch_generator__rescale': None,
+        'data_batch_generator__rotation_range': 0,
+        'data_batch_generator__samplewise_center': False,
+        'data_batch_generator__samplewise_std_normalization': False,
+        'data_batch_generator__shear_range': 0.0,
+        'data_batch_generator__validation_split': None,
+        'data_batch_generator__vertical_flip': False,
+        'data_batch_generator__width_shift_range': 0.0,
+        'data_batch_generator__zca_epsilon': 1e-06,
+        'data_batch_generator__zca_whitening': False,
+        'data_batch_generator__zoom_range': [1.0, 1.0],
+        'decay': 0, 'epochs': 1, 'epsilon': None,
+        'loss': 'binary_crossentropy', 'lr': 0.01,
+        'metrics': [], 'model_type': 'sequential', 'momentum': 0,
+        'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
+        'predict_sample_epochs': 1, 'rho': None,
+        'schedule_decay': None, 'seed': 0,
+        'steps_per_epoch': None, 'validation_data': None}
 
     for k, v in got.items():
         if k not in expect:
@@ -856,19 +861,18 @@ def test_keras_fasta_batch_classifier():
 
     expect = {
         'amsgrad': None, 'batch_size': None,
-        'beta_1': None, 'beta_2': None,
-        'callbacks': None, 'decay': 0, 'epochs': 1,
-        'epsilon': None, 'loss': 'binary_crossentropy',
+        'beta_1': None, 'beta_2': None, 'callbacks': None,
+        'data_batch_generator__fasta_path':
+            './test-data/regulatory_mutations.fa',
+        'data_batch_generator__seed': 42,
+        'data_batch_generator__seq_length': 1000,
+        'data_batch_generator__shuffle': True, 'decay': 0,
+        'epochs': 1, 'epsilon': None, 'loss': 'binary_crossentropy',
         'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
         'momentum': 0, 'n_jobs': 1, 'nesterov': False,
-        'optimizer': 'sgd', 'rho': None,
-        'schedule_decay': None, 'seed': 0,
-        'train_batch_generator__fasta_path':
-            './test-data/regulatory_mutations.fa',
-        'train_batch_generator__seed': 42,
-        'train_batch_generator__seq_length': 1000,
-        'train_batch_generator__shuffle': True,
-        'validation_data': None}
+        'optimizer': 'sgd', 'predict_sample_epochs': 1,
+        'rho': None, 'schedule_decay': None, 'seed': 0,
+        'steps_per_epoch': None, 'validation_data': None}
     assert got == expect, got
 
 
@@ -914,21 +918,23 @@ def test_keras_fasta_protein_batch_classifier():
 
     expect = {
         'amsgrad': None, 'batch_size': None, 'beta_1': None,
-        'beta_2': None, 'callbacks': None, 'decay': 0,
-        'epochs': 3, 'epsilon': None, 'loss': 'binary_crossentropy',
-        'lr': 0.01, 'metrics': [], 'model_type': 'functional',
-        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
-        'optimizer': 'sgd', 'rho': None, 'schedule_decay': None,
-        'seed': 0, 'train_batch_generator__fasta_path': 'None',
-        'train_batch_generator__seed': 42,
-        'train_batch_generator__seq_length': 500,
-        'train_batch_generator__shuffle': True,
-        'validation_data': None}
+        'beta_2': None, 'callbacks': None,
+        'data_batch_generator__fasta_path': 'None',
+        'data_batch_generator__seed': 42,
+        'data_batch_generator__seq_length': 500,
+        'data_batch_generator__shuffle': True,
+        'decay': 0, 'epochs': 3, 'epsilon': None,
+        'loss': 'binary_crossentropy', 'lr': 0.01,
+        'metrics': [], 'model_type': 'functional', 'momentum': 0,
+        'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
+        'predict_sample_epochs': 1, 'rho': None,
+        'schedule_decay': None, 'seed': 0,
+        'steps_per_epoch': None, 'validation_data': None}
     assert got == expect, got
 
     cloned_clf = clone(classifier)
     new_params = {
-        'train_batch_generator__fasta_path':
+        'data_batch_generator__fasta_path':
             './test-data/uniprot_sprot_10000L.fasta'
     }
     cloned_clf.set_params(**new_params)
@@ -951,4 +957,65 @@ def test_keras_fasta_protein_batch_classifier():
                         refit=False, error_score='raise')
 
     grid.fit(X1, y1)
+    print(grid.cv_results_)
+
+
+def test_keras_genomic_intervals_batch_classifier():
+    ref_genome_path = '/selene/manuscript/case1/data/'\
+        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
+    intervals_path = './test-data/hg38_TF_intervals_2000.txt'
+    target_path = '/selene/manuscript/case1/data/'\
+        'GATA1_proery_bm.bed'
+    seed = 42
+    random_state = 0
+
+    generator = GenomicIntervalBatchGenerator(
+        ref_genome_path=ref_genome_path,
+        intervals_path=intervals_path,
+        target_path=target_path,
+        seed=seed,
+        features=['Proery_BM|GATA1'],
+        random_state=random_state
+    )
+
+    # DeepSea model
+    model = Sequential()
+    model.add(Conv1D(filters=320, kernel_size=8, input_shape=(1000, 4)))
+    model.add(Activation('relu'))
+    model.add(MaxPool1D(pool_size=4, strides=4))
+    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=480, kernel_size=8))
+    model.add(Activation('relu'))
+    model.add(MaxPool1D(pool_size=4, strides=4))
+    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=960, kernel_size=8))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Reshape((50880,)))
+    model.add(Dense(1))
+    model.add(Activation('relu'))
+    model.add(Dense(1))
+    model.add(Activation('sigmoid'))
+
+    config = model.get_config()
+
+    classifier = KerasGBatchClassifier(
+        config, generator, optimizer='adam',
+        batch_size=64, n_jobs=2, epochs=2)
+
+    intervals = pd.read_csv(intervals_path, sep='\t', header=None)
+    n_samples = intervals.shape[0]
+    X = np.arange(n_samples)[:, np.newaxis]
+
+    cv = ShuffleSplit(2, test_size=0.4, random_state=123)
+    scoring = 'balanced_accuracy'
+    param_grid = {}
+
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    GridSearchCV = getattr(_search, 'GridSearchCV')
+    grid = GridSearchCV(classifier, param_grid, scoring=scoring,
+                        cv=cv, refit=False, error_score='raise',
+                        n_jobs=1)
+    y = None
+    grid.fit(X, y, class_weight={0: 1, 1: 3})
     print(grid.cv_results_)

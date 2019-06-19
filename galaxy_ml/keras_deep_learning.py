@@ -277,7 +277,7 @@ def build_keras_model(inputs, outfile, infile_json, infile_weights=None,
         if batch_mode:
             generator = get_batch_generator(inputs['mode_selection']
                                             ['generator_selection'])
-            options['train_batch_generator'] = generator
+            options['data_batch_generator'] = generator
         estimator = klass(config, **options)
 
     print(repr(estimator))

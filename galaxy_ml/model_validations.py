@@ -355,22 +355,20 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
     ##########################################################
     # Changes on sklearn.model_selection._search
-    estimator_params = estimator.get_params()
-
+    for param in estimator.get_params().keys():
+        # suppose work for both pipeline or single
+        # keras model
+        if param.endswith('validation_data'):
+            fit_params.update(
+                {param: (X_test, y_test)})
+            break
+    # Changes end
+    ##########################################################
     try:
         if y_train is None:
             estimator.fit(X_train, **fit_params)
         else:
-            for param in estimator_params.keys():
-                # suppose work for both pipeline or single
-                # keras model
-                if param.endswith('validation_data'):
-                    fit_params.update(
-                        {param: (X_test, y_test)})
-                    break
             estimator.fit(X_train, y_train, **fit_params)
-    # Changes end
-    ##########################################################
 
     except Exception as e:
         # Note fit time as time until error
@@ -401,8 +399,19 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
     else:
         fit_time = time.time() - start_time
-        # _score will return dict if is_multimetric is True
-        test_scores = _score(estimator, X_test, y_test, scorer, is_multimetric)
+
+        #######################################################################
+        #######################################################################
+        if estimator.__class__.__name__ == 'KerasGBatchClassifier' \
+                and hasattr(estimator.data_batch_generator, 'target_path'):
+            test_scores = estimator.evaluate(X_test, y_test,
+                                             scorer, is_multimetric)
+        else:
+            # _score will return dict if is_multimetric is True
+            test_scores = _score(estimator, X_test, y_test,
+                                 scorer, is_multimetric)
+        #######################################################################
+        #######################################################################
         score_time = time.time() - start_time - fit_time
         if return_train_score:
             train_scores = _score(estimator, X_train, y_train, scorer,

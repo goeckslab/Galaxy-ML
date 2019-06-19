@@ -25,6 +25,7 @@ from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin)
 from sklearn.externals import six
+from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
@@ -862,9 +863,7 @@ class KerasGBatchClassifier(KerasGClassifier):
     ----------
     config : dictionary
         from `model.get_config()`
-    train_batch_generator : instance of batch data generator
-    predict_batch_generator : instance of batch data generator (default=None)
-        if None, same as train_batch_generator
+    data_batch_generator : instance of batch data generator
     model_type : str
         'sequential' or 'functional'
     optimizer : str, default 'sgd'
@@ -908,11 +907,15 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "restore_best_weights": False}}
     validation_data : None or tuple of arrays, (X_test, y_test)
         fit_param
+    steps_per_epoch : int, default is None
+        fit param. The number of train batches per epoch
     seed : None or int, default 0
         backend random seed
+    predict_sample_epochs : int, default=1
+        Sampling epochs, works in prediction with
+        `data_batch_generator.sample`
     """
-    def __init__(self, config, train_batch_generator,
-                 predict_batch_generator=None,
+    def __init__(self, config, data_batch_generator,
                  model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None,
                  momentum=None, decay=None, nesterov=None, rho=None,
@@ -920,6 +923,8 @@ class KerasGBatchClassifier(KerasGClassifier):
                  beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=0, n_jobs=1,
                  callbacks=None, validation_data=None,
+                 steps_per_epoch=None,
+                 predict_sample_epochs=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
@@ -929,25 +934,46 @@ class KerasGBatchClassifier(KerasGClassifier):
             schedule_decay=schedule_decay, epochs=epochs,
             batch_size=batch_size, seed=seed, callbacks=callbacks,
             validation_data=validation_data, **fit_params)
-        self.train_batch_generator = train_batch_generator
-        self.predict_batch_generator = predict_batch_generator
+        self.data_batch_generator = data_batch_generator
+        self.steps_per_epoch = steps_per_epoch
+        self.predict_sample_epochs = predict_sample_epochs
         self.n_jobs = n_jobs
 
-    def fit(self, X, y, class_weight=None, sample_weight=None, **kwargs):
+    def fit(self, X, y=None, class_weight=None, sample_weight=None, **kwargs):
         """ fit the model
         """
-        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
-        check_classification_targets(y)
         check_params(kwargs, Model.fit_generator)
 
-        if len(y.shape) == 2 and y.shape[1] > 1:
-            self.classes_ = np.arange(y.shape[1])
-        elif (len(y.shape) == 2 and y.shape[1] == 1) or len(y.shape) == 1:
-            self.classes_ = np.unique(y)
-            y = np.searchsorted(self.classes_, y)
+        self.data_generator_ = self.data_batch_generator
+        self.data_generator_.fit()
+        if self.steps_per_epoch and \
+                hasattr(self.data_generator_, 'steps_per_epoch_'):
+            setattr(self.data_generator_, 'steps_per_epoch_',
+                    self.steps_per_epoch)
+
+        if y is not None:
+            X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
+            check_classification_targets(y)
+
+            if len(y.shape) == 2 and y.shape[1] > 1:
+                self.classes_ = np.arange(y.shape[1])
+            elif (len(y.shape) == 2 and y.shape[1] == 1) or len(y.shape) == 1:
+                self.classes_ = np.unique(y)
+                y = np.searchsorted(self.classes_, y)
+            else:
+                raise ValueError('Invalid shape for y: ' + str(y.shape))
+            self.n_classes_ = len(self.classes_)
+
+            if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
+                y = to_categorical(y)
         else:
-            raise ValueError('Invalid shape for y: ' + str(y.shape))
-        self.n_classes_ = len(self.classes_)
+            X = check_array(X, accept_sparse=['csr', 'csc'], allow_nd=True)
+
+            if hasattr(self.data_generator_, 'target_path'):
+                # for GenomicIntervalBatchGenerator
+                self.classes_ = np.arange(
+                    max(self.data_generator_.n_features_, 2))
+                self.n_classes_ = len(self.classes_)
 
         if class_weight is not None:
             kwargs['class_weight'] = class_weight
@@ -969,9 +995,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.model_.compile(loss=self.loss, optimizer=self._optimizer,
                             metrics=self.metrics)
 
-        if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
-            y = to_categorical(y)
-
         fit_params = self.fit_params
         batch_size = self.batch_size or 32
         epochs = self.epochs
@@ -979,7 +1002,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         validation_data = self.validation_data
 
         fit_params.update(dict(
-            steps_per_epoch=(X.shape[0] + batch_size - 1) // batch_size,
             epochs=epochs,
             workers=n_jobs,
             use_multiprocessing=n_jobs > 1,
@@ -990,40 +1012,72 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         validation_data = fit_params.get('validation_data', None)
         if validation_data:
-            if self.predict_batch_generator is None:
-                predict_batch_generator = self.train_batch_generator
-            else:
-                predict_batch_generator = self.predict_batch_generator
             fit_params['validation_data'] = \
-                predict_batch_generator.flow(*validation_data,
-                                             batch_size=batch_size)
+                self.data_generator_.flow(*validation_data,
+                                          batch_size=batch_size)
         # set tensorflow random seed
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
 
         self.model_.fit_generator(
-            self.train_batch_generator.flow(X, y, batch_size=batch_size,
-                                            sample_weight=sample_weight),
+            self.data_generator_.flow(X, y, batch_size=batch_size,
+                                      sample_weight=sample_weight),
             **fit_params)
 
         return self
 
     def _predict(self, X, **kwargs):
+        """
+        Parameter
+        ---------
+        X : 2-D or array in other shape
+            If 2-D array in (indices, 1) shape and
+            `predict_sample_epochs` == 1, call generator.
+            If 2-D array in (indices, 1) shape and
+            `predict_sample_epochs` > 1, call `predict_sample_epochs.sample()`.
+            Otherwise, predict using `self.model_`.
+        data_generator : obj
+            Data generator transfrom to array.
+        kwargs : dict
+            Other predict parameters.
+        """
         check_is_fitted(self, 'model_')
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
-        check_params(kwargs, Model.predict_generator)
 
-        if self.predict_batch_generator is None:
-            predict_batch_generator = self.train_batch_generator
-        else:
-            predict_batch_generator = self.predict_batch_generator
+        pred_data_generator = kwargs.pop('data_generator', None)
+        if not pred_data_generator:
+            pred_data_generator = self.data_generator_
+
+        check_params(kwargs, Model.predict_generator)
 
         batch_size = self.batch_size or 32
         n_jobs = self.n_jobs
-        preds = self.model_.predict_generator(
-            predict_batch_generator.flow(X, batch_size=batch_size),
-            workers=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
-            **kwargs)
+
+        predict_sample_epochs = kwargs.pop('predict_sample_epochs', None)
+        if not predict_sample_epochs:
+            predict_sample_epochs = self.predict_sample_epochs
+
+        # through data generator
+        if predict_sample_epochs == 1:
+            preds = self.model_.predict_generator(
+                pred_data_generator.flow(X, batch_size=batch_size),
+                workers=n_jobs,
+                use_multiprocessing=True if n_jobs > 1 else False,
+                **kwargs)
+
+        # transform once through sample()
+        elif X.ndim == 2 and X.shape[1] == 1:
+            n_samples = X.shape[0]
+            sample_size = n_samples * predict_sample_epochs
+            retrieved_X, _ = pred_data_generator.sample(
+                X, sample_size=sample_size)
+            preds = self.model_.predict(retrieved_X, batch_size=batch_size,
+                                        **kwargs)
+
+        # X was transformed
+        else:
+            preds = self.model_.predict(X, batch_size=batch_size,
+                                        **kwargs)
 
         if preds.min() < 0. or preds.max() > 1.:
             warnings.warn('Network returning invalid probability values. '
@@ -1032,23 +1086,19 @@ class KerasGBatchClassifier(KerasGClassifier):
                           '(like softmax or sigmoid would).')
         return preds
 
-    def score(self, X, y, **kwargs):
+    def score(self, X, y=None, **kwargs):
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
-        y = np.searchsorted(self.classes_, y)
+        if y is not None:
+            y = np.searchsorted(self.classes_, y)
+            if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
+                y = to_categorical(y)
+
         check_params(kwargs, Model.evaluate_generator)
-
-        if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
-            y = to_categorical(y)
-
-        if self.predict_batch_generator is None:
-            predict_batch_generator = self.train_batch_generator
-        else:
-            predict_batch_generator = self.predict_batch_generator
 
         n_jobs = self.n_jobs
         batch_size = self.batch_size or 32
         outputs = self.model_.evaluate_generator(
-            predict_batch_generator.flow(X, y, batch_size=batch_size),
+            self.data_generator_.flow(X, y, batch_size=batch_size),
             n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
             **kwargs)
 
@@ -1060,3 +1110,22 @@ class KerasGBatchClassifier(KerasGClassifier):
         raise ValueError('The model is not configured to compute accuracy. '
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
+
+    def evaluate(self, X_test, y_test=None, scorer=None, is_multimetric=False,
+                 predict_sample_epochs=None):
+        """Compute the score(s) with sklearn scorers on a given test
+        set. Will return a single float if is_multimetric is False and a
+        dict of floats, if is_multimetric is True
+        """
+        if not predict_sample_epochs:
+            predict_sample_epochs = self.predict_sample_epochs
+        n_samples = X_test.shape[0]
+        sample_size = n_samples * predict_sample_epochs
+
+        retrieved_X, targets = self.data_generator_.sample(
+            X_test, sample_size=sample_size)
+
+        scores = _score(self, retrieved_X, targets,
+                        scorer, is_multimetric)
+
+        return scores
