@@ -914,6 +914,11 @@ class KerasGBatchClassifier(KerasGClassifier):
     predict_sample_epochs : int, default=1
         Sampling epochs, works in prediction with
         `data_batch_generator.sample`
+    class_positive_factor : int or float, default=1
+        For binary classification only. If int, like 5, will
+        convert to class_weight {0: 1, 1: 5}.
+        If float, 0.2, corresponds to class_weight
+        {0: 5/0.2, 1: 1}
     """
     def __init__(self, config, data_batch_generator,
                  model_type='sequential', optimizer='sgd',
@@ -923,8 +928,8 @@ class KerasGBatchClassifier(KerasGClassifier):
                  beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=0, n_jobs=1,
                  callbacks=None, validation_data=None,
-                 steps_per_epoch=None,
-                 predict_sample_epochs=1,
+                 steps_per_epoch=None, predict_sample_epochs=1,
+                 class_positive_factor=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
@@ -937,6 +942,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.data_batch_generator = data_batch_generator
         self.steps_per_epoch = steps_per_epoch
         self.predict_sample_epochs = predict_sample_epochs
+        self.class_positive_factor = class_positive_factor
         self.n_jobs = n_jobs
 
     def fit(self, X, y=None, class_weight=None, sample_weight=None, **kwargs):
@@ -970,6 +976,12 @@ class KerasGBatchClassifier(KerasGClassifier):
                 self.classes_ = np.arange(
                     max(self.data_generator_.n_features_, 2))
                 self.n_classes_ = len(self.classes_)
+
+        if self.classes_.tolist() == [0, 1] and class_weight is None:
+            if self.class_positive_factor > 1:
+                class_weight = {0: 1, 1: self.class_positive_factor}
+            elif self.class_positive_factor < 1.0:
+                class_weight = {0: 1/self.class_positive_factor, 1: 1}
 
         if class_weight is not None:
             kwargs['class_weight'] = class_weight

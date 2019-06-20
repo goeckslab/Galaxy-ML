@@ -7,7 +7,7 @@ import tempfile
 import warnings
 from keras.models import Sequential, Model
 from keras import layers
-from keras.layers import (Dense, Activation, Conv1D,
+from keras.layers import (Dense, Activation, Conv1D, Flatten,
                           MaxPool1D, Dropout, Reshape)
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
@@ -713,6 +713,7 @@ def test_keras_batch_classifier_get_params():
     expect = {
         'amsgrad': None, 'batch_size': None, 'beta_1': None,
         'beta_2': None, 'callbacks': None,
+        'class_positive_factor': 1,
         'data_batch_generator__brightness_range': None,
         'data_batch_generator__channel_shift_range': 0.0,
         'data_batch_generator__cval': 0.0,
@@ -862,6 +863,7 @@ def test_keras_fasta_batch_classifier():
     expect = {
         'amsgrad': None, 'batch_size': None,
         'beta_1': None, 'beta_2': None, 'callbacks': None,
+        'class_positive_factor': 1,
         'data_batch_generator__fasta_path':
             './test-data/regulatory_mutations.fa',
         'data_batch_generator__seed': 42,
@@ -919,6 +921,7 @@ def test_keras_fasta_protein_batch_classifier():
     expect = {
         'amsgrad': None, 'batch_size': None, 'beta_1': None,
         'beta_2': None, 'callbacks': None,
+        'class_positive_factor': 1,
         'data_batch_generator__fasta_path': 'None',
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 500,
@@ -1002,11 +1005,14 @@ def test_keras_genomic_intervals_batch_classifier():
     config = model.get_config()
 
     classifier = KerasGBatchClassifier(
-        config, generator, optimizer='adam',
+        config, clone(generator), optimizer='adam',
         batch_size=64, n_jobs=1, epochs=10,
         steps_per_epoch=20,
         predict_sample_epochs=3,
+        class_positive_factor=10,
         metrics=['acc'])
+
+    classifier1 = clone(classifier)
 
     intervals = pd.read_csv(intervals_path, sep='\t', header=None)
     n_samples = intervals.shape[0]
@@ -1018,9 +1024,9 @@ def test_keras_genomic_intervals_batch_classifier():
 
     setattr(_search, '_fit_and_score', _fit_and_score)
     GridSearchCV = getattr(_search, 'GridSearchCV')
-    grid = GridSearchCV(classifier, param_grid, scoring=scoring,
+    grid = GridSearchCV(classifier1, param_grid, scoring=scoring,
                         cv=cv, refit=False, error_score='raise',
                         n_jobs=1)
     y = None
-    grid.fit(X, y, class_weight={0: 1, 1: 3}, verbose=1)
+    grid.fit(X, y, verbose=1)
     print(grid.cv_results_)
