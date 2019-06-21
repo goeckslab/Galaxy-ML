@@ -18,13 +18,13 @@ binarize_recall_scorer
 
 import numpy as np
 import warnings
+import six
 
 from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn import metrics
 from sklearn.base import (BaseEstimator, clone, RegressorMixin,
                           TransformerMixin)
-from sklearn.externals import six
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._search import BaseSearchCV
@@ -164,7 +164,8 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             return p, mean_change, negative_mean
 
         parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
-                            pre_dispatch=self.pre_dispatch)
+                            pre_dispatch=self.pre_dispatch,
+                            backend='threading')
 
         res = parallel(delayed(_stochastic_sampling)(
                 X, y, index,

@@ -25,11 +25,11 @@ def test_iraps_classifier_1():
         AP=binarize_average_precision_scorer
     )
     iraps_core = IRAPSCore(
-        n_iter=100, n_jobs=3, random_state=10, verbose=10)
+        n_iter=100, n_jobs=2, random_state=10, verbose=10)
     iraps = IRAPSClassifier(iraps_core, p_thres=0.01, occurrence=0.7)
     start_time = time.time()
     result_clf = cross_validate(
-        iraps, X, y, cv=cv, scoring=scoring, verbose=10)
+        iraps, X, y, cv=cv, scoring=scoring, verbose=10, n_jobs=2)
     stop_time = time.time()
     print("Time: %f " % (stop_time - start_time))
     ap_mean = result_clf['test_AP'].mean()
