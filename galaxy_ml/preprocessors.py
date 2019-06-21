@@ -36,7 +36,8 @@ __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
            'ProteinOneHotEncoder', 'ImageBatchGenerator',
            'FastaIterator', 'FastaToArrayIterator',
            'FastaDNABatchGenerator', 'FastaRNABatchGenerator',
-           'FastaProteinBatchGenerator')
+           'FastaProteinBatchGenerator', 'IntervalsToArrayIterator',
+           'GenomicIntervalBatchGenerator')
 
 
 class Z_RandomOverSampler(BaseOverSampler):

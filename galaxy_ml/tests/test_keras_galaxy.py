@@ -1009,7 +1009,7 @@ def test_keras_genomic_intervals_batch_classifier():
         batch_size=64, n_jobs=1, epochs=10,
         steps_per_epoch=20,
         predict_sample_epochs=3,
-        class_positive_factor=10,
+        class_positive_factor=5,
         metrics=['acc'])
 
     classifier1 = clone(classifier)

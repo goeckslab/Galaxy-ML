@@ -586,9 +586,9 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
 
-        self.model_.fit(X, y, **fit_params)
+        history = self.model_.fit(X, y, **fit_params)
 
-        return self
+        return history
 
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
@@ -1030,13 +1030,14 @@ class KerasGBatchClassifier(KerasGClassifier):
         if self.seed is not None and K.backend() == 'tensorflow':
             set_random_seed(self.seed)
 
-        self.model_.fit_generator(
+        history = self.model_.fit_generator(
             self.data_generator_.flow(X, y, batch_size=batch_size,
                                       steps=steps_per_epoch,
                                       sample_weight=sample_weight),
+            shuffle=self.seed is None,
             **fit_params)
 
-        return self
+        return history
 
     def _predict(self, X, **kwargs):
         """
