@@ -1,8 +1,8 @@
 import keras
+import six
 
 from ast import literal_eval
 from keras.models import Sequential, Model
-from sklearn.externals import six
 from utils import try_get_attr
 
 

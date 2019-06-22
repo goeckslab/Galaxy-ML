@@ -388,7 +388,8 @@ def test_gridsearchcv_keras_g_classifier():
 
     config = train_model.get_config()
     classifier = KerasGClassifier(config, optimizer='adam',
-                                  batch_size=32, metrics=[])
+                                  batch_size=32, metrics=[],
+                                  seed=42)
 
     param_grid = dict(
         epochs=[60],
@@ -413,7 +414,7 @@ def test_gridsearchcv_keras_g_classifier():
             ['kernel_initializer']['config']['seed'])
 
     print(grid_result.best_score_)
-    assert got1 == 0.68, got1
+    assert got1 == 0.73, got1
     assert got2 == 0.003, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -441,7 +442,7 @@ def test_get_params_keras_g_regressor():
 
 def test_gridsearchcv_keras_g_regressor():
     config = train_model.get_config()
-    regressor = KerasGRegressor(config, optimizer='adam', metrics=[])
+    regressor = KerasGRegressor(config, optimizer='adam', metrics=[], seed=42)
 
     param_grid = dict(
         epochs=[60],
@@ -464,7 +465,7 @@ def test_gridsearchcv_keras_g_regressor():
     got6 = (grid_result.best_estimator_.config['layers'][1]['config']
             ['kernel_initializer']['config']['seed'])
 
-    assert -0.04 <= got1 <= 0.04, got1
+    assert got1 == 0.03, got1
     assert got2 == 0.002, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -779,7 +780,7 @@ def test_keras_galaxy_model_callbacks():
 
     estimator = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
-                                 epochs=500,
+                                 epochs=500, seed=42,
                                  callbacks=cbacks)
 
     scorer = SCORERS['accuracy']
@@ -796,7 +797,7 @@ def test_keras_galaxy_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert 0.69 <= round(got1[0], 2) <= 0.74, got1
+    assert round(got1[0], 2) == 0.68, got1
 
 
 def test_keras_galaxy_model_callbacks_girdisearch():
@@ -824,7 +825,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
              'monitor': 'val_loss'}}]
     estimator = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
-                                 epochs=500,
+                                 epochs=500, seed=42,
                                  callbacks=cbacks)
 
     scorer = SCORERS['balanced_accuracy']
@@ -843,7 +844,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
 
     got1 = grid.best_score_
 
-    assert 0.64 <= round(got1, 2) <= 0.70, got1
+    assert round(got1, 2) == 0.68, got1
 
 
 def test_keras_fasta_batch_classifier():
@@ -908,7 +909,7 @@ def test_keras_fasta_protein_batch_classifier():
                                                  seed=42)
     classifier = KerasGBatchClassifier(config, batch_generator,
                                        model_type='functional',
-                                       epochs=3)
+                                       epochs=3, seed=0)
 
     params = classifier.get_params()
     got = {}
@@ -961,6 +962,8 @@ def test_keras_fasta_protein_batch_classifier():
 
     grid.fit(X1, y1)
     print(grid.cv_results_)
+    got = grid.cv_results_['mean_test_acc'].tolist()
+    assert got == [0.48], got
 
 
 def test_keras_genomic_intervals_batch_classifier():
@@ -1008,9 +1011,13 @@ def test_keras_genomic_intervals_batch_classifier():
         config, clone(generator), optimizer='adam',
         batch_size=64, n_jobs=1, epochs=10,
         steps_per_epoch=20,
-        predict_sample_epochs=3,
-        class_positive_factor=5,
+        predict_sample_epochs=2,
+        class_positive_factor=3,
         metrics=['acc'])
+
+    for k, v in classifier.get_params().items():
+        if k.endswith('_seed') and v is None:
+            classifier.set_params(**{k: 999})
 
     classifier1 = clone(classifier)
 

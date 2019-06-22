@@ -9,8 +9,10 @@ Email: guqiang01@gmail.com
 import collections
 import keras
 import numpy as np
+import random
 import tensorflow as tf
 import warnings
+import six
 from abc import ABCMeta
 from keras import backend as K
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
@@ -24,7 +26,6 @@ from keras.utils import to_categorical
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin)
-from sklearn.externals import six
 from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
@@ -339,7 +340,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "restore_best_weights": False}}
     validation_data : None or tuple of arrays, (X_test, y_test)
         fit_param
-    seed : None or int, default 0
+    seed : None or int, default None
         backend random seed
     """
     def __init__(self, config, model_type='sequential',
@@ -347,7 +348,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  metrics=[], lr=None, momentum=None, decay=None,
                  nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=0, callbacks=None,
+                 batch_size=None, seed=None, callbacks=None,
                  validation_data=None, **fit_params):
         self.config = config
         self.model_type = model_type
@@ -582,9 +583,17 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                                validation_data=validation_data))
         fit_params.update(kwargs)
 
-        # set tensorflow random seed
-        if self.seed is not None and K.backend() == 'tensorflow':
-            set_random_seed(self.seed)
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            # set tensorflow randomness
+            if K.backend() == 'tensorflow':
+                set_random_seed(self.seed)
+                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
+                                              inter_op_parallelism_threads=1)
+                sess = tf.Session(graph=tf.get_default_graph(),
+                                  config=session_conf)
+                K.set_session(sess)
 
         history = self.model_.fit(X, y, **fit_params)
 
@@ -909,7 +918,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         fit_param
     steps_per_epoch : int, default is None
         fit param. The number of train batches per epoch
-    seed : None or int, default 0
+    seed : None or int, default None
         backend random seed
     predict_sample_epochs : int, default=1
         Sampling epochs, works in prediction with
@@ -926,7 +935,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  momentum=None, decay=None, nesterov=None, rho=None,
                  epsilon=None, amsgrad=None, beta_1=None,
                  beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=0, n_jobs=1,
+                 batch_size=None, seed=None, n_jobs=1,
                  callbacks=None, validation_data=None,
                  steps_per_epoch=None, predict_sample_epochs=1,
                  class_positive_factor=1,
@@ -1026,9 +1035,17 @@ class KerasGBatchClassifier(KerasGClassifier):
                 self.data_generator_.flow(*validation_data,
                                           batch_size=batch_size,
                                           shuffle=False)
-        # set tensorflow random seed
-        if self.seed is not None and K.backend() == 'tensorflow':
-            set_random_seed(self.seed)
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            # set tensorflow randomness
+            if K.backend() == 'tensorflow':
+                set_random_seed(self.seed)
+                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
+                                              inter_op_parallelism_threads=1)
+                sess = tf.Session(graph=tf.get_default_graph(),
+                                  config=session_conf)
+                K.set_session(sess)
 
         history = self.model_.fit_generator(
             self.data_generator_.flow(X, y, batch_size=batch_size,

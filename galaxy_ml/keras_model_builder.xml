@@ -37,7 +37,7 @@
         </param>
         <expand macro="keras_compile_params_section"/>
         <expand macro="keras_fit_params_section"/>
-        <param name="random_seed" type="integer" value="0" label="Random Seed" help="Integer or blank for None"/>
+        <param name="random_seed" type="integer" value="" label="Random Seed" help="Integer or blank for None. Warning: when random seed is set to an integer, training will be running on single thread mode, which may cause slowness."/>
       </when>
       <when value="prefitted">
         <param name="infile_json" type="data" format="json" label="Select the dataset containing model configurations (JSON)"/>

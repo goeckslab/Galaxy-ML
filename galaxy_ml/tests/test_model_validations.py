@@ -15,7 +15,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.externals.six.moves import zip
+from six.moves import zip
 from sklearn.model_selection import _search
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.metrics import SCORERS
@@ -333,7 +333,7 @@ def test_fit_and_score_keras_model_callbacks():
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
-                                 epochs=500)
+                                 epochs=500, seed=42)
 
     scorer = SCORERS['accuracy']
     train, test = next(KFold(n_splits=5).split(X, y))
@@ -350,14 +350,14 @@ def test_fit_and_score_keras_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert 0.56 <= round(got1[0], 2) <= 0.66, got1
+    assert round(got1[0], 2) == 0.57, got1
 
 
 def test_fit_and_score_keras_model_in_gridsearchcv():
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
-                                 epochs=10)
+                                 epochs=10, seed=42)
 
     df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
     X = df.iloc[:, 0:8].values.astype(float)
@@ -370,13 +370,12 @@ def test_fit_and_score_keras_model_in_gridsearchcv():
         'layers_0_Dense__config__kernel_initializer__config__seed': [0],
         'layers_1_Dense__config__kernel_initializer__config__seed': [0]
     }
-    fit_params = {'shuffle': False}
 
     grid = GridSearchCV(regressor, param_grid=new_params, scoring=scorer,
                         cv=cv, n_jobs=2, refit=False)
 
-    grid.fit(X, y, **fit_params)
+    grid.fit(X, y, verbose=0)
 
     got1 = grid.best_score_
 
-    assert 0.62 <= round(got1, 2) <= 0.64, got1
+    assert round(got1, 2) == 0.57, got1

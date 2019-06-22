@@ -1,6 +1,7 @@
 import argparse
 import collections
 import imblearn
+import joblib
 import json
 import numpy as np
 import pandas as pd
@@ -20,7 +21,6 @@ from sklearn import (cluster, compose, decomposition, ensemble,
                      pipeline, preprocessing, svm, linear_model,
                      tree, discriminant_analysis)
 from sklearn.exceptions import FitFailedWarning
-from sklearn.externals import joblib
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search
 
