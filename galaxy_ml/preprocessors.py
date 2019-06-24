@@ -439,8 +439,6 @@ class FastaToArrayIterator(FastaIterator):
         Sample weight
     seed : int
         Random seed for data shuffling
-    steps : int or None, default is None
-        The number of batches before ending current epoch.
     """
     def __init__(self, X, generator, y=None, batch_size=32,
                  shuffle=True, sample_weight=None, seed=None,
@@ -450,24 +448,9 @@ class FastaToArrayIterator(FastaIterator):
         self.generator = generator
         self.y = y
         self.sample_weight = sample_weight
-        self.steps = steps
-
-        n = batch_size * steps if steps else X.shape[0]
-        if n > X.shape[0]:
-            raise ValueError("FastaToArrayIterator doesn't support "
-                             "oversampling! Try a smaller "
-                             "`steps_per_epoch` instead.")
 
         super(FastaToArrayIterator, self).__init__(
-            n, batch_size, shuffle, seed)
-
-    def _set_index_array(self):
-        self.index_array = np.arange(self.n)
-        if self.shuffle:
-            # when n==X.shape[0], the same as permutation
-            self.index_array = np.random.choice(
-                np.arange(self.X.shape[0]), size=self.n,
-                replace=False)
+              X.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         generator = self.generator
@@ -488,6 +471,7 @@ class FastaToArrayIterator(FastaIterator):
         output += (self.y[index_array],)
         if self.sample_weight is not None:
             output += (self.sample_weight[index_array],)
+
         return output
 
 
@@ -523,7 +507,7 @@ class FastaDNABatchGenerator(BaseEstimator):
         return self
 
     def flow(self, X, y=None, batch_size=32, sample_weight=None,
-             steps=None, shuffle=None):
+             shuffle=None):
         if not hasattr(self, 'fasta_file_'):
             self.fit()
 
@@ -533,7 +517,6 @@ class FastaDNABatchGenerator(BaseEstimator):
             X, self, y=y, batch_size=batch_size,
             sample_weight=sample_weight,
             shuffle=shuffle,
-            steps=steps,
             seed=self.seed)
 
     def apply_transform(self, idx):
@@ -657,7 +640,7 @@ class FastaProteinBatchGenerator(FastaDNABatchGenerator):
         self.UNK_BASE = 'X'
 
 
-class IntervalsToArrayIterator(FastaIterator):
+class IntervalsToArrayIterator(FastaToArrayIterator):
     """Iterator yielding Numpy array from intervals and reference
     sequences.
 
@@ -677,8 +660,6 @@ class IntervalsToArrayIterator(FastaIterator):
         Sample weight
     seed : int
         Random seed for data shuffling
-    steps : int or None, default is None
-        The number of batches before ending current epoch.
     sample_probabilities : 1-D array or None, default is None.
         The probabilities to draw samples. Different from the sample
         weight, this parameter only changes the the frequency of
@@ -686,36 +667,21 @@ class IntervalsToArrayIterator(FastaIterator):
     """
     def __init__(self, X, generator, y=None, batch_size=32,
                  shuffle=True, sample_weight=None, seed=None,
-                 steps=None, sample_probabilities=None):
-        X, y, sample_weight = indexable(X, y, sample_weight)
-        self.X = X
-        self.generator = generator
-        self.y = y
-        self.sample_weight = sample_weight
-        self.steps = steps
+                 sample_probabilities=None):
+        super(IntervalsToArrayIterator, self).__init__(
+            X, generator,
+            y=y, batch_size=batch_size,
+            shuffle=shuffle, seed=seed,
+            sample_weight=sample_weight)
+
         self.sample_probabilities = sample_probabilities
 
-        n = batch_size * steps if steps else X.shape[0]
-        if n > X.shape[0] and not shuffle:
-            raise ValueError("IntervalsToArrayIterator doesn't support "
-                             "oversampling when shuffle is False! Try "
-                             "a smaller `steps_per_epoch` or set shuffle "
-                             "to True.")
-
-        super(IntervalsToArrayIterator, self).__init__(n, batch_size,
-                                                       shuffle, seed)
-
     def _set_index_array(self):
-        self.index_array = np.arange(self.X.shape[0])
+        self.index_array = np.arange(self.n)
         if self.shuffle:
             self.index_array = np.random.choice(
                 self.index_array, size=self.n,
                 replace=True, p=self.sample_probabilities)
-        elif self.n <= self.index_array.shape[0]:
-            self.index_array = self.index_array[:self.n]
-        else:
-            raise ValueError("IntervalsToArrayIterator doesn't support "
-                             "oversampling when shuffle is False!")
 
     def _get_batches_of_transformed_samples(self, index_array):
         generator = self.generator
@@ -738,7 +704,11 @@ class IntervalsToArrayIterator(FastaIterator):
             batch_x[i, :, :] = rval[0]
             batch_y[i, :] = rval[1]
 
-        return (batch_x, batch_y)
+        output = (batch_x, batch_y)
+        if self.sample_weight is not None:
+            output += (self.sample_weight[index_array], )
+
+        return output
 
 
 class GenomicIntervalBatchGenerator(BaseEstimator):
@@ -852,7 +822,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         self.steps_per_epoch_ = None
 
     def flow(self, X, y=None, batch_size=32, sample_weight=None,
-             shuffle=None, steps=None):
+             shuffle=None):
         if not hasattr(self, 'reference_genome_'):
             self.fit()
 
@@ -864,7 +834,6 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
             indices[:, np.newaxis], self, y=y, batch_size=batch_size,
             sample_weight=sample_weight,
             sample_probabilities=weights,
-            steps=steps,
             shuffle=shuffle,
             seed=self.seed)
 

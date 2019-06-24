@@ -340,6 +340,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "restore_best_weights": False}}
     validation_data : None or tuple of arrays, (X_test, y_test)
         fit_param
+    steps_per_epoch : int, default is None
+        fit param. The number of train batches per epoch
+    validation_steps : None or int, default is None
+        fit params, validation steps. if None, it will be number
+        of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
     """
@@ -349,7 +354,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  nesterov=None, rho=None, epsilon=None, amsgrad=None,
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, callbacks=None,
-                 validation_data=None, **fit_params):
+                 validation_data=None, steps_per_epoch=None,
+                 validation_steps=None, **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -360,6 +366,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.seed = seed
         self.callbacks = callbacks
         self.validation_data = validation_data
+        self.steps_per_epoch = steps_per_epoch
+        self.validation_steps = validation_steps
         self.fit_params = fit_params
         # TODO support compile parameters
 
@@ -554,6 +562,19 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         return callbacks
 
     def _fit(self, X, y, **kwargs):
+        # base fit
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            # set tensorflow randomness
+            if K.backend() == 'tensorflow':
+                set_random_seed(self.seed)
+                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
+                                              inter_op_parallelism_threads=1)
+                sess = tf.Session(graph=tf.get_default_graph(),
+                                  config=session_conf)
+                K.set_session(sess)
+
         config = self.config
 
         if self.model_type not in ['sequential', 'functional']:
@@ -577,23 +598,15 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         fit_params = self.fit_params
         callbacks = self._callbacks
         validation_data = self.validation_data
+        steps_per_epoch = self.steps_per_epoch
+        validation_steps = self.validation_steps
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size or 32,
                                callbacks=callbacks,
-                               validation_data=validation_data))
+                               validation_data=validation_data,
+                               steps_per_epoch=steps_per_epoch,
+                               validation_steps=validation_steps))
         fit_params.update(kwargs)
-
-        if self.seed is not None:
-            np.random.seed(self.seed)
-            random.seed(self.seed)
-            # set tensorflow randomness
-            if K.backend() == 'tensorflow':
-                set_random_seed(self.seed)
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
-                                              inter_op_parallelism_threads=1)
-                sess = tf.Session(graph=tf.get_default_graph(),
-                                  config=session_conf)
-                K.set_session(sess)
 
         history = self.model_.fit(X, y, **fit_params)
 
@@ -918,11 +931,15 @@ class KerasGBatchClassifier(KerasGClassifier):
         fit_param
     steps_per_epoch : int, default is None
         fit param. The number of train batches per epoch
+    validation_steps : None or int, default is None
+        fit params, validation steps. if None, it will be number
+        of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
-    predict_sample_epochs : int, default=1
-        Sampling epochs, works in prediction with
-        `data_batch_generator.sample`
+    n_jobs : int, default=1
+    prediction_steps : None or int, default is None
+        prediction steps. If None, it will be number of samples
+        divided by batch_size.
     class_positive_factor : int or float, default=1
         For binary classification only. If int, like 5, will
         convert to class_weight {0: 1, 1: 5}.
@@ -937,7 +954,8 @@ class KerasGBatchClassifier(KerasGClassifier):
                  beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, n_jobs=1,
                  callbacks=None, validation_data=None,
-                 steps_per_epoch=None, predict_sample_epochs=1,
+                 steps_per_epoch=None, validation_steps=None,
+                 prediction_steps=None,
                  class_positive_factor=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
@@ -947,10 +965,12 @@ class KerasGBatchClassifier(KerasGClassifier):
             amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
             schedule_decay=schedule_decay, epochs=epochs,
             batch_size=batch_size, seed=seed, callbacks=callbacks,
-            validation_data=validation_data, **fit_params)
+            validation_data=validation_data,
+            steps_per_epoch=steps_per_epoch,
+            validation_steps=validation_steps,
+            **fit_params)
         self.data_batch_generator = data_batch_generator
-        self.steps_per_epoch = steps_per_epoch
-        self.predict_sample_epochs = predict_sample_epochs
+        self.prediction_steps = prediction_steps
         self.class_positive_factor = class_positive_factor
         self.n_jobs = n_jobs
 
@@ -958,6 +978,18 @@ class KerasGBatchClassifier(KerasGClassifier):
         """ fit the model
         """
         check_params(kwargs, Model.fit_generator)
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            # set tensorflow randomness
+            if K.backend() == 'tensorflow':
+                set_random_seed(self.seed)
+                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
+                                              inter_op_parallelism_threads=1)
+                sess = tf.Session(graph=tf.get_default_graph(),
+                                  config=session_conf)
+                K.set_session(sess)
 
         self.data_generator_ = self.data_batch_generator
         self.data_generator_.fit()
@@ -1018,13 +1050,15 @@ class KerasGBatchClassifier(KerasGClassifier):
         n_jobs = self.n_jobs
         validation_data = self.validation_data
         steps_per_epoch = self.steps_per_epoch
+        validation_steps = self.validation_steps
 
         fit_params.update(dict(
             epochs=epochs,
             workers=n_jobs,
-            use_multiprocessing=n_jobs > 1,
+            use_multiprocessing=False,
+            validation_data=validation_data,
             steps_per_epoch=steps_per_epoch,
-            validation_data=validation_data))
+            validation_steps=validation_steps))
 
         # kwargs from function `fit ` override object initiation values.
         fit_params.update(kwargs)
@@ -1035,21 +1069,9 @@ class KerasGBatchClassifier(KerasGClassifier):
                 self.data_generator_.flow(*validation_data,
                                           batch_size=batch_size,
                                           shuffle=False)
-        if self.seed is not None:
-            np.random.seed(self.seed)
-            random.seed(self.seed)
-            # set tensorflow randomness
-            if K.backend() == 'tensorflow':
-                set_random_seed(self.seed)
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
-                                              inter_op_parallelism_threads=1)
-                sess = tf.Session(graph=tf.get_default_graph(),
-                                  config=session_conf)
-                K.set_session(sess)
 
         history = self.model_.fit_generator(
             self.data_generator_.flow(X, y, batch_size=batch_size,
-                                      steps=steps_per_epoch,
                                       sample_weight=sample_weight),
             shuffle=self.seed is None,
             **fit_params)
@@ -1062,9 +1084,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         ---------
         X : 2-D or array in other shape
             If 2-D array in (indices, 1) shape and
-            `predict_sample_epochs` == 1, call generator.
-            If 2-D array in (indices, 1) shape and
-            `predict_sample_epochs` > 1, call `predict_sample_epochs.sample()`.
+            call generator.
             Otherwise, predict using `self.model_`.
         data_generator : obj
             Data generator transfrom to array.
@@ -1082,27 +1102,18 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         batch_size = self.batch_size or 32
         n_jobs = self.n_jobs
-
-        predict_sample_epochs = kwargs.pop('predict_sample_epochs', None)
-        if not predict_sample_epochs:
-            predict_sample_epochs = self.predict_sample_epochs
+        steps = kwargs.pop('steps', None)
+        if not steps:
+            steps = self.prediction_steps
 
         # through data generator
-        if predict_sample_epochs == 1:
+        if X.ndim == 2 and X.shape[1] == 1:
             preds = self.model_.predict_generator(
                 pred_data_generator.flow(X, batch_size=batch_size),
+                steps=steps,
                 workers=n_jobs,
-                use_multiprocessing=True if n_jobs > 1 else False,
+                use_multiprocessing=False,
                 **kwargs)
-
-        # transform once through sample()
-        elif X.ndim == 2 and X.shape[1] == 1:
-            n_samples = X.shape[0]
-            sample_size = n_samples * predict_sample_epochs
-            retrieved_X, _ = pred_data_generator.sample(
-                X, sample_size=sample_size)
-            preds = self.model_.predict(retrieved_X, batch_size=batch_size,
-                                        **kwargs)
 
         # X was transformed
         else:
@@ -1123,13 +1134,24 @@ class KerasGBatchClassifier(KerasGClassifier):
             if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
                 y = to_categorical(y)
 
+        data_generator = kwargs.pop('data_generator', None)
+        if not data_generator:
+            data_generator_ = self.data_generator_
+
+        check_params(kwargs, Model.predict_generator)
         check_params(kwargs, Model.evaluate_generator)
 
         n_jobs = self.n_jobs
         batch_size = self.batch_size or 32
+        steps = kwargs.pop('steps', None)
+        if not steps:
+            steps = self.prediction_steps
+
         outputs = self.model_.evaluate_generator(
-            self.data_generator_.flow(X, y, batch_size=batch_size),
-            n_jobs=n_jobs,  use_multiprocessing=True if n_jobs > 1 else False,
+            data_generator_.flow(X, y=y, batch_size=batch_size),
+            steps=steps,
+            n_jobs=n_jobs,
+            use_multiprocessing=False,
             **kwargs)
 
         outputs = to_list(outputs)
@@ -1142,15 +1164,14 @@ class KerasGBatchClassifier(KerasGClassifier):
                          'the `model.compile()` method.')
 
     def evaluate(self, X_test, y_test=None, scorer=None, is_multimetric=False,
-                 predict_sample_epochs=None):
+                 steps=None):
         """Compute the score(s) with sklearn scorers on a given test
         set. Will return a single float if is_multimetric is False and a
         dict of floats, if is_multimetric is True
         """
-        if not predict_sample_epochs:
-            predict_sample_epochs = self.predict_sample_epochs
-        n_samples = X_test.shape[0]
-        sample_size = n_samples * predict_sample_epochs
+        if not steps:
+            steps = self.prediction_steps
+        sample_size = self.batch_size * steps
 
         retrieved_X, targets = self.data_generator_.sample(
             X_test, sample_size=sample_size)

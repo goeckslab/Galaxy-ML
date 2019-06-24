@@ -18,6 +18,7 @@ from sklearn.ensemble import RandomForestRegressor
 from six.moves import zip
 from sklearn.model_selection import _search
 from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import SCORERS
 from sklearn.utils.mocking import MockDataFrame
 from sklearn.utils.testing import assert_equal
@@ -309,7 +310,7 @@ def test_fit_and_score_keras_model():
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
                                  metrics=[], batch_size=32,
-                                 epochs=30)
+                                 epochs=30, seed=42)
 
     scorer = SCORERS['accuracy']
     train, test = next(KFold(n_splits=5).split(X, y))
@@ -326,7 +327,7 @@ def test_fit_and_score_keras_model():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert 0.57 <= round(got1[0], 2) <= 0.60, got1
+    assert round(got1[0], 2) == 0.69, got1
 
 
 def test_fit_and_score_keras_model_callbacks():
@@ -350,32 +351,32 @@ def test_fit_and_score_keras_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert round(got1[0], 2) == 0.57, got1
+    assert round(got1[0], 2) == 0.70, got1
 
 
 def test_fit_and_score_keras_model_in_gridsearchcv():
     config = train_model.get_config()
-    regressor = KerasGClassifier(config, optimizer='adam',
-                                 metrics=[], batch_size=32,
-                                 epochs=10, seed=42)
+    clf = KerasGClassifier(config, optimizer='adam',
+                           metrics=[], batch_size=32,
+                           epochs=10, seed=42)
 
     df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
     X = df.iloc[:, 0:8].values.astype(float)
     y = df.iloc[:, 8].values
 
     scorer = SCORERS['balanced_accuracy']
-    cv = KFold(n_splits=5)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=123)
 
     new_params = {
         'layers_0_Dense__config__kernel_initializer__config__seed': [0],
         'layers_1_Dense__config__kernel_initializer__config__seed': [0]
     }
 
-    grid = GridSearchCV(regressor, param_grid=new_params, scoring=scorer,
+    grid = GridSearchCV(clf, param_grid=new_params, scoring=scorer,
                         cv=cv, n_jobs=2, refit=False)
 
     grid.fit(X, y, verbose=0)
 
     got1 = grid.best_score_
 
-    assert round(got1, 2) == 0.57, got1
+    assert round(got1, 2) == 0.53, got1

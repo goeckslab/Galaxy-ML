@@ -333,14 +333,7 @@ def test_genomic_interval_batch_generator():
     # test steps_per_epoch
     generator2 = clone(generator)
     generator2.fit()
-    gen_flow2 = generator2.flow(X, batch_size=4, steps=3)
+    gen_flow2 = generator2.flow(X, batch_size=2)
 
-    assert len(gen_flow2) == 3, len(gen_flow2)
-
-    # test iterator index
-    generator3 = clone(generator)
-    generator3.fit()
-    gen_flow3 = generator3.flow(X, batch_size=2, steps=8)
-
-    index_arr = next(gen_flow3.index_generator)
+    index_arr = next(gen_flow2.index_generator)
     assert index_arr.tolist() == [3, 7], index_arr
