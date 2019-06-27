@@ -744,10 +744,6 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         `center_bin_to_predict`.
     feature_thresholds : float, default=0.5
         Threshold values to determine target value.
-    sample_postive_tries : float or int, default=1
-        If int, the maximum number of tries to get a transformed
-        sample with positive target value. If float,
-        int(1/sample_postive_tries) to get negative target value.
     random_state : int or None, default=None
         Random seed for sampling sequences with changing position.
     """
@@ -757,7 +753,6 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
                  shuffle=True, seed=None, seq_length=1000,
                  center_bin_to_predict=200,
                  feature_thresholds=0.5,
-                 sample_postive_tries=10,
                  random_state=None):
         self.ref_genome_path = ref_genome_path
         self.intervals_path = intervals_path

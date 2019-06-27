@@ -245,15 +245,14 @@ def test_genomic_interval_batch_generator():
         target_path=target_path,
         seed=seed,
         features=['Proery_BM|GATA1'],
-        sample_postive_tries=20,
         random_state=random_state
     )
     generator1 = clone(generator)
     got = list(generator1.get_params().keys())
     expect = ['blacklist_regions', 'center_bin_to_predict',
               'feature_thresholds', 'features', 'intervals_path',
-              'random_state', 'ref_genome_path', 'sample_postive_tries',
-              'seed', 'seq_length', 'shuffle', 'target_path']
+              'random_state', 'ref_genome_path', 'seed',
+              'seq_length', 'shuffle', 'target_path']
 
     assert got == expect, got
 

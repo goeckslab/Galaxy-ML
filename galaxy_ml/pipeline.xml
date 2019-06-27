@@ -211,10 +211,10 @@ df.to_csv('$outfile_params', sep='\t', index=False)
                     <option value="decomposition">Matrix Decomposition</option>
                     <option value="kernel_approximation">Kernel Approximation</option>
                     <option value="FeatureAgglomeration">Agglomerate Features</option>
-                    <option value="skrebate">SK-rebate feature selection</option>
-                    <option value="imblearn">imbalanced-learn sampling</option>
+                    <option value="skrebate">SK-rebate Feature Selection</option>
+                    <option value="imblearn">Imbalanced-learn Sampling</option>
                     <option value="IRAPS">IRAPS -- feature selector and classifier</option>
-                    <option value="preprocessors">Bio- sequence encoders</option>
+                    <option value="preprocessors">Bio-sequence Encoders</option>
                 </param>
                 <when value="None"/>
                 <when value="pre_processor">
