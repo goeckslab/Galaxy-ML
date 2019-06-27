@@ -190,7 +190,14 @@ def get_batch_generator(config):
     """
     generator_type = config.pop('generator_type')
     klass = try_get_attr('preprocessors', generator_type)
-    config['fasta_path'] = 'to_be_determined'
+
+    if generator_type == 'GenomicIntervalBatchGenerator':
+        config['ref_genome_path'] = 'to_be_determined'
+        config['intervals_path'] = 'to_be_determined'
+        config['target_path'] = 'to_be_determined'
+        config['features'] = 'to_be_determined'
+    else:
+        config['fasta_path'] = 'to_be_determined'
 
     return klass(**config)
 

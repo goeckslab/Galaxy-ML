@@ -1044,6 +1044,17 @@
     <expand macro="params_fasta_dna_batch_generator"/>
   </xml>
 
+  <xml name="params_genomic_interval_batch_generator">
+    <expand macro="params_fasta_dna_batch_generator"/>
+    <param argument="blacklist_regions" type="select" help="Tabix-indexed list of regions from which we should not output sequences">
+      <option value="hg38" selected="true">hg38</option>
+      <option value="hg19">hg19</option>
+    </param>
+    <param argument="center_bin_to_predict" type="integer" value="200" optional="true" help="Query the tabix-indexed file for a region of length."/>
+    <param argument="feature_thresholds" type="float" value="0.5"  optional="true" help="Threshold values to determine target value."/>
+    <param argument="random_state" type="integer" value="" optional="true" help="Random seed number, to control the sample position in each invertal."/>
+  </xml>
+
   <xml name="params_image_batch_generator">
   </xml>
 
@@ -1130,6 +1141,8 @@
     <section name="fit_params" title="Fit Parameters" expanded="true">
       <param name="epochs" type="integer" value="1" min="1" label="epochs"/>
       <param name="batch_size" type="integer" value="32" optional="true" label="batch_size" help="Integer or blank for 32"/>
+      <param name="steps_per_epoch" type="integer" value="" optional="true" label="steps_per_epoch" help="The number of steps (batches of samples) before declaring one epoch finished and starting the next epoch. The default None is equal to the number of samples in your dataset divided by the batch size, or 1 if that cannot be determined."/>
+      <param name="validation_steps" type="integer" value="" optional="true" label="validation_steps" help="Default None. Total number of steps (batches of samples) to validate before stopping." />
       <!--`validation_freq` will be available in next keras version-->
       <!--param name="validation_freq" type="integer" value="1" optional="true" label="validation_freq" help="Integer only at current moment. If an integer, specifies how many training epochs to run before a new validation run is performed."/-->
       <expand macro="keras_callbacks"/>
