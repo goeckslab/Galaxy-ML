@@ -111,7 +111,7 @@
     <a class="current" href="./">Change Log</a>
     <ul class="subnav">
             
-    <li class="toctree-l3"><a href="#version-065-tool_main-1062-stacking-020-keras-020-05-26-2019">Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-072-tool_main-1070-stacking-020-keras-030-06-20-2019">Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-20-2019)</a></li>
     
         <ul>
         
@@ -124,7 +124,7 @@
         </ul>
     
 
-    <li class="toctree-l3"><a href="#version-060-tool_main-1060-keras-020-05-13-2019">Version 0.6.0 / tool_main: 1.0.6.0 / keras: 0.2.0 (05-13-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-071-tool_main-1070-stacking-020-keras-030-06-11-2019">Version 0.7.1 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-11-2019)</a></li>
     
         <ul>
         
@@ -137,7 +137,7 @@
         </ul>
     
 
-    <li class="toctree-l3"><a href="#version-050-tool_main-1005-keras-020-05-13-2019">Version 0.5.0 / tool_main: 1.0.0.5 / keras: 0.2.0 (05-13-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-065-tool_main-1062-stacking-020-keras-020-05-26-2019">Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)</a></li>
     
         <ul>
         
@@ -150,7 +150,7 @@
         </ul>
     
 
-    <li class="toctree-l3"><a href="#version-040-tool_main-1004-04-29-2019">Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-060-tool_main-1060-keras-020-05-13-2019">Version 0.6.0 / tool_main: 1.0.6.0 / keras: 0.2.0 (05-13-2019)</a></li>
     
         <ul>
         
@@ -163,7 +163,7 @@
         </ul>
     
 
-    <li class="toctree-l3"><a href="#version-030-tool_main-1003-04-23-2019">Version 0.3.0/ tool_main: 1.0.0.3 (04-23-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-050-tool_main-1005-keras-020-05-13-2019">Version 0.5.0 / tool_main: 1.0.0.5 / keras: 0.2.0 (05-13-2019)</a></li>
     
         <ul>
         
@@ -176,7 +176,7 @@
         </ul>
     
 
-    <li class="toctree-l3"><a href="#version-020-03-24-2019">Version 0.2.0 (03-24-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-040-tool_main-1004-04-29-2019">Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)</a></li>
     
         <ul>
         
@@ -185,6 +185,32 @@
             <li><a class="toctree-l4" href="#changes_5">Changes</a></li>
         
             <li><a class="toctree-l4" href="#bug-fixes_5">Bug Fixes</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l3"><a href="#version-030-tool_main-1003-04-23-2019">Version 0.3.0/ tool_main: 1.0.0.3 (04-23-2019)</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#new-features_6">New Features</a></li>
+        
+            <li><a class="toctree-l4" href="#changes_6">Changes</a></li>
+        
+            <li><a class="toctree-l4" href="#bug-fixes_6">Bug Fixes</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l3"><a href="#version-020-03-24-2019">Version 0.2.0 (03-24-2019)</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#new-features_7">New Features</a></li>
+        
+            <li><a class="toctree-l4" href="#changes_7">Changes</a></li>
+        
+            <li><a class="toctree-l4" href="#bug-fixes_7">Bug Fixes</a></li>
         
         </ul>
     
@@ -236,8 +262,48 @@
           <div role="main">
             <div class="section">
               
-                <h3 id="version-065-tool_main-1062-stacking-020-keras-020-05-26-2019">Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)</h3>
+                <h3 id="version-072-tool_main-1070-stacking-020-keras-030-06-20-2019">Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-20-2019)</h3>
 <h4 id="new-features">New Features</h4>
+<ul>
+<li>
+<p>Adds <code>GenomicIntervalBatchGenerator</code>, an online data generator that provides online genomic sequences transformation from a reference genome and intervals. By trying to offer the same functionalities of <a href="https://github.com/FunctionLab/selene">selene</a>, <code>GenomicIntervalBatchGenerator</code> is implemented by, 1) reusing selene cython backend; 2) extending <code>keras.utils.Sequence</code>, multiple processing and queueing capable; 3) compatibilizing with sciKit-learn APIs, like KFold, GridSeearchCV, <em>etc</em>. <code>GenomicIntervalBatchGenerator</code> is supposed to be fast and memory-efficient.</p>
+</li>
+<li>
+<p>Adds parameter <code>steps_per_epoch</code> to <code>KerasGBactchGenerator</code>.</p>
+</li>
+<li>
+<p>Adds <code>class_weight</code>-like parameter <code>class_positive_factor</code> to <code>KerasGBatchGenerator</code> for imbalanced training.</p>
+</li>
+</ul>
+<h4 id="changes">Changes</h4>
+<ul>
+<li>Refactor fast array generators, introduced <code>fit</code> method.</li>
+<li>Refactor iraps_classifier random index generator, reduce fit time by about 45%</li>
+</ul>
+<h4 id="bug-fixes">Bug Fixes</h4>
+<h3 id="version-071-tool_main-1070-stacking-020-keras-030-06-11-2019">Version 0.7.1 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-11-2019)</h3>
+<h4 id="new-features_1">New Features</h4>
+<ul>
+<li>Adds <code>validation_data</code> into keras galaxy models and supports gridsearch and <code>model_validation</code>.</li>
+<li>Adds fasta sequence batch generator and makes <code>FastaDNABatchGenerator</code>, <code>FastaRNABatchGenerator</code> and <code>FastaProteinBatchGenerator</code>.</li>
+<li>Adds keras galaxy batch classifier and <code>generator.flow</code>.</li>
+<li>Adds <code>keras_batch_models</code> tool.</li>
+<li>Adds <code>GenomeOneHotEncoder</code> and <code>ProteinOneHotEncoder</code> to <code>pipeline</code>.</li>
+<li>Adds API documentation at <code>https://goeckslab.github.io/Galaxy-ML/</code>.</li>
+<li>Extends <code>BinarizeTarget Classifier/Regressor</code> to support <code>fit_params</code>.</li>
+<li>Modifies <code>read_columns</code> function to avoid repeated input file reading.</li>
+</ul>
+<h4 id="changes_1">Changes</h4>
+<ul>
+<li>Changes <code>model_validation</code> tool name.</li>
+</ul>
+<h4 id="bug-fixes_1">Bug Fixes</h4>
+<ul>
+<li>Fixes CV groups file issue in searchcv tool.</li>
+<li>Fixes cheetah error in model_validation tool.</li>
+</ul>
+<h3 id="version-065-tool_main-1062-stacking-020-keras-020-05-26-2019">Version 0.6.5 / tool_main: 1.0.6.2 / stacking: 0.2.0 / keras: 0.2.0 (05-26-2019)</h3>
+<h4 id="new-features_2">New Features</h4>
 <ul>
 <li>Adds <code>BinarizeTargetTransformer</code>.</li>
 <li>Adds support of binarize_scorers to <code>BaseSearchCV</code>.</li>
@@ -246,17 +312,17 @@
 <li>Adds <code>__all__</code> attribute together with <code>try_get_attr</code> to manage custom module and names.</li>
 <li>Adds keras callbacks. Now supports <code>EarlyStopping</code>, <code>RemoteMonitor</code>, <code>TerminateOnNaN</code>, <code>ReduceLROnPlateau</code> and partially support <code>ModelCheckpoint</code>, <code>CSVLogger</code>.</li>
 </ul>
-<h4 id="changes">Changes</h4>
+<h4 id="changes_2">Changes</h4>
 <ul>
 <li>Pumps <code>stacking_ensembles</code> too to version 0.2.0.</li>
 <li>Changes <code>KerasBatchClassifier</code> to <code>KerasGBatchClassifier</code>.</li>
 </ul>
-<h4 id="bug-fixes">Bug Fixes</h4>
+<h4 id="bug-fixes_2">Bug Fixes</h4>
 <ul>
 <li>Fix voting estimators duplicate naming problem.</li>
 </ul>
 <h3 id="version-060-tool_main-1060-keras-020-05-13-2019">Version 0.6.0 / tool_main: 1.0.6.0 / keras: 0.2.0 (05-13-2019)</h3>
-<h4 id="new-features_1">New Features</h4>
+<h4 id="new-features_3">New Features</h4>
 <ul>
 <li>Adds Nested CV to searchcv tool.</li>
 <li>Adds <code>BinarizeTargetClassifier</code>.classifier_, <code>BinarizeTargetRegressor</code>.regressor_ and <code>IRAPSClassifier</code>.get_signature() in estimator_attributes tool.</li>
@@ -264,17 +330,17 @@
 <li>Adds <code>KerasBatchClassifier</code>.</li>
 <li>Makes <code>KerasGClassifier</code> and <code>KerasGRegressor</code> support multi-dimension array.</li>
 </ul>
-<h4 id="changes_1">Changes</h4>
+<h4 id="changes_3">Changes</h4>
 <ul>
 <li>Changes min value of <code>n_splits</code>  from 2 to 1.</li>
 <li>Main Tool version changes on the last second number instead of the last one.</li>
 </ul>
-<h4 id="bug-fixes_1">Bug Fixes</h4>
+<h4 id="bug-fixes_3">Bug Fixes</h4>
 <ul>
 <li>Fixes <code>train_test_split</code> which didn't work with <code>default</code> scoring.</li>
 </ul>
 <h3 id="version-050-tool_main-1005-keras-020-05-13-2019">Version 0.5.0 / tool_main: 1.0.0.5 / keras: 0.2.0 (05-13-2019)</h3>
-<h4 id="new-features_2">New Features</h4>
+<h4 id="new-features_4">New Features</h4>
 <ul>
 <li>Extend binarize target scorers to support stacking estimators, i.e., use binarize target estimator as meta estimator.</li>
 <li>Adds <code>cv_results</code> attributes to <code>estimator_attributes</code> tool.</li>
@@ -282,34 +348,34 @@
 <li>Adds <code>save_weights</code> and <code>load_weights</code> for keras classifier/regressor models.</li>
 <li>Merges keras model builder</li>
 </ul>
-<h4 id="changes_2">Changes</h4>
+<h4 id="changes_4">Changes</h4>
 <ul>
 <li>Refactors the multiple scoring input for searchcv and simplify cv_results output.</li>
 <li>Refactors import system, get rid of exec import.</li>
 </ul>
-<h4 id="bug-fixes_2">Bug Fixes</h4>
+<h4 id="bug-fixes_4">Bug Fixes</h4>
 <ul>
 <li>Fixes stacking estimators whitelist issue and other import issues.</li>
 <li>Fixes bases typo error in stacking ensembles tool</li>
 <li>Fixes multiple scoring error in train_test_split mode</li>
 </ul>
 <h3 id="version-040-tool_main-1004-04-29-2019">Version 0.4.0 / tool_main: 1.0.0.4 (04-29-2019)</h3>
-<h4 id="new-features_3">New Features</h4>
+<h4 id="new-features_5">New Features</h4>
 <ul>
 <li>Adds <code>StackingCVClassifier</code>, <code>StackingClassifier</code> and <code>StackingRegressor</code> to <code>Stacking_ensembles</code> tool, and makes explicit base estimator and meta estimator building options.</li>
 <li>Adds <code>.gitattributes</code> and <code>.gitignore</code>.</li>
 </ul>
-<h4 id="changes_3">Changes</h4>
+<h4 id="changes_5">Changes</h4>
 <ul>
 <li>Changes <code>extended_ensemble_ml.xml</code> to <code>stacking_ensembles.xml</code>.</li>
 <li>Moves src to subfolder <code>Galaxy-ML</code></li>
 </ul>
-<h4 id="bug-fixes_3">Bug Fixes</h4>
+<h4 id="bug-fixes_5">Bug Fixes</h4>
 <ul>
 <li>Fix safepickler classobj issue</li>
 </ul>
 <h3 id="version-030-tool_main-1003-04-23-2019">Version 0.3.0/ tool_main: 1.0.0.3 (04-23-2019)</h3>
-<h4 id="new-features_4">New Features</h4>
+<h4 id="new-features_6">New Features</h4>
 <ul>
 <li>Makes <code>RepeatedOrderedKFold</code>.</li>
 <li>Makes <code>train_test_split</code> tool and adds <code>train_test_split</code> to searchcv tool.</li>
@@ -319,30 +385,30 @@
 <code>estimator_attributes</code> tool.</li>
 <li>Restructures <code>estimator_attributes</code> tool to be workflow friendly.</li>
 </ul>
-<h4 id="changes_4">Changes</h4>
+<h4 id="changes_6">Changes</h4>
 <ul>
 <li>Separate <code>OrderedKFold</code> into <code>model_validations</code> module.</li>
 <li>Refactors <code>SafePickler</code> class and pickle white list loading system for better CPU and Memory efficiency.</li>
 <li>Separates <code>feature_selector</code> module out from <code>utils</code>.</li>
 </ul>
-<h4 id="bug-fixes_4">Bug Fixes</h4>
+<h4 id="bug-fixes_6">Bug Fixes</h4>
 <ul>
 <li>Fix safepickler classobj issue</li>
 </ul>
 <h3 id="version-020-03-24-2019">Version 0.2.0 (03-24-2019)</h3>
-<h5 id="new-features_5">New Features</h5>
+<h5 id="new-features_7">New Features</h5>
 <ul>
 <li>SearchCV tool selects param from <code>get_params()</code> dataset.</li>
 <li>Adds <code>extended_ensemble_ml</code> tool which wraps <code>StackingCVRegressor</code> to ensemble machine learning.</li>
 <li>Extends <code>estimator_attributes</code> tool to output <code>get_params()</code>.</li>
 <li>Adds support of multipleprocessing in <code>IRAPSCore</code>.</li>
 </ul>
-<h5 id="changes_5">Changes</h5>
+<h5 id="changes_7">Changes</h5>
 <ul>
 <li>Removes the limit of <code>n_jobs=1</code> for <code>IRAPSClassifier</code></li>
 <li>Changes named estimators in <code>pipeline_builder</code> tool. Use <code>make_pipeline</code> instead of <code>Pipeline</code> initiation.</li>
 </ul>
-<h5 id="bug-fixes_5">Bug Fixes</h5>
+<h5 id="bug-fixes_7">Bug Fixes</h5>
 <ul>
 <li></li>
 </ul>
