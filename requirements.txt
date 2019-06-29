@@ -1,0 +1,15 @@
+cython>=0.27.3
+scipy>=1.2.1
+numpy>=1.16.2
+pandas>=0.24.2
+scikit-learn==0.20.3
+joblib>=0.13.2
+xgboost==0.80
+asteval>=0.9.13
+skrebate==0.6
+imbalanced-learn==0.4.2
+tensorflow==1.13.1
+Keras==2.2.4
+mlxtend==0.16.0
+pyfaidx>=0.5.5.2
+pytabix>=0.1
