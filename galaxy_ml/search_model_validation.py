@@ -162,7 +162,8 @@ def _eval_search_params(params_builder):
 
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None, groups=None,
-         ref_seq=None, intervals=None, fasta_path=None):
+         ref_seq=None, intervals=None, targets=None,
+         fasta_path=None):
     """
     Parameter
     ---------
@@ -192,6 +193,9 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     intervals : str
         File path to dataset containing interval file
+
+    targets : str
+        File path to dataset compressed target bed file
 
     fasta_path : str
         File path to dataset containing fasta file
@@ -252,6 +256,16 @@ def main(inputs, infile_estimator, infile1, infile2,
                 "or having GenomeOneHotEncoder/ProteinOneHotEncoder "
                 "in pipeline!")
 
+    elif input_type == 'refseq_and_interval':
+        path_params = {
+            'data_batch_generator__ref_genome_path': ref_seq,
+            'data_batch_generator__intervals_path': intervals,
+            'data_batch_generator__target_path': targets
+        }
+        estimator.set_params(**path_params)
+        n_intervals = sum(1 for line in open(intervals))
+        X = np.arange(n_intervals)[:, np.newaxis]
+
     # Get target y
     header = 'infer' if params['input_options']['header2'] else None
     column_option = (params['input_options']['column_selector_options_2']
@@ -279,6 +293,10 @@ def main(inputs, infile_estimator, infile1, infile2,
             parse_dates=True)
     if len(y.shape) == 2 and y.shape[1] == 1:
         y = y.ravel()
+    if input_type == 'refseq_and_interval':
+        estimator.set_params(
+            data_batch_generator__features=y.ravel().tolist())
+        y = None
     # end y
 
     optimizer = params['search_schemes']['selected_search_scheme']
@@ -482,10 +500,11 @@ if __name__ == '__main__':
     aparser.add_argument("-g", "--groups", dest="groups")
     aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
     aparser.add_argument("-b", "--intervals", dest="intervals")
+    aparser.add_argument("-t", "--targets", dest="targets")
     aparser.add_argument("-f", "--fasta_path", dest="fasta_path")
     args = aparser.parse_args()
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
          groups=args.groups, ref_seq=args.ref_seq, intervals=args.intervals,
-         fasta_path=args.fasta_path)
+         targets=args.targets, fasta_path=args.fasta_path)

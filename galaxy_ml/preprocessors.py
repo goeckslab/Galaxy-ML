@@ -24,11 +24,13 @@ pyfaidx = get_module('pyfaidx')
 try:
     # tools should pick up here
     from externals import selene_sdk
-except ImportError:
+except ImportError as e:
+    print(e)
     # nosetest picks here
     try:
         from .externals import selene_sdk
-    except ImportError:
+    except ImportError as e:
+        print(e)
         pass
 
 

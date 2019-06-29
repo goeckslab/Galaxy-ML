@@ -433,7 +433,7 @@
           <option value="tabular" selected="true">tabular data</option>
           <option value="sparse">sparse matrix</option>
           <option value="seq_fasta">sequnences in a fasta file</option>
-          <!--option value="refseq_and_interval">reference sequnence plus intervals</option-->
+          <option value="refseq_and_interval">reference sequnence plus intervals</option>
       </param>
       <when value="tabular">
           <expand macro="samples_tabular" multiple1="true" multiple2="false"/>
@@ -444,9 +444,9 @@
       <when value="seq_fasta">
           <expand macro="inputs_seq_fasta"/>
       </when>
-      <!--when value="refseq_and_interval">
+      <when value="refseq_and_interval">
           <expand macro="inputs_refseq_and_interval"/>
-      </when-->
+      </when>
     </conditional>
   </xml>
 
@@ -464,8 +464,14 @@
   </xml>
 
   <xml name="inputs_refseq_and_interval">
-    <param name="reference_file" type="data" format="fasta" label="Dataset containing reference genomic sequence"/>
-    <param name="interval_file" type="data" format="interval" label="Dataset containing sequence intervals" help="Sequences will be retrieved from the reference genome and one-hot encoded to training arrays."/>
+    <param name="ref_genome_file" type="data" format="fasta" label="Dataset containing reference genomic sequence"/>
+    <param name="interval_file" type="data" format="interval" label="Dataset containing sequence intervals for training" help="interval. Sequences will be retrieved from the reference genome and one-hot encoded to training arrays."/>
+    <param name="target_file" type="data" format="bed" label="Dataset containing positions and features for target values." help="bed. The file will be compressed with `bgzip` and then indexed using `tabix`."/>
+    <param name="infile2" type="data" format="tabular" label="Dataset containing the feature list for prediction"/>
+    <param name="header2" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Does the dataset contain header:" />
+    <conditional name="column_selector_options_2">
+      <expand macro="samples_column_selector_options" column_option="selected_column_selector_option2" col_name="col2" multiple="true" infile="infile2"/>
+    </conditional>
   </xml>
 
   <!--Advanced options-->
