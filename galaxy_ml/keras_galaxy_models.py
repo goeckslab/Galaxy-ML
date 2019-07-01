@@ -1171,7 +1171,10 @@ class KerasGBatchClassifier(KerasGClassifier):
         """
         if not steps:
             steps = self.prediction_steps
-        sample_size = self.batch_size * steps
+        if steps:
+            sample_size = self.batch_size * steps
+        else:
+            sample_size = X_test.shape[0]
 
         retrieved_X, targets = self.data_generator_.sample(
             X_test, sample_size=sample_size)
