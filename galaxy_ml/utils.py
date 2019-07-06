@@ -77,8 +77,9 @@ class _SafePickler(pickle.Unpickler, object):
 
         # custom module in Galaxy-ML
         self.custom_modules = [
-            '__main__', 'keras_galaxy_models', 'feature_selectors',
-            'preprocessors', 'iraps_classifier', 'model_validations']
+            'keras_galaxy_models',
+            'feature_selectors', 'preprocessors',
+            'iraps_classifier', 'model_validations']
 
     # override
     def find_class(self, module, name):
@@ -88,7 +89,10 @@ class _SafePickler(pickle.Unpickler, object):
                                          % (module, name))
 
         # custom module in Galaxy-ML
+        # compatible with models from versions before 1.0.7.0
         if module in self.custom_modules:
+            return try_get_attr('galaxy_ml.' + module, name)
+        if module == '__main__' or module.startswith('galaxy_ml.'):
             return try_get_attr(module, name)
 
         fullname = module + '.' + name
@@ -210,7 +214,7 @@ def feature_selector(inputs, X=None, y=None):
             estimator_json = inputs['model_inputter']['estimator_selector']
             estimator = get_estimator(estimator_json)
             check_feature_importances = try_get_attr(
-                'feature_selectors', 'check_feature_importances')
+                'galaxy_ml.feature_selectors', 'check_feature_importances')
             estimator = check_feature_importances(estimator)
             new_selector = selector(estimator, **options)
 
@@ -220,7 +224,7 @@ def feature_selector(inputs, X=None, y=None):
             options['step'] = int(step)
         estimator = get_estimator(inputs["estimator_selector"])
         check_feature_importances = try_get_attr(
-            'feature_selectors', 'check_feature_importances')
+            'galaxy_ml.feature_selectors', 'check_feature_importances')
         estimator = check_feature_importances(estimator)
         new_selector = selector(estimator, **options)
 
@@ -237,7 +241,7 @@ def feature_selector(inputs, X=None, y=None):
             options['step'] = int(step)
         estimator = get_estimator(inputs['estimator_selector'])
         check_feature_importances = try_get_attr(
-            'feature_selectors', 'check_feature_importances')
+            'galaxy_ml.feature_selectors', 'check_feature_importances')
         estimator = check_feature_importances(estimator)
         new_selector = selector(estimator, **options)
 
@@ -257,9 +261,9 @@ def feature_selector(inputs, X=None, y=None):
         options['step'] = step
         estimator = get_estimator(inputs["estimator_selector"])
         check_feature_importances = try_get_attr(
-            'feature_selectors', 'check_feature_importances')
+            'galaxy_ml.feature_selectors', 'check_feature_importances')
         estimator = check_feature_importances(estimator)
-        DyRFECV = try_get_attr('feature_selectors', 'DyRFECV')
+        DyRFECV = try_get_attr('galaxy_ml.feature_selectors', 'DyRFECV')
 
         new_selector = DyRFECV(estimator, **options)
 
@@ -436,10 +440,10 @@ def get_estimator(estimator_json):
             options['value'] = estimator_json['value']
         options['less_is_positive'] = estimator_json['less_is_positive']
         if estimator_json['clf_or_regr'] == 'BinarizeTargetClassifier':
-            klass = try_get_attr('iraps_classifier',
+            klass = try_get_attr('galaxy_ml.iraps_classifier',
                                  'BinarizeTargetClassifier')
         else:
-            klass = try_get_attr('iraps_classifier',
+            klass = try_get_attr('galaxy_ml.iraps_classifier',
                                  'BinarizeTargetRegressor')
         return klass(wrapped_estimator, **options)
 
@@ -524,9 +528,11 @@ def get_cv(cv_json):
         cv_json['test_size'] = int(test_size)
 
     if cv == 'OrderedKFold':
-        cv_class = try_get_attr('model_validations', 'OrderedKFold')
+        cv_class = try_get_attr(
+            'galaxy_ml.model_validations', 'OrderedKFold')
     elif cv == 'RepeatedOrderedKFold':
-        cv_class = try_get_attr('model_validations', 'RepeatedOrderedKFold')
+        cv_class = try_get_attr(
+            'galaxy_ml.model_validations', 'RepeatedOrderedKFold')
     else:
         cv_class = getattr(model_selection, cv)
     splitter = cv_class(**cv_json)
@@ -562,9 +568,11 @@ def get_scoring(scoring_json):
 
     my_scorers = metrics.SCORERS
     my_scorers['binarize_auc_scorer'] =\
-        try_get_attr('iraps_classifier', 'binarize_auc_scorer')
+        try_get_attr('galaxy_ml.iraps_classifier',
+                     'binarize_auc_scorer')
     my_scorers['binarize_average_precision_scorer'] =\
-        try_get_attr('iraps_classifier', 'binarize_average_precision_scorer')
+        try_get_attr('galaxy_ml.iraps_classifier',
+                     'binarize_average_precision_scorer')
     if 'balanced_accuracy' not in my_scorers:
         my_scorers['balanced_accuracy'] =\
             metrics.make_scorer(balanced_accuracy_score)
@@ -587,7 +595,8 @@ def get_search_params(estimator):
     """Format the output of `estimator.get_params()`
     """
     res = estimator.get_params()
-    SearchParam = try_get_attr('keras_galaxy_models', 'SearchParam')
+    SearchParam = try_get_attr('galaxy_ml.keras_galaxy_models',
+                               'SearchParam')
     params = [SearchParam(k, v) for k, v in res.items()]
     params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
 
@@ -626,10 +635,11 @@ def try_get_attr(module, name):
     -------
     class or function
     """
-    if module not in ('__main__', 'keras_galaxy_models',
-                      'feature_selectors', 'preprocessors',
-                      'iraps_classifier', 'model_validations'):
-        raise NameError("%s is recognized as a valid custom "
+    if module.split('.')[-1] not in (
+            '__main__', 'keras_galaxy_models',
+            'feature_selectors', 'preprocessors',
+            'iraps_classifier', 'model_validations'):
+        raise NameError("%s is not recognized as a valid custom "
                         "module in Galaxy-ML!" % module)
 
     mod = sys.modules.get(module, None)

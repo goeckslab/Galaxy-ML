@@ -2,6 +2,7 @@
 Z_RandomOverSampler
 """
 import numpy as np
+import pyfaidx
 from collections import Counter
 from keras.preprocessing.image import ImageDataGenerator
 from imblearn.over_sampling.base import BaseOverSampler
@@ -14,24 +15,7 @@ from sklearn.utils import check_array, safe_indexing, check_random_state
 from sklearn.utils.validation import (check_is_fitted, check_X_y,
                                       FLOAT_DTYPES)
 
-try:
-    from utils import get_module
-except ImportError:
-    from .utils import get_module
-
-pyfaidx = get_module('pyfaidx')
-
-try:
-    # tools should pick up here
-    from externals import selene_sdk
-except ImportError as e:
-    print(e)
-    # nosetest picks here
-    try:
-        from .externals import selene_sdk
-    except ImportError as e:
-        print(e)
-        pass
+from galaxy_ml.externals import selene_sdk
 
 
 __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
