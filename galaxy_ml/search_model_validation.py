@@ -24,11 +24,11 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search
 
-from utils import (SafeEval, get_cv, get_scoring, load_model,
-                   read_columns, try_get_attr, get_module)
+from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
+                          read_columns, try_get_attr, get_module)
 
 
-_fit_and_score = try_get_attr('model_validations', '_fit_and_score')
+_fit_and_score = try_get_attr('galaxy_ml.model_validations', '_fit_and_score')
 setattr(_search, '_fit_and_score', _fit_and_score)
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -417,7 +417,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     else:
         if split_mode == 'train_test_split':
             train_test_split = try_get_attr(
-                'model_validations', 'train_test_split')
+                'galaxy_ml.model_validations', 'train_test_split')
             # make sure refit is choosen
             if not options['refit']:
                 raise ValueError("Refit must be `True` for shuffle splitting!")

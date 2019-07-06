@@ -10,7 +10,8 @@ import sys
 import warnings
 from sklearn import ensemble
 
-from utils import load_model, get_cv, get_estimator, get_search_params
+from galaxy_ml.utils import (load_model, get_cv, get_estimator,
+                          get_search_params)
 
 
 warnings.filterwarnings('ignore')

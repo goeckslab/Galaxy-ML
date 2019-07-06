@@ -30,10 +30,8 @@ from sklearn import (
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
-
-sys.path.insert(0, '$__tool_directory__')
-from utils import (SafeEval, feature_selector, get_estimator,
-                   try_get_attr, get_search_params)
+from galaxy_ml.utils import (SafeEval, feature_selector, get_estimator,
+                             try_get_attr, get_search_params)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -110,7 +108,7 @@ def get_component(input_json, check_none=False):
         if algorithm == 'over_sampling.SMOTENC':
             obj = over_sampling.SMOTENC(categorical_features=[])
         elif algorithm == 'Z_RandomOverSampler':
-            Z_RandomOverSampler = try_get_attr('preprocessors',
+            Z_RandomOverSampler = try_get_attr('galaxy_ml.preprocessors',
                                                'Z_RandomOverSampler')
             obj = Z_RandomOverSampler()
         else:
@@ -122,7 +120,7 @@ def get_component(input_json, check_none=False):
             options = safe_eval( 'dict(' + options + ')' )
             obj.set_params(**options)
     elif input_json['component_type'] == 'IRAPS':
-        iraps_core = try_get_attr('iraps_classifier','IRAPSCore')()
+        iraps_core = try_get_attr('galaxy_ml.iraps_classifier','IRAPSCore')()
         core_params = input_json['text_params'].strip()
         if core_params != '':
             try:
@@ -139,12 +137,12 @@ def get_component(input_json, check_none=False):
             options['occurrence'] = input_json['occurrence']
         if input_json['discretize'] is not None:
             options['discretize'] = input_json['discretize']
-        IRAPSClassifier = try_get_attr('iraps_classifier','IRAPSClassifier')
+        IRAPSClassifier = try_get_attr('galaxy_ml.iraps_classifier','IRAPSClassifier')
         obj = IRAPSClassifier(iraps_core, **options)
     elif input_json['component_type'] == 'preprocessors':
         encoder_selection = input_json['encoder_selection']
         encoder_type = encoder_selection.pop('encoder_type')
-        klass = try_get_attr('preprocessors', encoder_type)
+        klass = try_get_attr('galaxy_ml.preprocessors', encoder_type)
         obj = klass(**encoder_selection)
 
     if 'n_jobs' in obj.get_params():

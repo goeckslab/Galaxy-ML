@@ -3,7 +3,7 @@ import six
 
 from ast import literal_eval
 from keras.models import Sequential, Model
-from utils import try_get_attr
+from galaxy_ml.utils import try_get_attr
 
 
 def _handle_shape(literal):
