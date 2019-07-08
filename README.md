@@ -29,9 +29,14 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
     - StackingClassifier
     - StackingCVRegressor
     - StackingRegressor
-- _[keras](https://github.com/keras-team/keras)_
-    - KerasGClassifier (new API)
-    - KerasGRegressor (new API)
+
+- _[Keras](https://github.com/keras-team/keras)_ (Deep learning models are re-implemented with fully sklearn APIs compatibility. Support parameter, including layer subparameters, swap or searches.  Support `callbacks`)
+    - KerasGClassifier
+    - KerasGRegressor
+    - KerasGBatchClassifier (works best with online data generators, processing images, genomic sequences and so on)
+    
+- BinarizeTargetClassifier/BinarizeTargetRegressor
+- [IRAPSClassifier](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5445594/)
   
 ##### Preprocessor
 - _[scikit-learn](https://github.com/scikit-learn/scikit-learn)_
@@ -50,13 +55,83 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
     - SURFstar
     - MultiSURF
     - MultiSURFstar
-  
-##### Custom implementations for biomedical application
-- [IRAPSClassifier](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5445594/)
-- BinarizeTargetClassifier/BinarizeTargetRegressor
 - [TDMScaler](https://www.ncbi.nlm.nih.gov/pubmed/26844019)
 - DyRFE/DyRFECV
 - Z_RandomOverSampler
+- GenomeOneHotEncoder
+- ProteinOneHotEncoder
+- FastaDNABatchGenerator
+- FastaRNABatchGenerator
+- FastaProteinBatchGenerator
+- GenomicIntervalBatchGenerator
+- ImageBatchGenerator
 
-### Examples
-1. Build a simple randomforest model.
+
+### Installation
+Models, preprocessors and utils implemented in Galaxy-ML are installable separately.
+
+##### Installing using anaconda (recommended)
+```
+conda install -c bioconda -c conda-forge Galaxy-ML
+```
+
+##### Installing using pip
+```
+pip install -U Galaxy-ML
+```
+
+##### Installing from source
+```
+python setup.py install
+```
+
+##### Using source code inplace
+```
+python setup.py build_ext --inplace
+```
+
+To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
+
+
+### Examples for using Galaxy-ML API
+__Handle imports__
+```
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from sklearn.model_selection import GridSearchCV
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
+```
+__Build a DNN classifier__
+```
+model = Sequential()
+model.add(Dense(64))
+model.add(Activation(‘relu'))
+model.add((Dense(1, activation=‘sigmoid’)))
+config = model.get_config()
+
+classifier = KerasGClassifier(config, random_state=42)
+```
+__Clone a classifier__
+```
+clf = clone(classifier)
+```
+__Get parameters__
+```
+params = clf.get_params()
+```
+__Set parameters__
+```
+new_params = dict(
+    epochs=60,
+    lr=0.01,
+    layers_1_Dense__config__kernel_initializer__config__seed=999,
+    layers_0_Dense__config__kernel_initializer__config__seed=999
+)
+clf.set_params(**new_params)
+```
+__With GridSearchCV__
+```
+grid = GridSearchCV(clf, param_grid={}, scoring=‘roc_auc’, cv=5, n_jobs=2)
+grid.fit(X, y)
+```
+
