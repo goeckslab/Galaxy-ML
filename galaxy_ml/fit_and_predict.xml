@@ -30,9 +30,8 @@ from sklearn import (
     svm, linear_model, tree, discriminant_analysis)
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn.pipeline import Pipeline
+from galaxy_ml.utils import load_model, read_columns
 
-sys.path.insert(0, '$__tool_directory__')
-from utils import load_model, read_columns
 
 warnings.filterwarnings('ignore')
 

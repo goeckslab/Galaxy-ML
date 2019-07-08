@@ -189,7 +189,7 @@ def get_batch_generator(config):
     config : dictionary, galaxy tool parameters loaded by JSON
     """
     generator_type = config.pop('generator_type')
-    klass = try_get_attr('preprocessors', generator_type)
+    klass = try_get_attr('galaxy_ml.preprocessors', generator_type)
 
     if generator_type == 'GenomicIntervalBatchGenerator':
         config['ref_genome_path'] = 'to_be_determined'
@@ -269,7 +269,7 @@ def build_keras_model(inputs, outfile, infile_json, infile_weights=None,
     # build train model
     else:
         cls_name = inputs['mode_selection']['learning_type']
-        klass = try_get_attr('keras_galaxy_models', cls_name)
+        klass = try_get_attr('galaxy_ml.keras_galaxy_models', cls_name)
 
         options['loss'] = (inputs['mode_selection']
                            ['compile_params']['loss'])

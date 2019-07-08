@@ -33,10 +33,9 @@ from sklearn import (
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.model_selection import _validation
 
-sys.path.insert(0, '$__tool_directory__')
-from utils import (SafeEval, get_cv, get_scoring, load_model,
+from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                    read_columns, get_module)
-from model_validations import _fit_and_score
+from galaxy_ml.model_validations import _fit_and_score
 
 
 setattr(_validation, '_fit_and_score', _fit_and_score)
