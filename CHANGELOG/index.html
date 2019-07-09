@@ -111,7 +111,7 @@
     <a class="current" href="./">Change Log</a>
     <ul class="subnav">
             
-    <li class="toctree-l3"><a href="#version-072-tool_main-1070-stacking-020-keras-030-06-20-2019">Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-20-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-075-tool_main-1075-stacking-020-keras-030-07-09-2019">Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)</a></li>
     
         <ul>
         
@@ -262,18 +262,16 @@
           <div role="main">
             <div class="section">
               
-                <h3 id="version-072-tool_main-1070-stacking-020-keras-030-06-20-2019">Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-20-2019)</h3>
+                <h3 id="version-075-tool_main-1075-stacking-020-keras-030-07-09-2019">Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)</h3>
 <h4 id="new-features">New Features</h4>
 <ul>
-<li>
-<p>Adds <code>GenomicIntervalBatchGenerator</code>, an online data generator that provides online genomic sequences transformation from a reference genome and intervals. By trying to offer the same functionalities of <a href="https://github.com/FunctionLab/selene">selene</a>, <code>GenomicIntervalBatchGenerator</code> is implemented by, 1) reusing selene cython backend; 2) extending <code>keras.utils.Sequence</code>, multiple processing and queueing capable; 3) compatibilizing with sciKit-learn APIs, like KFold, GridSeearchCV, <em>etc</em>. <code>GenomicIntervalBatchGenerator</code> is supposed to be fast and memory-efficient.</p>
-</li>
-<li>
-<p>Adds parameter <code>steps_per_epoch</code> to <code>KerasGBactchGenerator</code>.</p>
-</li>
-<li>
-<p>Adds <code>class_weight</code>-like parameter <code>class_positive_factor</code> to <code>KerasGBatchGenerator</code> for imbalanced training.</p>
-</li>
+<li>Adds MIT license.</li>
+<li>Adds <code>setup.py</code> and <code>requirement.txt</code> for APIs installation.</li>
+<li>Makes Galaxy-ML APIs as a library and installable vis pypi and bioconda. </li>
+<li>Adds <code>GenomicIntervalBatchGenerator</code>, an online data generator that provides online genomic sequences transformation from a reference genome and intervals. By trying to offer the same functionalities of <a href="https://github.com/FunctionLab/selene">selene</a>, <code>GenomicIntervalBatchGenerator</code> is implemented by, 1) reusing selene cython backend; 2) extending <code>keras.utils.Sequence</code>, multiple processing and queueing capable; 3) compatibilizing with sciKit-learn APIs, like KFold, GridSeearchCV, <em>etc</em>. <code>GenomicIntervalBatchGenerator</code> is supposed to be fast and memory-efficient.</li>
+<li>Adds parameter <code>steps_per_epoch</code>, <code>validation_steps</code> to <code>BaseKerasModel</code>.</li>
+<li>Adds parameter <code>prediction_steps</code> to <code>KerasGBatchClassifier</code>.</li>
+<li>Adds <code>class_weight</code>-like parameter <code>class_positive_factor</code> to <code>KerasGBatchGenerator</code> for imbalanced training.</li>
 </ul>
 <h4 id="changes">Changes</h4>
 <ul>

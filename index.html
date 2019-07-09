@@ -2,14 +2,6 @@
 <!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-141380533-2"></script>
-  <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'UA-141380533-2');
-  </script>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,6 +26,17 @@
   <script src="js/modernizr-2.8.3.min.js" defer></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
   <script>hljs.initHighlightingOnLoad();</script> 
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-141380533-1', 'goeckslab.github.io/Galaxy-ML/');
+      ga('send', 'pageview');
+  </script>
+  
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -68,7 +71,9 @@
         
             <li><a class="toctree-l3" href="#supported-modules">Supported modules</a></li>
         
-            <li><a class="toctree-l3" href="#examples">Examples</a></li>
+            <li><a class="toctree-l3" href="#installation">Installation</a></li>
+        
+            <li><a class="toctree-l3" href="#examples-for-using-galaxy-ml-api">Examples for using Galaxy-ML API</a></li>
         
         </ul>
     
@@ -188,18 +193,27 @@
 <li>XGBRegressor</li>
 </ul>
 </li>
-<li><em><a href="https://github.com/rasbt/mlxtend">mlxtend</a></em><ul>
+<li>
+<p><em><a href="https://github.com/rasbt/mlxtend">mlxtend</a></em></p>
+<ul>
 <li>StackingCVClassifier</li>
 <li>StackingClassifier</li>
 <li>StackingCVRegressor</li>
 <li>StackingRegressor</li>
 </ul>
 </li>
-<li><em><a href="https://github.com/keras-team/keras">keras</a></em><ul>
-<li>KerasGClassifier (new API)</li>
-<li>KerasGRegressor (new API)</li>
+<li>
+<p><em><a href="https://github.com/keras-team/keras">Keras</a></em> (Deep learning models are re-implemented with fully sklearn APIs compatibility. Support parameter, including layer subparameters, swap or searches.  Support <code>callbacks</code>)</p>
+<ul>
+<li>KerasGClassifier</li>
+<li>KerasGRegressor</li>
+<li>KerasGBatchClassifier (works best with online data generators, processing images, genomic sequences and so on)</li>
 </ul>
 </li>
+<li>
+<p>BinarizeTargetClassifier/BinarizeTargetRegressor</p>
+</li>
+<li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5445594/">IRAPSClassifier</a></li>
 </ul>
 <h5 id="preprocessor">Preprocessor</h5>
 <ul>
@@ -225,19 +239,76 @@
 <li>MultiSURFstar</li>
 </ul>
 </li>
-</ul>
-<h5 id="custom-implementations-for-biomedical-application">Custom implementations for biomedical application</h5>
-<ul>
-<li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5445594/">IRAPSClassifier</a></li>
-<li>BinarizeTargetClassifier/BinarizeTargetRegressor</li>
 <li><a href="https://www.ncbi.nlm.nih.gov/pubmed/26844019">TDMScaler</a></li>
 <li>DyRFE/DyRFECV</li>
 <li>Z_RandomOverSampler</li>
+<li>GenomeOneHotEncoder</li>
+<li>ProteinOneHotEncoder</li>
+<li>FastaDNABatchGenerator</li>
+<li>FastaRNABatchGenerator</li>
+<li>FastaProteinBatchGenerator</li>
+<li>GenomicIntervalBatchGenerator</li>
+<li>ImageBatchGenerator</li>
 </ul>
-<h3 id="examples">Examples</h3>
-<ol>
-<li>Build a simple randomforest model.</li>
-</ol>
+<h3 id="installation">Installation</h3>
+<p>Models, preprocessors and utils implemented in Galaxy-ML are installable separately.</p>
+<h5 id="installing-using-anaconda-recommended">Installing using anaconda (recommended)</h5>
+<pre><code>conda install -c bioconda -c conda-forge Galaxy-ML
+</code></pre>
+
+<h5 id="installing-using-pip">Installing using pip</h5>
+<pre><code>pip install -U Galaxy-ML
+</code></pre>
+
+<h5 id="installing-from-source">Installing from source</h5>
+<pre><code>python setup.py install
+</code></pre>
+
+<h5 id="using-source-code-inplace">Using source code inplace</h5>
+<pre><code>python setup.py build_ext --inplace
+</code></pre>
+
+<p>To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.</p>
+<h3 id="examples-for-using-galaxy-ml-api">Examples for using Galaxy-ML API</h3>
+<p><strong>Handle imports</strong></p>
+<pre><code>from keras.models import Sequential
+from keras.layers import Dense, Activation
+from sklearn.model_selection import GridSearchCV
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
+</code></pre>
+
+<p><strong>Build a DNN classifier</strong></p>
+<pre><code>model = Sequential()
+model.add(Dense(64))
+model.add(Activation(‘relu'))
+model.add((Dense(1, activation=‘sigmoid’)))
+config = model.get_config()
+
+classifier = KerasGClassifier(config, random_state=42)
+</code></pre>
+
+<p><strong>Clone a classifier</strong></p>
+<pre><code>clf = clone(classifier)
+</code></pre>
+
+<p><strong>Get parameters</strong></p>
+<pre><code>params = clf.get_params()
+</code></pre>
+
+<p><strong>Set parameters</strong></p>
+<pre><code>new_params = dict(
+    epochs=60,
+    lr=0.01,
+    layers_1_Dense__config__kernel_initializer__config__seed=999,
+    layers_0_Dense__config__kernel_initializer__config__seed=999
+)
+clf.set_params(**new_params)
+</code></pre>
+
+<p><strong>With GridSearchCV</strong></p>
+<pre><code>grid = GridSearchCV(clf, param_grid={}, scoring=‘roc_auc’, cv=5, n_jobs=2)
+grid.fit(X, y)
+</code></pre>
               
             </div>
           </div>
@@ -288,5 +359,5 @@
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2019-06-28 19:20:17
+Build Date UTC : 2019-07-09 21:56:08
 -->
