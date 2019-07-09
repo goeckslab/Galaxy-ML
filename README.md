@@ -30,7 +30,7 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
     - StackingCVRegressor
     - StackingRegressor
 
-- _[Keras](https://github.com/keras-team/keras)_ (Deep learning models are re-implemented with fully sklearn APIs compatibility. Support parameter, including layer subparameters, swap or searches.  Support `callbacks`)
+- _[Keras](https://github.com/keras-team/keras)_ (Deep learning models are re-implemented with fully sklearn APIs compatibility. Support parameter, including layer subparameter, swap or searches.  Support `callbacks`)
     - KerasGClassifier
     - KerasGRegressor
     - KerasGBatchClassifier (works best with online data generators, processing images, genomic sequences and so on)
@@ -68,7 +68,7 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
 
 
 ### Installation
-Models, preprocessors and utils implemented in Galaxy-ML are installable separately.
+APIs for models, preprocessors and utils implemented in Galaxy-ML can be installed separately.
 
 ##### Installing using anaconda (recommended)
 ```
@@ -93,16 +93,17 @@ python setup.py build_ext --inplace
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
 
-### Examples for using Galaxy-ML API
-__Handle imports__
+### Examples for using Galaxy-ML APIs
+
 ```
+# handle imports
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from sklearn.model_selection import GridSearchCV
 from galaxy_ml.keras_galaxy_models import KerasGClassifier
-```
-__Build a DNN classifier__
-```
+
+
+# build a DNN classifier
 model = Sequential()
 model.add(Dense(64))
 model.add(Activation(‘relu'))
@@ -110,17 +111,17 @@ model.add((Dense(1, activation=‘sigmoid’)))
 config = model.get_config()
 
 classifier = KerasGClassifier(config, random_state=42)
-```
-__Clone a classifier__
-```
+
+
+# clone a classifier
 clf = clone(classifier)
-```
-__Get parameters__
-```
+
+
+# Get parameters
 params = clf.get_params()
-```
-__Set parameters__
-```
+
+
+# Set parameters
 new_params = dict(
     epochs=60,
     lr=0.01,
@@ -128,9 +129,9 @@ new_params = dict(
     layers_0_Dense__config__kernel_initializer__config__seed=999
 )
 clf.set_params(**new_params)
-```
-__With GridSearchCV__
-```
+
+
+# model evaluation using GridSearchCV
 grid = GridSearchCV(clf, param_grid={}, scoring=‘roc_auc’, cv=5, n_jobs=2)
 grid.fit(X, y)
 ```
