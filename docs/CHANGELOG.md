@@ -1,11 +1,13 @@
-### Version 0.7.2 / tool_main: 1.0.7.0 / stacking: 0.2.0 / keras: 0.3.0 (06-20-2019)
+### Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)
 
 #### New Features
 
+- Adds MIT license.
+- Adds `setup.py` and `requirement.txt` for APIs installation.
+- Makes Galaxy-ML APIs as a library and installable vis pypi and bioconda. 
 - Adds `GenomicIntervalBatchGenerator`, an online data generator that provides online genomic sequences transformation from a reference genome and intervals. By trying to offer the same functionalities of [selene](https://github.com/FunctionLab/selene), `GenomicIntervalBatchGenerator` is implemented by, 1) reusing selene cython backend; 2) extending `keras.utils.Sequence`, multiple processing and queueing capable; 3) compatibilizing with sciKit-learn APIs, like KFold, GridSeearchCV, _etc_. `GenomicIntervalBatchGenerator` is supposed to be fast and memory-efficient.
-
-- Adds parameter `steps_per_epoch` to `KerasGBactchGenerator`.
-
+- Adds parameter `steps_per_epoch`, `validation_steps` to `BaseKerasModel`.
+- Adds parameter `prediction_steps` to `KerasGBatchClassifier`.
 - Adds `class_weight`-like parameter `class_positive_factor` to `KerasGBatchGenerator` for imbalanced training.
 
 
