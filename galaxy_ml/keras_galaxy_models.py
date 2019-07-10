@@ -944,7 +944,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         For binary classification only. If int, like 5, will
         convert to class_weight {0: 1, 1: 5}.
         If float, 0.2, corresponds to class_weight
-        {0: 5/0.2, 1: 1}
+        {0: 1/0.2, 1: 1}
     """
     def __init__(self, config, data_batch_generator,
                  model_type='sequential', optimizer='sgd',
