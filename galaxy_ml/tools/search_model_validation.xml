@@ -25,13 +25,14 @@
             --infile1 '$input_options.infile1'
             #end if
             --infile2 '$input_options.infile2'
-            --outfile_result '$outfile_result'
+            --outfile_result "`pwd`/tmp_outfile_result"
             #if $save
             --outfile_object '$outfile_object'
             #end if
             #if $search_schemes.options.cv_selector.selected_cv in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']
             --groups '$search_schemes.options.cv_selector.groups_selector.infile_g'
             #end if
+            >'$outfile_result' && cp tmp_outfile_result '$outfile_result'
 
         ]]>
     </command>

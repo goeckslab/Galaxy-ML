@@ -32,7 +32,7 @@ warnings.simplefilter('ignore')
 
 train_test_split.__test__ = False
 
-df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
 X = df.iloc[:, 0:8].values.astype(float)
 y = df.iloc[:, 8].values
 
@@ -360,7 +360,7 @@ def test_fit_and_score_keras_model_in_gridsearchcv():
                            metrics=[], batch_size=32,
                            epochs=10, seed=42)
 
-    df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+    df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
     X = df.iloc[:, 0:8].values.astype(float)
     y = df.iloc[:, 8].values
 

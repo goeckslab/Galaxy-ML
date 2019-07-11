@@ -43,7 +43,7 @@ model.add(Activation('tanh'))
 model.add(Dense(32))
 
 # toy dataset
-df = pd.read_csv('./test-data/pima-indians-diabetes.csv', sep=',')
+df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
 X = df.iloc[:, 0:8].values.astype(float)
 y = df.iloc[:, 8].values
 
@@ -640,13 +640,13 @@ def test_to_json_keras_g_classifier():
 
     got = classifier.to_json()
 
-    with open('./test-data/to_json.txt', 'r') as f:
+    with open('./tools/test-data/to_json.txt', 'r') as f:
         expect = f.read()
     assert got == expect, got
 
 
 def test_keras_model_to_json():
-    with open('./test-data/keras02.json', 'r') as f:
+    with open('./tools/test-data/keras02.json', 'r') as f:
         model_json = json.load(f)
 
     if model_json['class_name'] == 'Sequential':
@@ -665,7 +665,7 @@ def test_keras_model_to_json():
 
 
 def test_keras_model_load_and_save_weights():
-    with open('./test-data/keras_model_drosophila01.json', 'r') as f:
+    with open('./tools/test-data/keras_model_drosophila01.json', 'r') as f:
         model_json = json.load(f)
 
     config = model_json.get('config')
@@ -675,13 +675,13 @@ def test_keras_model_load_and_save_weights():
         model_type = 'functional'
     model = KerasGRegressor(config, model_type=model_type)
 
-    model.load_weights('./test-data/keras_model_drosophila_weights01.h5')
+    model.load_weights('./tools/test-data/keras_model_drosophila_weights01.h5')
 
     tmp = tempfile.mktemp()
     model.save_weights(tmp)
 
     got = os.path.getsize(tmp)
-    expect = os.path.getsize('./test-data/keras_model_drosophila_weights01.h5')
+    expect = os.path.getsize('./tools/test-data/keras_model_drosophila_weights01.h5')
 
     assert abs(got - expect) < 40, got - expect
 
@@ -855,7 +855,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
 
 def test_keras_fasta_batch_classifier():
     config = model.get_config()
-    fasta_path = './test-data/regulatory_mutations.fa'
+    fasta_path = './tools/test-data/regulatory_mutations.fa'
     batch_generator = FastaDNABatchGenerator(fasta_path,
                                              seq_length=1000,
                                              seed=42)
@@ -872,7 +872,7 @@ def test_keras_fasta_batch_classifier():
         'beta_1': None, 'beta_2': None, 'callbacks': None,
         'class_positive_factor': 1,
         'data_batch_generator__fasta_path':
-            './test-data/regulatory_mutations.fa',
+            './tools/test-data/regulatory_mutations.fa',
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 1000,
         'data_batch_generator__shuffle': True, 'decay': 0,
@@ -946,7 +946,7 @@ def test_keras_fasta_protein_batch_classifier():
     cloned_clf = clone(classifier)
     new_params = {
         'data_batch_generator__fasta_path':
-            './test-data/uniprot_sprot_10000L.fasta'
+            './tools/test-data/uniprot_sprot_10000L.fasta'
     }
     cloned_clf.set_params(**new_params)
 
@@ -977,7 +977,7 @@ def test_keras_genomic_intervals_batch_classifier():
     # selene case1 genome file, file not uploaded
     ref_genome_path = '/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = './test-data/hg38_TF_intervals_2000.txt'
+    intervals_path = './tools/test-data/hg38_TF_intervals_2000.txt'
     # selene case1 target bed file, file not uploaded
     target_path = '/projects/selene/manuscript/case1/data/'\
         'GATA1_proery_bm.bed.gz'

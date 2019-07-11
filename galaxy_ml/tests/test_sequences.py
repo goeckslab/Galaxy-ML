@@ -26,7 +26,7 @@ except ImportError:
 warnings.simplefilter('ignore')
 
 
-sequence_path = './test-data/regulatory_mutations.fa'
+sequence_path = './tools/test-data/regulatory_mutations.fa'
 
 BASE_TO_INDEX = {
         'A': 0, 'C': 1, 'G': 2, 'T': 3,
@@ -43,7 +43,7 @@ def test_fast_sequence_to_encoding():
                                     4)[np.newaxis, :]
          for fast_record in fasta_file])
 
-    expect = np.load('./test-data/sequence_encoding01.npy')
+    expect = np.load('./tools/test-data/sequence_encoding01.npy')
 
     assert np.array_equal(sequences, expect), sequences
 
@@ -57,7 +57,7 @@ def test_gnome_one_hot_encoder():
 
     trans = coder.transform(X)
 
-    expect = np.load('./test-data/sequence_encoding01.npy')
+    expect = np.load('./tools/test-data/sequence_encoding01.npy')
 
     assert np.array_equal(trans, expect), trans
 
@@ -150,7 +150,7 @@ def test_fasta_dna_batch_generator():
     params = generator.get_params()
 
     expect1 = {
-        'fasta_path': './test-data/regulatory_mutations.fa',
+        'fasta_path': './tools/test-data/regulatory_mutations.fa',
         'seed': 42, 'seq_length': 1000, 'shuffle': True}
 
     assert params == expect1, params
@@ -204,16 +204,16 @@ def test_fasta_protein_batch_generator():
 
 
 def test_protein_one_hot_encoder():
-    fasta_path = './test-data/uniprot_sprot_10000L.fasta'
+    fasta_path = './tools/test-data/uniprot_sprot_10000L.fasta'
     coder = ProteinOneHotEncoder(fasta_path=fasta_path, padding=True)
     X = np.zeros((20, 1))
     X[:, 0] = np.arange(20)
 
     coder.fit(X)
     trans = coder.transform(X)
-    # np.save('./test-data/sequence_encoding02.npy', trans)
+    # np.save('./tools/test-data/sequence_encoding02.npy', trans)
 
-    expect = np.load('./test-data/sequence_encoding02.npy')
+    expect = np.load('./tools/test-data/sequence_encoding02.npy')
 
     assert np.array_equal(trans, expect), trans
 
@@ -232,7 +232,7 @@ def test_genomic_interval_batch_generator():
     # selene case1 genome file, file not uploaded
     ref_genome_path = '/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = './test-data/hg38_TF_intervals_2000.txt'
+    intervals_path = './tools/test-data/hg38_TF_intervals_2000.txt'
     # selene case1 target bed file, file not uploaded
     target_path = '/projects/selene/manuscript/case1/data/'\
         'GATA1_proery_bm.bed.gz'

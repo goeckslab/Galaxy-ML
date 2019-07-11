@@ -13,7 +13,7 @@ from galaxy_ml.iraps_classifier import (
 
 warnings.simplefilter('ignore')
 
-Olaparib_1017 = pd.read_csv('./test-data/Olaparib_1017.tsv.gz',
+Olaparib_1017 = pd.read_csv('./tools/test-data/Olaparib_1017.tsv.gz',
                             sep='\t', index_col=0)
 X, y = Olaparib_1017.iloc[:, 6:].values, Olaparib_1017.iloc[:, 5].values
 

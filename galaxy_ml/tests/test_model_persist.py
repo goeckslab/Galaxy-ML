@@ -11,8 +11,8 @@ from sklearn import (
     tree, discriminant_analysis)
 
 
-test_model = './test-data/gbr_model01_py3'
-result_json = './test-data/gbr_model01_py3.json'
+test_model = './tools/test-data/gbr_model01_py3'
+result_json = './tools/test-data/gbr_model01_py3.json'
 
 
 def test_jpikle_dumpc():
