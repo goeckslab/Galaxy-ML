@@ -30,7 +30,6 @@ from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
-from tensorflow import set_random_seed
 
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
@@ -563,17 +562,25 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
     def _fit(self, X, y, **kwargs):
         # base fit
-        if self.seed is not None:
-            np.random.seed(self.seed)
-            random.seed(self.seed)
-            # set tensorflow randomness
-            if K.backend() == 'tensorflow':
-                set_random_seed(self.seed)
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
-                                              inter_op_parallelism_threads=1)
-                sess = tf.Session(graph=tf.get_default_graph(),
-                                  config=session_conf)
-                K.set_session(sess)
+        if K.backend() == 'tensorflow':
+            # default
+            intra_op = 0
+            inter_op = 0
+            if self.seed is not None:
+                np.random.seed(self.seed)
+                random.seed(self.seed)
+                tf.set_random_seed(self.seed)
+                intra_op = 1
+                inter_op = 1
+
+            session_conf = tf.ConfigProto(
+                intra_op_parallelism_threads=intra_op,
+                inter_op_parallelism_threads=inter_op,
+                log_device_placement=True)
+
+            sess = tf.Session(graph=tf.get_default_graph(),
+                              config=session_conf)
+            K.set_session(sess)
 
         config = self.config
 
@@ -977,19 +984,27 @@ class KerasGBatchClassifier(KerasGClassifier):
     def fit(self, X, y=None, class_weight=None, sample_weight=None, **kwargs):
         """ fit the model
         """
-        check_params(kwargs, Model.fit_generator)
+        if K.backend() == 'tensorflow':
+            # default
+            intra_op = 0
+            inter_op = 0
+            if self.seed is not None:
+                np.random.seed(self.seed)
+                random.seed(self.seed)
+                tf.set_random_seed(self.seed)
+                intra_op = 1
+                inter_op = 1
 
-        if self.seed is not None:
-            np.random.seed(self.seed)
-            random.seed(self.seed)
-            # set tensorflow randomness
-            if K.backend() == 'tensorflow':
-                set_random_seed(self.seed)
-                session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
-                                              inter_op_parallelism_threads=1)
-                sess = tf.Session(graph=tf.get_default_graph(),
-                                  config=session_conf)
-                K.set_session(sess)
+            session_conf = tf.ConfigProto(
+                intra_op_parallelism_threads=intra_op,
+                inter_op_parallelism_threads=inter_op,
+                log_device_placement=True)
+
+            sess = tf.Session(graph=tf.get_default_graph(),
+                              config=session_conf)
+            K.set_session(sess)
+
+        check_params(kwargs, Model.fit_generator)
 
         self.data_generator_ = self.data_batch_generator
         self.data_generator_.fit()

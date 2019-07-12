@@ -781,7 +781,7 @@ def test_keras_galaxy_model_callbacks():
         {'callback_selection':
             {'monitor': 'val_loss', 'save_best_only': True,
              'period': 1, 'save_weights_only': True,
-             'filepath': './tests/weights.hdf5',
+             'filepath': './tests/weights.{epoch:02d}-{val_loss:.2f}.hdf5',
              'callback_type': 'ModelCheckpoint', 'mode': 'auto'}}]
 
     estimator = KerasGClassifier(config, optimizer='adam',

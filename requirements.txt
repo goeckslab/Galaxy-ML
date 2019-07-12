@@ -11,5 +11,5 @@ xgboost==0.80
 mlxtend==0.16.0
 skrebate==0.6
 imbalanced-learn==0.4.3
-tensorflow==1.13.1
+tensorflow-gpu==1.13.1
 Keras==2.2.4
