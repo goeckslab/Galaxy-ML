@@ -30,6 +30,7 @@ from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
+from .externals.selene_sdk.utils import compute_score
 
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
@@ -832,7 +833,14 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     def predict(self, X, **kwargs):
         probas = self._predict(X, **kwargs)
         if probas.shape[-1] > 1:
-            classes = probas.argmax(axis=-1)
+            # if the last activation is `softmax`, the sum of all
+            # probibilities will 1, the classification is considered as
+            # multi-class problem, otherwise, we take it as multi-label.
+            act = getattr(self.model_.layers[-1], 'activation', None)
+            if act and act.__name__ == 'softmax':
+                classes = probas.argmax(axis=-1)
+            else:
+                return (probas > 0.5).astype('int32')
         else:
             classes = (probas > 0.5).astype('int32')
         return self.classes_[classes]
@@ -1194,7 +1202,36 @@ class KerasGBatchClassifier(KerasGClassifier):
         retrieved_X, targets = self.data_generator_.sample(
             X_test, sample_size=sample_size)
 
-        scores = _score(self, retrieved_X, targets,
-                        scorer, is_multimetric)
+        act = getattr(self.model_.layers[-1], 'activation', None)
+        # binary classification
+        if targets.shape[-1] == 1:
+            targets = targets.ravel()
+            scores = _score(self, retrieved_X, targets,
+                            scorer, is_multimetric)
+        # multi-class
+        elif act and act.__name__ == 'softmax':
+            targets = targets.argmax(axis=-1)
+            targets = self.classes_[targets]
+            scores = _score(self, retrieved_X, targets,
+                            scorer, is_multimetric)
+        # multi-label
+        else:
+            pred_probas = self._predict(retrieved_X)
+            pred_labels = (pred_probas > 0.5).astype('int32')
+            targets = targets.astype('int32')
+            if not is_multimetric:
+                preds = pred_labels if scorer.__class__.__name__ == \
+                    '_PredictScorer' else pred_probas
+                score, _ = compute_score(preds, targets,
+                                         scorer._score_func)
+                return score
+            else:
+                scores = {}
+                for name, one_scorer in scorer.items():
+                    preds = pred_labels if one_scorer.__class__.__name__\
+                        == '_PredictScorer' else pred_probas
+                    score, _ = compute_score(preds, targets,
+                                             one_scorer._score_func)
+                    scores[name] = score
 
         return scores
