@@ -92,7 +92,7 @@
             <filter>save</filter>
         </data>
         <data format="h5" name="outfile_weights" label="Weights trained on ${on_string}">
-            <discover_datasets pattern="^weights.hdf5$" visible="true"/>
+            <discover_datasets pattern="^weights.hdf5$" visible="true" ext="h5" assign_primary_output="true"/>
             <filter>save_weights</filter>
         </data>
     </outputs>

@@ -1071,6 +1071,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         batch_size = self.batch_size or 32
         epochs = self.epochs
         n_jobs = self.n_jobs
+        callbacks = self._callbacks
         validation_data = self.validation_data
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
@@ -1078,6 +1079,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         fit_params.update(dict(
             epochs=epochs,
             workers=n_jobs,
+            callbacks=callbacks,
             use_multiprocessing=False,
             validation_data=validation_data,
             steps_per_epoch=steps_per_epoch,
