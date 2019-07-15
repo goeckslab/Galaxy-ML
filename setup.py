@@ -9,6 +9,7 @@ try:
 except ImportError:
     subprocess.run("pip install numpy>=1.16.2",
                    shell=True, check=True)
+    import numpy as np
 
 from os.path import realpath, dirname, join
 from setuptools import find_packages
@@ -16,7 +17,6 @@ from distutils.core import setup
 from Cython.Distutils.extension import Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
-import numpy as np
 import galaxy_ml
 
 
@@ -68,11 +68,10 @@ setup(name='Galaxy-ML',
       long_description=long_description,
       long_description_content_type="text/markdown",
       url='https://github.com/goeckslab/Galaxy-ML/',
-      packages=find_packages(exclude=['tests*', 'test-data*']),
+      packages=find_packages(exclude=['tests*', 'test-data*', 'tools*']),
       package_data={
-        '': ['README.md',
-            'requirements.txt']
-      },
+          '': ['README.md',
+               'requirements.txt']},
       include_package_data=True,
       install_requires=install_reqs,
       extras_require={'docs': ['mkdocs']},
@@ -90,6 +89,4 @@ setup(name='Galaxy-ML',
           'Topic :: Scientific/Engineering',
           'Topic :: Scientific/Engineering :: Bio-Informatics',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
-      ]
-)
-
+      ])

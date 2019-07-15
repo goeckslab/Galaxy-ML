@@ -606,9 +606,10 @@ def get_search_params(estimator):
         # And show partial `repr` for values which are dictionary,
         # especially useful for keras models
         k, v = param.s_param, param.value
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'steps', 'nthread',
-                    'verbose', 'name')
-        if k.endswith(keywords):
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'name', 'nthread',
+                    'verbose', '_path')
+        exact_keywords = ('steps')
+        if k.endswith(keywords) or k in exact_keywords:
             results.append(['*', k, k+": "+repr(v)])
         elif type(v) is dict:
             results.append(['@', k, k+": "+repr(v)[:100]])
