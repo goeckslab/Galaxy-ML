@@ -1,3 +1,20 @@
+### Version 0.7.7 / tool_main: 1.0.7.7 / stacking: 0.2.0 / keras: 0.4.0 (07-09-2019)
+
+#### New Features
+
+- Adds searchcv tools to output `weights` for deep learning models.
+- Makes `KerasGBatchClassifier.evalue` to support multi-class and multi-label classification problem. 
+
+#### Changes
+
+- Changes dependency `tensorflow` to `tensorflow-gpu`.
+- Moves all tools to folder `tools`.
+
+#### Bug Fixes
+
+- Fixes `KerasGBatchClassifier` doesn't work with callbacks.
+
+
 ### Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)
 
 #### New Features
