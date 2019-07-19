@@ -133,7 +133,7 @@ This tool builds deep learning training models using API `galaxy_ml.keras_galaxy
 
 - compile parameters, are mainly composed of loss function and optimizer.
 
-- fit parameters, a large group of training options which are documented at `https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#kerasgbatchclassifier`_ and `https://keras.io/models/model/`_
+- fit parameters, a group of variables that control the training process, referring to `galaxy_ml.keras_galaxy_model.KerasGBatchClassifier`_ and `keras.io`_.
 
 - other parameters, including `class_positive_factor`, `prediction_steps`, `seed` (random seed) and so on.
 
@@ -144,8 +144,6 @@ A zipped model file that could be used in `model_validation` tool or `hyperparam
 
 .. _`galaxy_ml.keras_galaxy_model.KerasGBatchClassifier`: https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#kerasgbatchclassifier
 
-.. _`https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#kerasgbatchclassifier`: https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#kerasgbatchclassifier
-
 .. _`galaxy_ml.preprocessors.FastaDNABatchGenerator`: https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#FastaDNABatchGenerator
 
 .. _`galaxy_ml.preprocessors.FastaRNABatchGenerator`: https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#FastaRNABatchGenerator
@@ -154,7 +152,8 @@ A zipped model file that could be used in `model_validation` tool or `hyperparam
 
 .. _`galaxy_ml.preprocessors.GenomicIntervalBatchGenerator`: https://goeckslab.github.io/Galaxy-ML/APIs/keras-galaxy-models/#GenomicIntervalBatchGenerator
 
-.. _`https://keras.io/models/model/`: https://keras.io/models/model/
+.. _`keras.io`: https://keras.io/models/model/#fit_generator
+
       ]]>
   </help>
   <citations>
