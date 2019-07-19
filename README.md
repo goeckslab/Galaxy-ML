@@ -30,7 +30,7 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
     - StackingCVRegressor
     - StackingRegressor
 
-- _[Keras](https://github.com/keras-team/keras)_ (Deep learning models are re-implemented with fully sklearn APIs compatibility. Support parameter, including layer subparameter, swap or searches.  Support `callbacks`)
+- _[Keras](https://github.com/keras-team/keras)_ (Deep learning models are re-implemented to fully support sklearn APIs. Supports parameter, including layer subparameter, swaps or searches.  Supports `callbacks`)
     - KerasGClassifier
     - KerasGRegressor
     - KerasGBatchClassifier (works best with online data generators, processing images, genomic sequences and so on)
