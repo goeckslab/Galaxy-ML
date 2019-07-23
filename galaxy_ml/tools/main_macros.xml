@@ -345,9 +345,9 @@
   <xml name="samples_column_selector_options" token_column_option="selected_column_selector_option" token_col_name="col1" token_multiple="False" token_infile="infile1">
     <param name="@COLUMN_OPTION@" type="select" label="Choose how to select data by column:">
       <option value="by_index_number" selected="true">Select columns by column index number(s)</option>
-      <option value="all_but_by_index_number">All columns BUT by column index number(s)</option>
+      <option value="all_but_by_index_number">All columns EXCLUDING some by column index number(s)</option>
       <option value="by_header_name">Select columns by column header name(s)</option>
-      <option value="all_but_by_header_name">All columns BUT by column header name(s)</option>
+      <option value="all_but_by_header_name">All columns EXCLUDING some by column header name(s)</option>
       <option value="all_columns">All columns</option>
     </param>
     <when value="by_index_number">
@@ -732,7 +732,6 @@
     <param name="selected_pre_processor" type="select" label="Select a preprocessor:">
       <option value="StandardScaler" selected="true">Standard Scaler (Standardizes features by removing the mean and scaling to unit variance)</option>
       <option value="Binarizer">Binarizer (Binarizes data)</option>
-      <option value="Imputer">Imputer (Completes missing values)</option>
       <option value="MaxAbsScaler">Max Abs Scaler (Scales features by their maximum absolute value)</option>
       <option value="Normalizer">Normalizer (Normalizes samples individually to unit norm)</option>
       <yield/>
@@ -757,25 +756,6 @@
                 label="Threshold"
                 help="Feature values below or equal to this are replaced by 0, above it by 1. Threshold may not be less than 0 for operations on sparse matrices. "/>
         </section>
-    </when>
-    <when value="Imputer">
-      <section name="options" title="Advanced Options" expanded="False">
-          <param argument="copy" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="true"
-            label="Use a copy of data for precomputing imputation" help=" "/>
-          <param argument="strategy" type="select" optional="true" label="Imputation strategy" help=" ">
-              <option value="mean" selected="true">Replace missing values using the mean along the axis</option>
-              <option value="median">Replace missing values using the median along the axis</option>
-              <option value="most_frequent">Replace missing using the most frequent value along the axis</option>
-          </param>
-          <param argument="missing_values" type="text" optional="true" value="NaN"
-                label="Placeholder for missing values" help="For missing values encoded as numpy.nan, use the string value “NaN”"/>
-          <!--param argument="axis" type="boolean" optional="true" truevalue="1" falsevalue="0"
-                label="Impute along axis = 1" help="If fasle, axis = 0 is selected for imputation. "/> -->
-          <!--param argument="axis" type="select" optional="true" label="The axis along which to impute" help=" ">
-              <option value="0" selected="true">Impute along columns</option>
-              <option value="1">Impute along rows</option>
-          </param-->
-      </section>
     </when>
     <when value="StandardScaler">
       <section name="options" title="Advanced Options" expanded="False">
@@ -815,7 +795,7 @@
       </when>
       <when value="MinMaxScaler">
           <section name="options" title="Advanced Options" expanded="False">
-              <!--feature_range-->
+              <param argument="feature_range" type="text" value="(0, 1)" optional="true" help="Desired range of transformed data. None or tuple (min, max). None equals to (0, 1)"/>
               <param argument="copy" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolflase" checked="true"
                   label="Use a copy of data for precomputing normalization" help=" "/>
           </section>
