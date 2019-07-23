@@ -129,10 +129,11 @@ y = read_columns(
         parse_dates=True)
 if len(y.shape) == 2 and y.shape[1] == 1:
     y = y.ravel()
-if input_type == 'refseq_and_interval':
-    pipeline.set_params(
-        data_batch_generator__features=y.ravel().tolist())
-    y = None
+#if $input_options.selected_input == 'refseq_and_interval'
+pipeline.set_params(
+    data_batch_generator__features=y.ravel().tolist())
+y = None
+#end if
 
 ## handle options
 options = params['model_validation_functions']['options']
