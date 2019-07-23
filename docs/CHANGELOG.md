@@ -1,4 +1,4 @@
-### Version 0.7.7 / tool_main: 1.0.7.7 / stacking: 0.2.0 / keras: 0.4.0 (07-09-2019)
+### Version 0.7.8 / tool_main: 1.0.7.8 / stacking: 0.2.0 / keras: 0.4.0 (07-21-2019)
 
 #### New Features
 
