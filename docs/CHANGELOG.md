@@ -9,10 +9,12 @@
 
 - Changes dependency `tensorflow` to `tensorflow-gpu`.
 - Moves all tools to folder `tools`.
+- Makes `sklearn.preprocessing.Imputer` deprecated.
 
 #### Bug Fixes
 
 - Fixes `KerasGBatchClassifier` doesn't work with callbacks.
+- Fixes `GenomicIntervalBatchGenerator` doesn't work in nested model validation.
 
 
 ### Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)
