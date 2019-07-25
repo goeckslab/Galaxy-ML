@@ -22,7 +22,7 @@ from keras.callbacks import (EarlyStopping, LearningRateScheduler,
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
-from keras.utils import to_categorical
+from keras.utils import to_categorical, multi_gpu_model
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin)
@@ -1063,6 +1063,12 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.model_ = self.model_class_.from_config(
             config,
             custom_objects=dict(tf=tf))
+
+        # enable multiple gpu mode
+        try:
+            self.model_ = multi_gpu_model(self.model_)
+        except:
+            pass
 
         self.model_.compile(loss=self.loss, optimizer=self._optimizer,
                             metrics=self.metrics)
