@@ -346,6 +346,10 @@ def main(inputs, infile_estimator, infile1, infile2,
         options['refit'] = primary_scoring
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
+    verbose = options.get('verbose', 0)
+    estimator_verbose = getattr(estimator, 'verbose', None)
+    if verbose > 0 and estimator_verbose == 0:
+        setattr(estimator, 'verbose', 1)
 
     # del loaded_df
     del loaded_df
