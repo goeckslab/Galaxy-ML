@@ -885,7 +885,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
 
         return (retrieved_seq, retrieved_targets)
 
-    def sample(self, X, sample_size=None, by_sample_weight=False):
+    def sample(self, X, y=None, sample_size=None, by_sample_weight=False):
         """Output the number of sample arrays and their target values,
         excluding bad samples. If reaching the end of sample index,
         go back to index 0, until the number of sample_size is met.
@@ -895,6 +895,8 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         ----------
         X : 2-D array like
             Array of interval indices.
+        y : None
+            For compatibility.
         sample_size : int or None
             The number of output samples. If None,
             sample_size = X.shape[0]

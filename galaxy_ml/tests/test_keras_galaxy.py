@@ -20,7 +20,7 @@ from tensorflow import set_random_seed
 
 from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
-    check_params, SearchParam, KerasLayers,
+    check_params, SearchParam, KerasLayers, MetricCallback,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageBatchGenerator
@@ -337,7 +337,8 @@ def test_get_params_base_keras_model():
         'optimizer': 'sgd', 'rho': None,
         'schedule_decay': None, 'seed': None,
         'steps_per_epoch': None, 'validation_data': None,
-        'validation_steps': None}
+        'validation_steps': None,
+        'verbose': 0}
 
     assert got == expect, got
 
@@ -377,7 +378,7 @@ def test_get_params_keras_g_classifier():
         'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
         'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
-        'validation_data', 'validation_steps',
+        'validation_data', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -436,7 +437,7 @@ def test_get_params_keras_g_regressor():
         'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
         'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
-        'validation_data', 'validation_steps',
+        'validation_data', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -538,6 +539,7 @@ def test_funtional_model_get_params():
         'steps_per_epoch': None,
         'validation_data': None,
         'validation_steps': None,
+        'verbose': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
         'layers_1_Conv2D__class_name': 'Conv2D',
         'layers_1_Conv2D__config': {
@@ -749,7 +751,7 @@ def test_keras_batch_classifier_get_params():
         'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
         'prediction_steps': None, 'rho': None, 'schedule_decay': None,
         'seed': 0, 'steps_per_epoch': None, 'validation_data': None,
-        'validation_steps': None}
+        'validation_steps': None, 'verbose': 0}
 
     for k, v in got.items():
         if k not in expect:
@@ -882,7 +884,7 @@ def test_keras_fasta_batch_classifier():
         'optimizer': 'sgd', 'prediction_steps': None,
         'rho': None, 'schedule_decay': None, 'seed': None,
         'steps_per_epoch': None, 'validation_data': None,
-        'validation_steps': None}
+        'validation_steps': None, 'verbose': 0}
     assert got == expect, got
 
 
@@ -940,7 +942,8 @@ def test_keras_fasta_protein_batch_classifier():
         'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
         'prediction_steps': None, 'rho': None,
         'schedule_decay': None, 'seed': 0, 'steps_per_epoch': None,
-        'validation_data': None, 'validation_steps': None}
+        'validation_data': None, 'validation_steps': None,
+        'verbose': 0}
     assert got == expect, got
 
     cloned_clf = clone(classifier)
@@ -970,7 +973,7 @@ def test_keras_fasta_protein_batch_classifier():
     grid.fit(X1, y1)
     print(grid.cv_results_)
     got = grid.cv_results_['mean_test_acc'].tolist()
-    assert got == [0.51], got
+    assert got == [0.48], got
 
 
 def test_keras_genomic_intervals_batch_classifier():
@@ -1008,14 +1011,15 @@ def test_keras_genomic_intervals_batch_classifier():
     model.add(Dropout(0.5))
     model.add(Reshape((50880,)))
     model.add(Dense(1))
-    # model.add(Activation('relu'))
-    # model.add(Dense(1))
+    model.add(Activation('relu'))
+    model.add(Dense(1))
     model.add(Activation('sigmoid'))
 
     config = model.get_config()
 
     classifier = KerasGBatchClassifier(
         config, clone(generator), optimizer='adam',
+        momentum=0.9, decay=1e-6, nesterov=True,
         batch_size=64, n_jobs=1, epochs=10,
         steps_per_epoch=20,
         prediction_steps=100,
@@ -1032,7 +1036,7 @@ def test_keras_genomic_intervals_batch_classifier():
     n_samples = intervals.shape[0]
     X = np.arange(n_samples)[:, np.newaxis]
 
-    cv = ShuffleSplit(1, test_size=0.4, random_state=123)
+    cv = ShuffleSplit(1, test_size=0.2, random_state=123)
     scoring = 'balanced_accuracy'
     param_grid = {}
 
@@ -1044,3 +1048,18 @@ def test_keras_genomic_intervals_batch_classifier():
     y = None
     grid.fit(X, y, verbose=1)
     print(grid.cv_results_)
+
+
+def test_meric_callback():
+    mcb = MetricCallback()
+    params = mcb.get_params()
+    expect = {'scorer': 'roc_auc'}
+
+    assert params == expect, params
+
+    validation_data = (X, y)
+    setattr(mcb, 'validation_data', validation_data)
+    x_val, y_val = mcb.validation_data
+
+    assert np.array_equal(x_val, X)
+    assert np.array_equal(y_val, y)

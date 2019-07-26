@@ -15,6 +15,7 @@ import warnings
 import six
 from abc import ABCMeta
 from keras import backend as K
+from keras.callbacks import Callback
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              TensorBoard, RemoteMonitor,
                              ModelCheckpoint, TerminateOnNaN,
@@ -26,6 +27,7 @@ from keras.utils import to_categorical, multi_gpu_model
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin)
+from sklearn.metrics import SCORERS
 from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
@@ -35,7 +37,7 @@ from .externals.selene_sdk.utils import compute_score
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
            'KerasLearningRateScheduler', 'KerasRemoteMonitor',
-           'KerasModelCheckpoint', 'KerasTerminateOnNaN',
+           'KerasModelCheckpoint', 'KerasTerminateOnNaN', 'MetricCallback',
            'check_params', 'SearchParam', 'KerasLayers', 'BaseKerasModel',
            'KerasGClassifier', 'KerasGRegressor', 'KerasGBatchClassifier')
 
@@ -111,6 +113,57 @@ class KerasTerminateOnNaN(TerminateOnNaN, BaseEstimator):
 
 class KerasCSVLogger(CSVLogger, BaseEstimator):
     pass
+
+
+class MetricCallback(Callback, BaseEstimator):
+    """ A callback to return validation metric
+
+    Parameters
+    ----------
+    scorer : str
+        Key of sklearn.metrics.SCORERS
+    """
+    def __init__(self, scorer='roc_auc'):
+        self.scorer = scorer
+        self.validation_data = None
+        self.model = None
+
+    def on_train_begin(self, logs={}):
+        return
+
+    def on_train_end(self, logs={}):
+        return
+
+    def on_epoch_begin(self, epoch, logs={}):
+        return
+
+    def on_epoch_end(self, epoch, logs={}):
+        scorer = SCORERS[self.scorer]
+        print(self.validation_data)
+        x_val, y_val, _, _ = self.validation_data
+
+        pred_probas = self.model.predict(x_val)
+        pred_labels = (pred_probas > 0.5).astype('int32')
+        preds = pred_labels if scorer.__class__.__name__ == \
+            '_PredictScorer' else pred_probas
+
+        # binaray
+        if y_val.ndim == 1 or y_val.shape[-1] == 1:
+            preds = preds.ravel()
+            score = scorer._score_func(y_val, preds)
+        # multi-label
+        else:
+            score, _ = compute_score(preds, y_val, scorer._score_func)
+
+        print('\r%s_val: %s' % (self.scorer, str(round(score, 4))),
+              end=100*' '+'\n')
+        return
+
+    def on_batch_begin(self, batch, logs={}):
+        return
+
+    def on_batch_end(self, batch, logs={}):
+        return
 
 
 def _get_params_from_dict(dic, name):
@@ -347,6 +400,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
+    verbose : 0 or 1
+        if 1, log device placement.
     """
     def __init__(self, config, model_type='sequential',
                  optimizer='sgd', loss='binary_crossentropy',
@@ -355,7 +410,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, callbacks=None,
                  validation_data=None, steps_per_epoch=None,
-                 validation_steps=None, **fit_params):
+                 validation_steps=None, verbose=0, **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -368,6 +423,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.validation_data = validation_data
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
+        self.verbose = verbose
         self.fit_params = fit_params
         # TODO support compile parameters
 
@@ -577,7 +633,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             session_conf = tf.ConfigProto(
                 intra_op_parallelism_threads=intra_op,
                 inter_op_parallelism_threads=inter_op,
-                log_device_placement=True)
+                log_device_placement=bool(self.verbose))
 
             sess = tf.Session(graph=tf.get_default_graph(),
                               config=session_conf)
@@ -951,6 +1007,8 @@ class KerasGBatchClassifier(KerasGClassifier):
         of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
+    verbose : 0 or 1
+        if 1, log device placement.
     n_jobs : int, default=1
     prediction_steps : None or int, default is None
         prediction steps. If None, it will be number of samples
@@ -970,7 +1028,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  batch_size=None, seed=None, n_jobs=1,
                  callbacks=None, validation_data=None,
                  steps_per_epoch=None, validation_steps=None,
-                 prediction_steps=None,
+                 verbose=0, prediction_steps=None,
                  class_positive_factor=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
@@ -983,6 +1041,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             validation_data=validation_data,
             steps_per_epoch=steps_per_epoch,
             validation_steps=validation_steps,
+            verbose=verbose,
             **fit_params)
         self.data_batch_generator = data_batch_generator
         self.prediction_steps = prediction_steps
@@ -1006,7 +1065,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             session_conf = tf.ConfigProto(
                 intra_op_parallelism_threads=intra_op,
                 inter_op_parallelism_threads=inter_op,
-                log_device_placement=True)
+                log_device_placement=bool(self.verbose))
 
             sess = tf.Session(graph=tf.get_default_graph(),
                               config=session_conf)
@@ -1096,10 +1155,14 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         validation_data = fit_params.get('validation_data', None)
         if validation_data:
+            val_steps = fit_params.pop('validation_steps', None)
+            if val_steps:
+                val_size = val_steps * batch_size
+            else:
+                val_size = validation_data[0].shape[0]
             fit_params['validation_data'] = \
-                self.data_generator_.flow(*validation_data,
-                                          batch_size=batch_size,
-                                          shuffle=False)
+                self.data_generator_.sample(*validation_data,
+                                            sample_size=val_size)
 
         history = self.model_.fit_generator(
             self.data_generator_.flow(X, y, batch_size=batch_size,
@@ -1212,7 +1275,7 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         act = getattr(self.model_.layers[-1], 'activation', None)
         # binary classification
-        if targets.shape[-1] == 1:
+        if targets.ndim == 1 or targets.shape[-1] == 1:
             targets = targets.ravel()
             scores = _score(self, retrieved_X, targets,
                             scorer, is_multimetric)
