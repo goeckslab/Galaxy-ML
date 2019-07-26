@@ -1133,7 +1133,18 @@
           </expand>
         </when>
       </conditional>
-      <!--param name="metrics" type="select" label="Select metrics"-->
+      <param name="metrics" type="select" optional="true" multiple="true" label="Select metrics">
+        <option value="acc" selected="true">acc / accruracy</option>
+        <option value="binary_accuracy">binary_accuracy</option>
+        <option value="categorical_accuracy">categorical_accuracy</option>
+        <option value="sparse_categorical_accuracy">sparse_categorical_accuracy</option>
+        <option value="mse">mse / MSE / mean_squared_error</option>
+        <option value="mae">mae / MAE / mean_absolute_error</option>
+        <option value="mae">mape / MAPE / mean_absolute_percentage_error</option>
+        <option value="cosine_proximity">cosine_proximity</option>
+        <option value="cosine">cosine</option>
+        <option value="none">none</option>
+      </param>
     </section>
   </xml>
 
