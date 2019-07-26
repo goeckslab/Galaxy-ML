@@ -1,15 +1,18 @@
-### Version 0.7.8 / tool_main: 1.0.7.8 / stacking: 0.2.0 / keras: 0.4.0 (07-21-2019)
+### Version 0.7.9 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (07-25-2019)
 
 #### New Features
 
 - Adds searchcv tools to output `weights` for deep learning models.
-- Makes `KerasGBatchClassifier.evalue` to support multi-class and multi-label classification problem. 
+- Makes `KerasGBatchClassifier.evalue` to support multi-class and multi-label classification problem.
+- Adds parameter `verbose` in KerasG models to output device placement.
+- Adds `metrics` in keras model building tools.
 
 #### Changes
 
 - Changes dependency `tensorflow` to `tensorflow-gpu`.
 - Moves all tools to folder `tools`.
 - Makes `sklearn.preprocessing.Imputer` deprecated.
+- Updates dependencies in `requrements.txt`.
 
 #### Bug Fixes
 
