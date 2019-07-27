@@ -73,7 +73,7 @@
             <when value='no'/>
             <when value='train_test_split'>
                 <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
-                <param argument="train_size" type="float" optional="True" value="" label="Train size:"/>
+                <!--param argument="train_size" type="float" optional="True" value="" label="Train size:"/>-->
                 <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
                 <param argument="shuffle" type="select">
                     <option value="None">None - No shuffle</option>
