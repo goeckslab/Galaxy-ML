@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import warnings
+from itertools import chain
 from scipy.io import mmread
 from sklearn.base import clone
 from sklearn import (cluster, compose, decomposition, ensemble,
@@ -17,6 +18,7 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.metrics.scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
+from sklearn.utils import indexable, safe_indexing
 
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.utils import (SafeEval, get_scoring, load_model,
@@ -64,6 +66,7 @@ def _eval_swap_params(params_builder):
 
 def train_test_split_none(*arrays, **kwargs):
     """extend train_test_split to take None arrays
+    and support split by group names.
     """
     nones = []
     new_arrays = []
@@ -73,7 +76,25 @@ def train_test_split_none(*arrays, **kwargs):
         else:
             new_arrays.append(arr)
 
-    rval = train_test_split(*new_arrays, **kwargs)
+    if kwargs['shuffle'] == 'None':
+        kwargs['shuffle'] = None
+
+    group_names = kwargs.pop('group_names', None)
+
+    if group_names is not None and group_names.strip():
+        group_names = [name.strip() for name in
+                       group_names.split(',')]
+        new_arrays = indexable(*new_arrays)
+        groups = kwargs['labels']
+        n_samples = new_arrays[0].shape[0]
+        index_arr = np.arange(n_samples)
+        test = index_arr[np.isin(groups, group_names)]
+        train = index_arr[~np.isin(groups, group_names)]
+        rval = list(chain.from_iterable(
+            (safe_indexing(a, train),
+             safe_indexing(a, test)) for a in new_arrays))
+    else:
+        rval = train_test_split(*new_arrays, **kwargs)
 
     for pos in nones:
         rval[pos * 2: 2] = [None, None]
@@ -338,7 +359,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     else:
         scores = _score(estimator, X_test, y_test, scorer,
                         is_multimetric=True)
-
+    print(scores)
     # handle output
     for name, score in scores.items():
         scores[name] = [score]

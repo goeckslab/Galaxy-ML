@@ -964,28 +964,34 @@
     <conditional name="split_algos">
       <param name="shuffle" type="select" label="Select the splitting method">
         <option value="None">No shuffle</option>
-        <option value="simple">ShuffleSplit</option>
+        <option value="simple" selected="true">ShuffleSplit</option>
         <option value="stratified">StratifiedShuffleSplit -- target values serve as class labels</option>
-        <option value="group">GroupShuffleSplit</option>
+        <option value="group">Group based split</option>
       </param>
       <when value="None">
-        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
+        <expand macro="train_test_split_test_size"/>
       </when>
       <when value="simple">
-        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
-        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+        <expand macro="train_test_split_test_size"/>
+        <expand macro="random_state"/>
       </when>
       <when value="stratified">
-        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
-        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+        <expand macro="train_test_split_test_size"/>
+        <expand macro="random_state"/>
       </when>
       <when value="group">
-        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
-        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+        <expand macro="train_test_split_test_size" optional="true"/>
+        <expand macro="random_state"/>
+        <param argument="group_names" type="text" value="" optional="true" label="Type in group names instead"
+        help="For example: chr6, chr7. This parameter is optional. If used, it will override the holdout size and random seed."/>
         <yield/>
       </when>
     </conditional>
     <!--param argument="train_size" type="float" optional="True" value="" label="Train size:"/>-->
+  </xml>
+
+  <xml name="train_test_split_test_size" token_optional="false">
+    <param name="test_size" type="float" value="0.2" optional="@OPTIONAL@" label="Holdout size" help="Leass than 1, for preportion; greater than 1 (integer), for number of samples."/>
   </xml>
 
   <xml name="feature_selection_algorithms">
