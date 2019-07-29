@@ -45,7 +45,7 @@ def _eval_swap_params(params_builder):
 
         param_name = p['sp_name']
         if param_name.lower().endswith(NON_SEARCHABLE):
-            print("Warning: `%s` is not eligible for search and was "
+            warnings.warn("Warning: `%s` is not eligible for search and was "
                   "omitted!" % param_name)
             continue
 
@@ -348,7 +348,12 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     # train and eval
     if hasattr(estimator, 'validation_data'):
-        estimator.fit(X_train, y_train, validation_data=(X_val, y_val))
+        if exp_scheme == 'train_val_test':
+            estimator.fit(X_train, y_train,
+                          validation_data=(X_val, y_val))
+        else:
+            estimator.fit(X_train, y_train,
+                          validation_data=(X_test, y_test))
     else:
         estimator.fit(X_train, y_train)
 
@@ -359,7 +364,6 @@ def main(inputs, infile_estimator, infile1, infile2,
     else:
         scores = _score(estimator, X_test, y_test, scorer,
                         is_multimetric=True)
-    print(scores)
     # handle output
     for name, score in scores.items():
         scores[name] = [score]
