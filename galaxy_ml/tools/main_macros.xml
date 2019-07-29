@@ -960,6 +960,34 @@
     </section>
   </xml>
 
+  <xml name="train_test_split_params">
+    <conditional name="split_algos">
+      <param name="shuffle" type="select" label="Select the splitting method">
+        <option value="None">No shuffle</option>
+        <option value="simple">ShuffleSplit</option>
+        <option value="stratified">StratifiedShuffleSplit -- target values serve as class labels</option>
+        <option value="group">GroupShuffleSplit</option>
+      </param>
+      <when value="None">
+        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
+      </when>
+      <when value="simple">
+        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
+        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+      </when>
+      <when value="stratified">
+        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
+        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+      </when>
+      <when value="group">
+        <param argument="test_size" type="float" optional="True" value="0.25" label="Test size:"/>
+        <param argument="random_state" type="integer" optional="True" value="" label="Random seed number:"/>
+        <yield/>
+      </when>
+    </conditional>
+    <!--param argument="train_size" type="float" optional="True" value="" label="Train size:"/>-->
+  </xml>
+
   <xml name="feature_selection_algorithms">
     <option value="SelectKBest" selected="true">SelectKBest - Select features according to the k highest scores</option>
     <option value="GenericUnivariateSelect">GenericUnivariateSelect - Univariate feature selector with configurable strategy</option>
@@ -1309,6 +1337,30 @@
                 <add value="&quot;"/>
                 <add value="["/>
                 <add value="]"/>
+              </valid>
+            </sanitizer>
+          </param>
+      </repeat>
+    </section>
+  </xml>
+
+  <xml name="estimator_and_hyperparameter">
+    <param name="infile_estimator" type="data" format="zip" label="Choose the dataset containing pipeline/estimator object"/>
+    <section name="hyperparams_swapping" title="Hyperparameter Swapping" expanded="false">
+      <param name="infile_params" type="data" format="tabular" optional="true" label="Choose the dataset containing hyperparameters for the pipeline/estimator above" help="This dataset could be the output of `get_params` in the `Estimator Attributes` tool."/>
+      <repeat name="param_set" min="1" max="30" title="New hyperparameter setting">
+          <param name="sp_name" type="select" optional="true" label="Choose a parameter name (with current value)">
+            <options from_dataset="infile_params" startswith="@">
+              <column name="name" index="2"/>
+              <column name="value" index="1"/>
+              <filter type="unique_value" name="unique_param" column="1"/>
+            </options>
+          </param>
+          <param name="sp_value" type="text" value="" optional="true" label="New value" help="Supports int, float, boolean, single quoted string, and selected object constructor. Similar to the `Parameter settings for search` section in `searchcv` tool except that only single value is expected here.">
+            <sanitizer>
+              <valid initial="default">
+                <add value="&apos;"/>
+                <add value="&quot;"/>
               </valid>
             </sanitizer>
           </param>
