@@ -46,7 +46,7 @@ def _eval_swap_params(params_builder):
         param_name = p['sp_name']
         if param_name.lower().endswith(NON_SEARCHABLE):
             warnings.warn("Warning: `%s` is not eligible for search and was "
-                  "omitted!" % param_name)
+                          "omitted!" % param_name)
             continue
 
         if not swap_value.startswith(':'):

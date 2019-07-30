@@ -966,7 +966,7 @@
         <option value="None">No shuffle</option>
         <option value="simple" selected="true">ShuffleSplit</option>
         <option value="stratified">StratifiedShuffleSplit -- target values serve as class labels</option>
-        <option value="group">Group based split</option>
+        <option value="group">GroupShuffleSplit or split by group names</option>
       </param>
       <when value="None">
         <expand macro="train_test_split_test_size"/>

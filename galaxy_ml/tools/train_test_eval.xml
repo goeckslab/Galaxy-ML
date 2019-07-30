@@ -9,6 +9,7 @@
     <version_command>echo "@VERSION@"</version_command>
     <command detect_errors="aggressive">
         <![CDATA[
+        export HDF5_USE_FILE_LOCKING='FALSE';
         #if $input_options.selected_input == 'refseq_and_interval'
         bgzip -c '$input_options.target_file' > '${target_file.element_identifier}.gz' &&
         tabix -p bed '${target_file.element_identifier}.gz' &&

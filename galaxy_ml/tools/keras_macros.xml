@@ -1165,9 +1165,10 @@
     <citation type="bibtex">
       @misc{chollet2015keras,
         title={Keras},
+        url={https://keras.io},
         author={Chollet, Fran\c{c}ois and others},
         year={2015},
-        howpublished={\url{https://keras.io}},
+        howpublished={https://keras.io},
       }
     </citation>
   </xml>
