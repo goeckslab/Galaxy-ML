@@ -1945,7 +1945,7 @@
     </citation>
   </xml>
 
-    <xml name="imblearn_citation">
+  <xml name="imblearn_citation">
     <citation type="bibtex">
       @article{JMLR:v18:16-365,
         author  = {Guillaume  Lema{{\^i}}tre and Fernando Nogueira and Christos K. Aridas},

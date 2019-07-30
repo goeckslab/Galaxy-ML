@@ -779,5 +779,7 @@ A JSON file containing the information of all the layers and their respective at
       ]]>
   </help>
   <citations>
+    <expand macro="keras_citation"/>
+    <expand macro="tensorflow_citation"/>
   </citations>
 </tool>

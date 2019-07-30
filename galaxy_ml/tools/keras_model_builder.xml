@@ -132,5 +132,7 @@ An estimator object which can be used to train on a dataset.
     ]]>
     </help>
     <citations>
+        <expand macro="keras_citation"/>
+        <expand macro="tensorflow_citation"/>
     </citations>
 </tool>

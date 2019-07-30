@@ -2,6 +2,7 @@
     <description>fit a model using part of dataset and evaluate using the rest</description>
     <macros>
         <import>main_macros.xml</import>
+        <import>keras_macros.xml</import>
     </macros>
     <expand macro="python_requirements"/>
     <expand macro="macro_stdio"/>
@@ -267,6 +268,6 @@ Performance scores.
     <expand macro="sklearn_citation">
         <expand macro="skrebate_citation"/>
         <expand macro="xgboost_citation"/>
-        <expand macro="imblearn_citation"/>
+        <expand macro="keras_citation"/>
     </expand>
 </tool>

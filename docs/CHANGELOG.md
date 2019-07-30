@@ -6,6 +6,7 @@
 - Makes `KerasGBatchClassifier.evalue` to support multi-class and multi-label classification problem.
 - Adds parameter `verbose` in KerasG models to output device placement.
 - Adds `metrics` in keras model building tools.
+- Makes `train_test_eval` tool.
 
 #### Changes
 
