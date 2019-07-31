@@ -17,12 +17,14 @@
         <configfile name="sklearn_prediction_script">
             <![CDATA[
 import json
+import numpy as np
 import pandas as pd
 import sys
 import warnings
 from sklearn.pipeline import Pipeline
 
-from galaxy_ml.utils import load_model, read_columns
+from galaxy_ml.utils import (load_model, read_columns,
+                             get_module, try_get_attr)
 
 
 warnings.filterwarnings('ignore')
@@ -77,7 +79,7 @@ pyfaidx = get_module('pyfaidx')
 sequences = pyfaidx.Fasta(fasta_path)
 n_seqs = len(sequences.keys())
 X = np.arange(n_seqs)[:, np.newaxis]
-seq_length = estimator.data_generator_.seq_length
+seq_length = estimator.data_batch_generator.seq_length
 batch_size = getattr(estimator, 'batch_size', 32)
 steps = (n_seqs + batch_size - 1) // batch_size
 
