@@ -1,25 +1,25 @@
 <tool id="keras_model_builder" name="Create deep learning model" version="@KERAS_VERSION@">
-	<description>with an optimizer, loss function and fit parameters</description>
-	<macros>
-		<import>main_macros.xml</import>
-		<import>keras_macros.xml</import>
-	</macros>
-	<expand macro="python_requirements"/>
-	<expand macro="macro_stdio"/>
-	<version_command>echo "@KERAS_VERSION@"</version_command>
-	<command>
-		<![CDATA[
-		python '$__tool_directory__/keras_deep_learning.py'
-				--inputs '$inputs'
-				--tool_id 'keras_model_builder'
-				--outfile '$outfile'
-				--model_json '$mode_selection.infile_json'
-				#if $mode_selection.mode_type == 'prefitted'
-				--infile_weights '$mode_selection.infile_weights'
-					#end if
-				#if $mode_selection.mode_type == 'train_model' and $mode_selection.get_params
-				--outfile_params '$outfile_params'
-				#end if
+    <description>with an optimizer, loss function and fit parameters</description>
+    <macros>
+        <import>main_macros.xml</import>
+        <import>keras_macros.xml</import>
+    </macros>
+    <expand macro="python_requirements"/>
+    <expand macro="macro_stdio"/>
+    <version_command>echo "@KERAS_VERSION@"</version_command>
+    <command>
+        <![CDATA[
+        python '$__tool_directory__/keras_deep_learning.py'
+                --inputs '$inputs'
+                --tool_id 'keras_model_builder'
+                --outfile '$outfile'
+                --model_json '$mode_selection.infile_json'
+                #if $mode_selection.mode_type == 'prefitted'
+                --infile_weights '$mode_selection.infile_weights'
+                    #end if
+                #if $mode_selection.mode_type == 'train_model' and $mode_selection.get_params
+                --outfile_params '$outfile_params'
+                #end if
         ]]>
     </command>
     <configfiles>
@@ -55,26 +55,6 @@
         </data>
     </outputs>
     <tests>
-		<test>
-            <conditional name="mode_selection">
-                <param name="infile_json" value="keras04.json" ftype="json"/>
-                <param name="learning_type" value="KerasGRegressor"/>
-                <section name="compile_params">
-                    <conditional name="optimizer_selection">
-                        <param name="optimizer_type" value="Adam"/>
-                    </conditional>
-					<param name="metrics" value="mse"/>
-					<param name="loss" value="mean_squared_error"/>
-                </section>
-                <section name="fit_params">
-                    <param name="epochs" value="100"/>
-                </section>
-                <param name="random_seed" value="42"/>
-                <param name="get_params" value="true"/>
-            </conditional>
-            <output name="outfile" file="keras_model04" compare="sim_size" delta="1"/>
-            <output name="outfile_params" file="keras_params04.tabular"/>
-        </test>
         <test>
             <conditional name="mode_selection">
                 <param name="infile_json" value="keras01.json" ftype="json"/>
@@ -107,9 +87,29 @@
             </conditional>
             <output name="outfile" file="keras_prefitted01.zip" compare="sim_size" delta="5"/>
         </test>
+        <test>
+            <conditional name="mode_selection">
+                <param name="infile_json" value="keras04.json" ftype="json"/>
+                <param name="learning_type" value="KerasGRegressor"/>
+                <section name="compile_params">
+                    <conditional name="optimizer_selection">
+                        <param name="optimizer_type" value="Adam"/>
+                    </conditional>
+                    <param name="metrics" value="mse"/>
+                    <param name="loss" value="mean_squared_error"/>
+                </section>
+                <section name="fit_params">
+                    <param name="epochs" value="100"/>
+                </section>
+                <param name="random_seed" value="42"/>
+                <param name="get_params" value="true"/>
+            </conditional>
+            <output name="outfile" file="keras_model04" compare="sim_size" delta="1"/>
+            <output name="outfile_params" file="keras_params04.tabular"/>
+        </test>
     </tests>
     <help>
-	<![CDATA[
+    <![CDATA[
 **Help**
 
 **What it does**
