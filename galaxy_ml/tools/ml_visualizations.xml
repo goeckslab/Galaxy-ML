@@ -42,7 +42,10 @@
             <when value="feature_importances">
                 <param name="infile_estimator" type="data" format="zip" label="Select the dataset containing fitted estimator/pipeline" />
                 <param name="infile1" type="data" format="tabular" label="Select the dataset containing feature names" help="Make sure the headers (first row) are feature names."/>
-                <param name="threshold" type="float" value="" optional="true" label="Threshold value" help="Features with importance below the threshold value will be ignored."/>
+                <conditional name="column_selector_options">
+                    <expand macro="samples_column_selector_options" multiple="true"/>
+                </conditional>
+                <param name="threshold" type="float" value="" optional="true" min="0." label="Threshold value" help="Features with importance below the threshold value will be ignored."/>
             </when>
         </conditional>
     </inputs>
@@ -54,6 +57,7 @@
             <param name="plot_type" value="feature_importances"/>
             <param name="infile_estimator" value="best_estimator_.zip" ftype="zip"/>
             <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
+            <param name="selected_column_selector_option" value="all_columns"/>
             <output name="output" file="ml_vis01.html" compare="sim_size"/>
         </test>
     </tests>

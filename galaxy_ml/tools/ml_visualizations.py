@@ -3,12 +3,11 @@ import json
 import numpy as np
 import plotly
 import plotly.graph_objs as go
-import pandas as pd
 import warnings
 
 from sklearn.feature_selection.base import SelectorMixin
 from sklearn.pipeline import Pipeline
-from galaxy_ml.utils import load_model
+from galaxy_ml.utils import load_model, read_columns
 
 
 def main(inputs, infile_estimator=None, infile1=None,
@@ -56,14 +55,29 @@ def main(inputs, infile_estimator=None, infile1=None,
 
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
-    
+
     if (params['plotting_selection']
               ['plot_type']) == 'feature_importances':
         with open(infile_estimator, 'rb') as estimator_handler:
             estimator = load_model(estimator_handler)
 
-        df = pd.read_csv(infile1, sep='\t', header='infer', index_col=None)
-        feature_names = df.columns.values
+        column_option = (params['plotting_selection']
+                               ['column_selector_options']
+                               ['selected_column_selector_option'])
+        if column_option in ['by_index_number', 'all_but_by_index_number',
+                             'by_header_name', 'all_but_by_header_name']:
+            c = (params['plotting_selection']
+                       ['column_selector_options']['col1'])
+        else:
+            c = None
+
+        _, input_df = read_columns(infile1, c=c,
+                                   c_option=column_option,
+                                   return_df=True,
+                                   sep='\t', header='infer',
+                                   parse_dates=True)
+
+        feature_names = input_df.columns.values
 
         if isinstance(estimator, Pipeline):
             for st in estimator.steps[:-1]:
@@ -71,7 +85,7 @@ def main(inputs, infile_estimator=None, infile1=None,
                     mask = st[-1].get_support()
                     feature_names = feature_names[mask]
             estimator = estimator.steps[-1][-1]
-        
+
         if hasattr(estimator, 'coef_'):
             coefs = estimator.coef_
         else:
@@ -83,16 +97,21 @@ def main(inputs, infile_estimator=None, infile1=None,
 
         threshold = params['plotting_selection']['threshold']
         if threshold is not None:
-            coefs = coefs[coefs >= threshold]
-            feature_names = feature_names[coefs >= threshold]
-        
+            mask = (coefs > threshold) | (coefs < -threshold)
+            coefs = coefs[mask]
+            feature_names = feature_names[mask]
+
         # sort
         indices = np.argsort(coefs)[::-1]
 
         trace = go.Bar(x=feature_names[indices],
-                       y=coefs[indices]) 
-        layout = go.Layout(title="Feature importances")
-        plotly.offline.plot([trace], filename = "output.html",
+                       y=coefs[indices])
+        layout = go.Layout(title="Feature Importances")
+        figure = {
+            'data': [trace],
+            'layout': layout
+        }
+        plotly.offline.plot(figure, filename="output.html",
                             auto_open=False)
 
 
