@@ -32,7 +32,9 @@ setattr(_validation, '_fit_and_score', _fit_and_score)
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = './cached'
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
-                  'nthread')
+                  'nthread', 'callbacks')
+ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN', 'ReduceLROnPlateau',
+                     'CSVLogger', 'None')
 
 
 def _eval_swap_params(params_builder):
@@ -303,6 +305,14 @@ def main(inputs, infile_estimator, infile1, infile2,
                     new_params[p] = 1
                 else:
                     new_params[p] = N_JOBS
+            # for security reason, types of callback are limited
+            elif p.endswith('callbacks'):
+                for cb in v:
+                    cb_type = cb['callback_selection']['callback_type']
+                    if cb_type not in ALLOWED_CALLBACKS:
+                        raise ValueError(
+                            "Prohibited callback type: %s!" % cb_type)
+
         estimator.set_params(**new_params)
 
     # handle scorer, convert to scorer dict

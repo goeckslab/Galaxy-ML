@@ -36,7 +36,9 @@ setattr(_validation, '_fit_and_score', _fit_and_score)
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = './cached'
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
-                  'nthread')
+                  'nthread', 'callbacks')
+ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN', 'ReduceLROnPlateau',
+                     'CSVLogger', 'None')
 
 
 def _eval_search_params(params_builder):
@@ -375,6 +377,13 @@ def main(inputs, infile_estimator, infile1, infile2,
             elif p.endswith('n_jobs'):
                 new_params = {p: 1}
                 estimator.set_params(**new_params)
+            # for security reason, types of callbacks are limited
+            elif p.endswith('callbacks'):
+                for cb in v:
+                    cb_type = cb['callback_selection']['callback_type']
+                    if cb_type not in ALLOWED_CALLBACKS:
+                        raise ValueError(
+                            "Prohibited callback type: %s!" % cb_type)
 
     param_grid = _eval_search_params(params_builder)
     searcher = optimizer(estimator, param_grid, **options)
