@@ -105,7 +105,8 @@ def train_test_split_none(*arrays, **kwargs):
 
 
 def main(inputs, infile_estimator, infile1, infile2,
-         outfile_result, outfile_object=None, groups=None,
+         outfile_result, outfile_object=None,
+         outfile_weights=None, groups=None,
          ref_seq=None, intervals=None, targets=None,
          fasta_path=None):
     """
@@ -128,6 +129,9 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     outfile_object : str, optional
         File path to save searchCV object
+
+    outfile_weights : str, optional
+        File path to save deep learning model weights
 
     groups : str
         File path to dataset containing groups labels
@@ -385,12 +389,19 @@ def main(inputs, infile_estimator, infile1, infile2,
     memory.clear(warn=False)
 
     if outfile_object:
-        if hasattr(estimator, 'save_weights'):
-            estimator.save_weights(outfile_object)
-        else:
-            with open(outfile_object, 'wb') as output_handler:
-                pickle.dump(estimator, output_handler,
-                            pickle.HIGHEST_PROTOCOL)
+        main_est = estimator
+        if isinstance(estimator, pipeline.Pipeline):
+            main_est = estimator.steps[-1][-1]
+
+        if hasattr(main_est, 'model_') \
+                and hasattr(main_est, 'save_weights'):
+            if outfile_weights:
+                main_est.save_weights(outfile_weights)
+            del main_est.model_
+
+        with open(outfile_object, 'wb') as output_handler:
+            pickle.dump(estimator, output_handler,
+                        pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == '__main__':
@@ -401,6 +412,7 @@ if __name__ == '__main__':
     aparser.add_argument("-y", "--infile2", dest="infile2")
     aparser.add_argument("-O", "--outfile_result", dest="outfile_result")
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
+    aparser.add_argument("-w", "--outfile_weights", dest="outfile_weights")
     aparser.add_argument("-g", "--groups", dest="groups")
     aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
     aparser.add_argument("-b", "--intervals", dest="intervals")
@@ -410,5 +422,6 @@ if __name__ == '__main__':
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
-         groups=args.groups, ref_seq=args.ref_seq, intervals=args.intervals,
+         outfile_weights=args.outfile_weights, groups=args.groups,
+         ref_seq=args.ref_seq, intervals=args.intervals,
          targets=args.targets, fasta_path=args.fasta_path)
