@@ -9,104 +9,20 @@
     <version_command>echo "@VERSION@"</version_command>
     <command>
         <![CDATA[
-        python "$sklearn_prediction_script" '$inputs'
+        python '$__tool_directory__/model_prediction.py'
+            --inputs '$inputs'
+            --infile_estimator '$infile_estimator'
+            --outfile_predict '$outfile_predict'
+            --infile_weights '$infile_weights'
+            #if $input_options.selected_input == 'seq_fasta'
+            --fasta_path '$input_options.fasta_path'
+            #else
+            --infile1 '$input_options.infile1'
+            #end if
         ]]>
     </command>
     <configfiles>
         <inputs name="inputs" />
-        <configfile name="sklearn_prediction_script">
-            <![CDATA[
-import json
-import numpy as np
-import pandas as pd
-import sys
-import warnings
-from sklearn.pipeline import Pipeline
-
-from galaxy_ml.utils import (load_model, read_columns,
-                             get_module, try_get_attr)
-
-
-warnings.filterwarnings('ignore')
-
-input_json_path = sys.argv[1]
-with open(input_json_path, 'r') as param_handler:
-    params = json.load(param_handler)
-
-## load model
-with open('$infile_estimator', 'rb') as est_handler:
-    estimator = load_model(est_handler)
-
-infile_weights = '$infile_weights'
-if infile_weights != 'None':
-    if isinstance(estimator, Pipeline):
-        estimator.steps[-1][-1].load_weights(infile_weights)
-    else:
-        estimator.load_weights(infile_weights)
-
-#if $input_options.selected_input == 'tabular'
-header = 'infer' if params['input_options']['header1'] else None
-column_option = params['input_options']['column_selector_options_1']['selected_column_selector_option']
-if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_name', 'all_but_by_header_name']:
-    c = params['input_options']['column_selector_options_1']['col1']
-else:
-    c = None
-infile1 = '$input_options.infile1'
-df = pd.read_csv(infile1, sep='\t', header=header, parse_dates=True)
-
-X = read_columns(df, c=c, c_option=column_option).astype(float)
-
-if params['method'] == 'predict':
-    predicted = estimator.predict(X)
-else:
-    predicted = estimator.predict_proba(X)
-
-#elif $input_options.selected_input == 'sparse':
-X = mmread('$input_options.infile1')
-if params['method'] == 'predict':
-    predicted = estimator.predict(X)
-else:
-    predicted = estimator.predict_proba(X)
-
-#elif $input_options.selected_input == 'seq_fasta'
-if not hasattr(estimator, 'data_batch_generator'):
-    raise ValueError(
-        "To do prediction on sequences in fasta input, "
-        "the estimator must be a `KerasGBatchClassifier`"
-        "equipped with data_batch_generator!")
-fasta_path = '$input_options.fasta_path'
-pyfaidx = get_module('pyfaidx')
-sequences = pyfaidx.Fasta(fasta_path)
-n_seqs = len(sequences.keys())
-X = np.arange(n_seqs)[:, np.newaxis]
-seq_length = estimator.data_batch_generator.seq_length
-batch_size = getattr(estimator, 'batch_size', 32)
-steps = (n_seqs + batch_size - 1) // batch_size
-
-seq_type = params['input_options']['seq_type']
-pred_data_generator_klass = try_get_attr('galaxy_ml.preprocessors', seq_type)
-
-pred_data_generator = pred_data_generator_klass(
-    fasta_path, seq_length=seq_length)
-
-if params['method'] == 'predict':
-    predicted = estimator.predict(
-        X, data_generator=pred_data_generator, steps=steps)
-else:
-    predicted = estimator.predict_proba(
-        X, data_generator=pred_data_generator, steps=steps)
-#end if
-
-
-if len(predicted.shape) == 1:
-    rval = pd.DataFrame(predicted, columns=['Predicted'])
-else:
-    rval = pd.DataFrame(predicted)
-
-rval.to_csv(path_or_buf='$outfile_predict', sep='\t', header=True, index=False)
-
-            ]]>
-        </configfile>
     </configfiles>
     <inputs>
         <param name="infile_estimator" type="data" format="zip" label="Choose the dataset containing pipeline/estimator object"/>
