@@ -3,4 +3,4 @@ This module contains classes and methods for making and analyzing
 predictions with models that have already been trained.
 """
 
-from . import _common
+from . import _common, _variant_effect_prediction

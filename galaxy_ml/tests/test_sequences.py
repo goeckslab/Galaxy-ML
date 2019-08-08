@@ -11,6 +11,7 @@ from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import ProteinOneHotEncoder
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
+from galaxy_ml.preprocessors import GenomicVariantBatchGenerator
 
 try:
     import pyfaidx
@@ -96,10 +97,10 @@ def test_fasta_to_array_iterator_params():
 
     params = list(toarray_iterator.get_params().keys())
 
-    expect1 =  ['X', 'batch_size', 'generator__fasta_path',
-                'generator__seed', 'generator__seq_length',
-                'generator__shuffle', 'generator', 'sample_weight',
-                'seed', 'shuffle', 'steps', 'y']
+    expect1 = ['X', 'batch_size', 'generator__fasta_path',
+               'generator__seed', 'generator__seq_length',
+               'generator__shuffle', 'generator', 'sample_weight',
+               'seed', 'shuffle', 'steps', 'y']
 
     assert params == expect1, params
 
@@ -316,7 +317,7 @@ def test_genomic_interval_batch_generator():
     assert batch_y.tolist() == [[0], [0], [0], [1]], batch_y
 
     # test sample()
-    retrieved_seq_encodings, targets = generator1.sample(X, 10)
+    retrieved_seq_encodings, targets = generator1.sample(X, sample_size=10)
 
     assert retrieved_seq_encodings.shape == (10, 1000, 4),\
         retrieved_seq_encodings.shape
@@ -336,3 +337,43 @@ def test_genomic_interval_batch_generator():
 
     index_arr = next(gen_flow2.index_generator)
     assert index_arr.tolist() == [3, 7], index_arr
+
+
+def test_genomic_variant_batch_generator():
+    # selene case2 and 3 genome file, file not uploaded
+    ref_genome_path = "/projects/selene/manuscript/case3/"\
+        "1_variant_effect_prediction/data/male.hg19.fasta"
+    vcf_path = "./tools/test-data/lt0.05_igap_100.vcf"
+
+    generator = GenomicVariantBatchGenerator(
+        ref_genome_path=ref_genome_path, vcf_path=vcf_path,
+        blacklist_regions='hg19', output_reference=False)
+
+    generator1 = clone(generator)
+    got = list(generator1.get_params().keys())
+    expect = ['blacklist_regions', 'output_reference',
+              'ref_genome_path', 'seq_length', 'vcf_path']
+
+    assert got == expect, got
+
+    generator1.fit()
+
+    reference_genome_ = generator1.reference_genome_
+    start_radius_ = generator1.start_radius_
+    end_radius_ = generator1.end_radius_
+    variants = generator1.variants
+
+    assert reference_genome_.__class__.__name__ == 'Genome'
+    assert start_radius_ == 500, start_radius_
+    assert end_radius_ == 500, end_radius_
+    assert len(variants) == 101, len(variants)
+
+    gen_flow = generator1.flow(batch_size=4)
+
+    n_batches = len(gen_flow)
+    batch_X = next(gen_flow)
+    with np.load('./tools/test-data/vcf_batch1.npz', 'r') as data:
+        expect_X = data['arr_0']
+
+    assert n_batches == 26, n_batches
+    assert np.array_equal(batch_X, expect_X), batch_X

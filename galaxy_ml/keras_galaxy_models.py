@@ -401,7 +401,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     seed : None or int, default None
         backend random seed
     verbose : 0 or 1
-        if 1, log device placement.
+        if 1, log device placement
     """
     def __init__(self, config, model_type='sequential',
                  optimizer='sgd', loss='binary_crossentropy',
