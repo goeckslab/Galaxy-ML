@@ -64,6 +64,7 @@ A typic machine learning pipeline is composed of a main estimator/model and opti
 - FastaRNABatchGenerator
 - FastaProteinBatchGenerator
 - GenomicIntervalBatchGenerator
+- GenomicVariantBatchGenerator
 - ImageBatchGenerator
 
 

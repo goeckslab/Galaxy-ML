@@ -1,4 +1,4 @@
-### Version 0.7.9 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (07-25-2019)
+### Version 0.7.10 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (08-05-2019)
 
 #### New Features
 
@@ -7,6 +7,7 @@
 - Adds parameter `verbose` in KerasG models to output device placement.
 - Adds `metrics` in keras model building tools.
 - Makes `train_test_eval` tool.
+- Makes `GenomicVariantBatchGenerator`.
 
 #### Changes
 
