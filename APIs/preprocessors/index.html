@@ -102,6 +102,15 @@
     <li class="toctree-l3"><a href="#fastaproteinbatchgenerator">FastaProteinBatchGenerator</a></li>
     
 
+    <li class="toctree-l3"><a href="#intervalstoarrayiterator">IntervalsToArrayIterator</a></li>
+    
+
+    <li class="toctree-l3"><a href="#genomicintervalbatchgenerator">GenomicIntervalBatchGenerator</a></li>
+    
+
+    <li class="toctree-l3"><a href="#genomicvariantbatchgenerator">GenomicVariantBatchGenerator</a></li>
+    
+
     </ul>
                 </li>
                 <li class="">
@@ -185,13 +194,13 @@
           <div role="main">
             <div class="section">
               
-                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L29">[source]</a></span></p>
+                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L30">[source]</a></span></p>
 <h2 id="z_randomoversampler">Z_RandomOverSampler</h2>
 <pre><code class="python">galaxy_ml.preprocessors.Z_RandomOverSampler(sampling_strategy='auto', return_indices=False, random_state=None, ratio=None, negative_thres=0, positive_thres=-1)
 </code></pre>
 
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L111">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L112">[source]</a></span></p>
 <h2 id="tdmscaler">TDMScaler</h2>
 <pre><code class="python">galaxy_ml.preprocessors.TDMScaler(q_lower=25.0, q_upper=75.0)
 </code></pre>
@@ -203,7 +212,7 @@
        learning applications. PeerJ 4, e1621.
 </code></pre>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L194">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L195">[source]</a></span></p>
 <h2 id="genomeonehotencoder">GenomeOneHotEncoder</h2>
 <pre><code class="python">galaxy_ml.preprocessors.GenomeOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
 </code></pre>
@@ -224,7 +233,7 @@
         Sequence length. If None, determined by the the first entry.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L311">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L312">[source]</a></span></p>
 <h2 id="proteinonehotencoder">ProteinOneHotEncoder</h2>
 <pre><code class="python">galaxy_ml.preprocessors.ProteinOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
 </code></pre>
@@ -245,13 +254,13 @@
         Sequence length. If None, determined by the the first entry.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L379">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L380">[source]</a></span></p>
 <h2 id="imagebatchgenerator">ImageBatchGenerator</h2>
 <pre><code class="python">keras.preprocessing.image.ImageBatchGenerator(featurewise_center=False, samplewise_center=False, featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False, zca_epsilon=1e-06, rotation_range=0, width_shift_range=0.0, height_shift_range=0.0, brightness_range=None, shear_range=0.0, zoom_range=0.0, channel_shift_range=0.0, fill_mode='nearest', cval=0.0, horizontal_flip=False, vertical_flip=False, rescale=None, preprocessing_function=None, data_format=None, validation_split=0.0, dtype=None)
 </code></pre>
 
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L389">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L390">[source]</a></span></p>
 <h2 id="fastaiterator">FastaIterator</h2>
 <pre><code class="python">galaxy_ml.preprocessors.FastaIterator(n, batch_size=32, shuffle=True, seed=0)
 </code></pre>
@@ -269,9 +278,9 @@
         Random seed number for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L409">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L410">[source]</a></span></p>
 <h2 id="fastatoarrayiterator">FastaToArrayIterator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None, steps=None)
+<pre><code class="python">galaxy_ml.preprocessors.FastaToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None)
 </code></pre>
 
 <p>Iterator yielding Numpy array from fasta sequences</p>
@@ -348,6 +357,97 @@ to array.</p>
         Whether to shuffle the data between epochs</li>
 <li><strong>seed</strong>: int<br>
         Random seed for data shuffling</li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L629">[source]</a></span></p>
+<h2 id="intervalstoarrayiterator">IntervalsToArrayIterator</h2>
+<pre><code class="python">galaxy_ml.preprocessors.IntervalsToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None, sample_probabilities=None)
+</code></pre>
+
+<p>Iterator yielding Numpy array from intervals and reference
+sequences.</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>X</strong>: array<br>
+        Contains sequence indexes in the fasta file</li>
+<li><strong>generator</strong>: fitted object<br>
+        instance of GenomicIntervalBatchGenerator.</li>
+<li><strong>y</strong>: None<br>
+        The existing of y is due to inheritence, should be always None.</li>
+<li><strong>batch_size</strong>: int, default=32<br></li>
+<li><strong>shuffle</strong>: bool, default=True<br>
+        Whether to shuffle the data between epochs</li>
+<li><strong>sample_weight</strong>: None or array<br>
+        Sample weight</li>
+<li><strong>seed</strong>: int<br>
+        Random seed for data shuffling</li>
+<li><strong>sample_probabilities</strong>: 1-D array or None, default is None.<br>
+        The probabilities to draw samples. Different from the sample
+        weight, this parameter only changes the the frequency of
+        sampling, won't the loss during training.</li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L699">[source]</a></span></p>
+<h2 id="genomicintervalbatchgenerator">GenomicIntervalBatchGenerator</h2>
+<pre><code class="python">galaxy_ml.preprocessors.GenomicIntervalBatchGenerator(ref_genome_path=None, intervals_path=None, target_path=None, features='infer', blacklist_regions='hg38', shuffle=True, seed=None, seq_length=1000, center_bin_to_predict=200, feature_thresholds=0.5, random_state=None)
+</code></pre>
+
+<p>Generate sequence array and target values from a reference
+genome, intervals and genomic feature dataset.
+Try to mimic the the
+<code>selene_sdk.samplers.interval_sampler.IntervalsSampler</code>.</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>ref_genome_path</strong>: str<br>
+        File path to the reference genomce, usually in fasta
+        format.</li>
+<li><strong>intervals_path</strong>: str<br>
+        File path to the intervals dataset.</li>
+<li><strong>target_path</strong>: str<br>
+        File path to the dataset containing genomic features or
+        target information, usually in <code>bed</code> ir <code>bed.gz</code> format.</li>
+<li><strong>features</strong>: list of str or 'infer'<br>
+        A list of features to predict. If 'infer', retrieve all
+        the unique features from the target file.</li>
+<li><strong>blacklist_regions</strong>: str<br>
+        E.g., 'hg38'. For more info, refer to
+        <code>selene_sdk.sequences.Genome</code>.</li>
+<li><strong>shuffle</strong>: bool, default=True<br>
+        Whether to shuffle the data between epochs.</li>
+<li><strong>seed</strong>: int or None, default=None<br>
+        Random seed for shuffling between epocks.</li>
+<li><strong>seq_length</strong>: int, default=1000<br>
+        Retrived sequence length.</li>
+<li><strong>center_bin_to_predict</strong>: int, default=200<br>
+        Query the tabix-indexed file for a region of length
+        <code>center_bin_to_predict</code>.</li>
+<li><strong>feature_thresholds</strong>: float, default=0.5<br>
+        Threshold values to determine target value.</li>
+<li><strong>random_state</strong>: int or None, default=None<br>
+        Random seed for sampling sequences with changing position.</li>
+</ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L951">[source]</a></span></p>
+<h2 id="genomicvariantbatchgenerator">GenomicVariantBatchGenerator</h2>
+<pre><code class="python">galaxy_ml.preprocessors.GenomicVariantBatchGenerator(ref_genome_path=None, vcf_path=None, blacklist_regions='hg38', seq_length=1000, output_reference=False)
+</code></pre>
+
+<p><code>keras.utils.Sequence</code> capable sequence array generator
+from a reference genome and VCF (variant call format) file.</p>
+<p><strong>Parameters</strong></p>
+<ul>
+<li><strong>ref_genome_path</strong>: str<br>
+        File path to the reference genomce, usually in fasta
+        format.</li>
+<li><strong>vcf_path</strong>: str<br>
+        File path to the VCF dataset.</li>
+<li><strong>blacklist_regions</strong>: str<br>
+        E.g., 'hg38'. For more info, refer to
+        <code>selene_sdk.sequences.Genome</code>.</li>
+<li><strong>seq_length</strong>: int, default=1000<br>
+        Retrived sequence length.</li>
+<li><strong>output_reference</strong>: bool, default is False.<br>
+        If True, output reference sequence instead.</li>
 </ul>
               
             </div>
