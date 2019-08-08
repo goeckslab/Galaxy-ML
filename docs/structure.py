@@ -27,8 +27,10 @@ PAGES = [
             preprocessors.FastaToArrayIterator,
             preprocessors.FastaDNABatchGenerator,
             preprocessors.FastaRNABatchGenerator,
-            preprocessors.FastaProteinBatchGenerator
-
+            preprocessors.FastaProteinBatchGenerator,
+            preprocessors.IntervalsToArrayIterator,
+            preprocessors.GenomicIntervalBatchGenerator,
+            preprocessors.GenomicVariantBatchGenerator
         ]
     },
     {
