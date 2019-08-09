@@ -26,7 +26,7 @@ from keras.optimizers import (SGD, RMSprop, Adagrad,
 from keras.utils import to_categorical, multi_gpu_model
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
-                          RegressorMixin)
+                          RegressorMixin, clone)
 from sklearn.metrics import SCORERS
 from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
@@ -1073,7 +1073,7 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         check_params(kwargs, Model.fit_generator)
 
-        self.data_generator_ = self.data_batch_generator
+        self.data_generator_ = clone(self.data_batch_generator)
         self.data_generator_.fit()
 
         if y is not None:
