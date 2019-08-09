@@ -16,6 +16,9 @@
             --infile_weights '$infile_weights'
             #if $input_options.selected_input == 'seq_fasta'
             --fasta_path '$input_options.fasta_path'
+            #elif $input_options.selected_input == 'variant_effect'
+            --ref_seq '$input_options.ref_genome_file'
+            --vcf_path '$input_options.vcf_file'
             #else
             --infile1 '$input_options.infile1'
             #end if
@@ -36,6 +39,7 @@
                 <option value="tabular" selected="true">tabular data</option>
                 <option value="sparse">sparse matrix</option>
                 <option value="seq_fasta">sequnences in a fasta file</option>
+                <option value="variant_effect">reference genome and variant call file</option>
             </param>
             <when value="tabular">
                 <param name="infile1" type="data" format="tabular" label="Training samples dataset:"/>
@@ -54,6 +58,17 @@
                     <option value="FastaRNABatchGenerator">RNA</option>
                     <option value="FastaProteinBatchGenerator">Protein</option>
                 </param>
+            </when>
+            <when value="variant_effect">
+                <param name="ref_genome_file" type="data" format="fasta" label="Dataset containing reference genomic sequence" help="fasta"/>
+                <param name="blacklist_regions" type="select" label="blacklist regioins" help="A pre-loaded list of blacklisted intervals.Refer to `selene` for details.">
+                    <option value="none" selected="true">None</option>
+                    <option value="hg38">hg38</option>
+                    <option value="hg19">hg19</option>
+                </param>
+                <param name="vcf_file" type="data" format="vcf" label="Dataset containing sequence variations" help="vcf"/>
+                <param name="seq_length" type="integer" value="1000" label="Encoding seqence length" help="A stretch of sequence surrounding the variation position on the reference genome."/>
+                <param name="output_reference" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Predict the reference sequence?" help="If False, predict on the variant sequence."/>
             </when>
         </conditional>
     </inputs>
@@ -93,9 +108,12 @@ For estimator, this tool supports fitted sklearn estimators (pickled) and traine
 
 - bio-sequences in a fasta file
 
+- reference genome and variant call file
+
         ]]>
     </help>
     <expand macro="sklearn_citation">
         <expand macro="keras_citation"/>
+        <expand macro="selene_citation"/>
     </expand>
 </tool>

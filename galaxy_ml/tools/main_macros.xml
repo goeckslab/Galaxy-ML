@@ -1960,4 +1960,19 @@
     </citation>
   </xml>
 
+  <xml name="selene_citation">
+    <citation type="bibtex">
+      @article{chen2019selene,
+        title={Selene: a PyTorch-based deep learning library for sequence data},
+        author={Chen, Kathleen M and Cofer, Evan M and Zhou, Jian and Troyanskaya, Olga G},
+        journal={Nature methods},
+        volume={16},
+        number={4},
+        pages={315},
+        year={2019},
+        publisher={Nature Publishing Group}
+      }
+    </citation>
+  </xml>
+
 </macros>

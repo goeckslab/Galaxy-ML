@@ -11,9 +11,13 @@ from galaxy_ml.utils import (load_model, read_columns,
                              get_module, try_get_attr)
 
 
+N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
+
+
 def main(inputs, infile_estimator, outfile_predict,
          infile_weights=None, infile1=None,
-         fasta_path=None):
+         fasta_path=None, ref_seq=None,
+         vcf_path=None):
     """
     Parameter
     ---------
@@ -34,6 +38,12 @@ def main(inputs, infile_estimator, outfile_predict,
 
     fasta_path : str
         File path to dataset containing fasta file
+
+    ref_seq : str
+        File path to dataset containing the reference genome sequence.
+
+    vcf_path : str
+        File path to dataset containing variants info.
     """
     warnings.filterwarnings('ignore')
 
@@ -72,17 +82,17 @@ def main(inputs, infile_estimator, outfile_predict,
         X = read_columns(df, c=c, c_option=column_option).astype(float)
 
         if params['method'] == 'predict':
-            predicted = estimator.predict(X)
+            preds = estimator.predict(X)
         else:
-            predicted = estimator.predict_proba(X)
+            preds = estimator.predict_proba(X)
 
     # sparse input
     elif input_type == 'sparse':
         X = mmread(open(infile1, 'r'))
         if params['method'] == 'predict':
-            predicted = estimator.predict(X)
+            preds = estimator.predict(X)
         else:
-            predicted = estimator.predict_proba(X)
+            preds = estimator.predict_proba(X)
 
     # fasta input
     elif input_type == 'seq_fasta':
@@ -100,24 +110,78 @@ def main(inputs, infile_estimator, outfile_predict,
         steps = (n_seqs + batch_size - 1) // batch_size
 
         seq_type = params['input_options']['seq_type']
-        pred_data_generator_klass = try_get_attr(
+        klass = try_get_attr(
             'galaxy_ml.preprocessors', seq_type)
 
-        pred_data_generator = pred_data_generator_klass(
+        pred_data_generator = klass(
             fasta_path, seq_length=seq_length)
 
         if params['method'] == 'predict':
-            predicted = estimator.predict(
+            preds = estimator.predict(
                 X, data_generator=pred_data_generator, steps=steps)
         else:
-            predicted = estimator.predict_proba(
+            preds = estimator.predict_proba(
                 X, data_generator=pred_data_generator, steps=steps)
+
+    # vcf input
+    elif input_type == 'variant_effect':
+        klass = try_get_attr('galaxy_ml.preprocessors',
+                             'GenomicVariantBatchGenerator')
+
+        options = params['input_options']
+        options.pop('selected_input')
+        if options['blacklist_regions'] == 'none':
+            options['blacklist_regions'] = None
+
+        pred_data_generator = klass(
+            ref_genome_path=ref_seq, vcf_path=vcf_path, **options)
+
+        pred_data_generator.fit()
+
+        preds = estimator.model_.predict_generator(
+            pred_data_generator.flow(batch_size=32),
+            workers=N_JOBS,
+            use_multiprocessing=True)
+
+        if preds.min() < 0. or preds.max() > 1.:
+            warnings.warn('Network returning invalid probability values. '
+                          'The last layer might not normalize predictions '
+                          'into probabilities '
+                          '(like softmax or sigmoid would).')
+
+        if params['method'] == 'predict_proba' and preds.shape[1] == 1:
+            # first column is probability of class 0 and second is of class 1
+            preds = np.hstack([1 - preds, preds])
+
+        elif params['method'] == 'predict':
+            if preds.shape[-1] > 1:
+                # if the last activation is `softmax`, the sum of all
+                # probibilities will 1, the classification is considered as
+                # multi-class problem, otherwise, we take it as multi-label.
+                act = getattr(estimator.model_.layers[-1], 'activation', None)
+                if act and act.__name__ == 'softmax':
+                    classes = preds.argmax(axis=-1)
+                else:
+                    preds = (preds > 0.5).astype('int32')
+            else:
+                classes = (preds > 0.5).astype('int32')
+
+            preds = estimator.classes_[classes]
     # end input
 
-    if len(predicted.shape) == 1:
-        rval = pd.DataFrame(predicted, columns=['Predicted'])
+    # output
+    if input_type == 'variant_effect':   # TODO: save in batchs
+        rval = pd.DataFrame(preds)
+        meta = pd.DataFrame(
+            pred_data_generator.variants,
+            columns=['chrom', 'pos', 'name', 'ref', 'alt', 'strand'])
+
+        rval = pd.concat([meta, rval], axis=1)
+
+    elif len(preds.shape) == 1:
+        rval = pd.DataFrame(preds, columns=['Predicted'])
     else:
-        rval = pd.DataFrame(predicted)
+        rval = pd.DataFrame(preds)
 
     rval.to_csv(outfile_predict, sep='\t',
                 header=True, index=False)
@@ -131,8 +195,11 @@ if __name__ == '__main__':
     aparser.add_argument("-X", "--infile1", dest="infile1")
     aparser.add_argument("-O", "--outfile_predict", dest="outfile_predict")
     aparser.add_argument("-f", "--fasta_path", dest="fasta_path")
+    aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
+    aparser.add_argument("-v", "--vcf_path", dest="vcf_path")
     args = aparser.parse_args()
 
     main(args.inputs, args.infile_estimator, args.outfile_predict,
          infile_weights=args.infile_weights, infile1=args.infile1,
-         fasta_path=args.fasta_path)
+         fasta_path=args.fasta_path, ref_seq=args.ref_seq,
+         vcf_path=args.vcf_path)
