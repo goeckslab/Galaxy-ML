@@ -1,6 +1,7 @@
 import argparse
 import json
 import numpy as np
+import pandas as pd
 import plotly
 import plotly.graph_objs as go
 import warnings
@@ -56,8 +57,8 @@ def main(inputs, infile_estimator=None, infile1=None,
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
 
-    if (params['plotting_selection']
-              ['plot_type']) == 'feature_importances':
+    plot_type = params['plotting_selection']['plot_type']
+    if plot_type == 'feature_importances':
         with open(infile_estimator, 'rb') as estimator_handler:
             estimator = load_model(estimator_handler)
 
@@ -107,12 +108,42 @@ def main(inputs, infile_estimator=None, infile1=None,
         trace = go.Bar(x=feature_names[indices],
                        y=coefs[indices])
         layout = go.Layout(title="Feature Importances")
-        figure = {
-            'data': [trace],
-            'layout': layout
-        }
-        plotly.offline.plot(figure, filename="output.html",
-                            auto_open=False)
+        fig = go.Figure(data=[trace], layout=layout)
+
+    elif plot_type == 'learning_curve':
+        input_df = pd.read_csv(infile1, sep='\t', header='infer')
+        plot_std_err = params['plotting_selection']['plot_std_err']
+        data1 = go.Scatter(
+            x=input_df['train_sizes_abs'],
+            y=input_df['mean_train_scores'],
+            error_y=dict(
+                array=input_df['std_train_scores']
+            ) if plot_std_err else None,
+            mode='lines',
+            name="Train Scores",
+        )
+        data2 = go.Scatter(
+            x=input_df['train_sizes_abs'],
+            y=input_df['mean_test_scores'],
+            error_y=dict(
+                array=input_df['std_test_scores']
+            ) if plot_std_err else None,
+            mode='lines',
+            name="Test Scores",
+        )
+        layout = dict(
+            xaxis=dict(
+                title='No. of samples'
+            ),
+            yaxis=dict(
+                title='Performance Score'
+            ),
+            title='Learning Curve'
+        )
+        fig = go.Figure(data=[data1, data2], layout=layout)
+
+    plotly.offline.plot(fig, filename="output.html",
+                        auto_open=False)
 
 
 if __name__ == '__main__':

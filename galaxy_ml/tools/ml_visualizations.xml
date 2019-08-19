@@ -13,7 +13,9 @@
         <![CDATA[
         python '$__tool_directory__/ml_visualizations.py' 
             --inputs '$inputs'
-            #if $plotting_selection.plot_type == 'feature_importances'
+            #if $plotting_selection.plot_type == 'learning_curve'
+            --infile1 '$plotting_selection.infile1'
+            #elif $plotting_selection.plot_type == 'feature_importances'
             --estimator '$plotting_selection.infile_estimator'
             --infile1 '$plotting_selection.infile1'
             #end if
@@ -32,6 +34,8 @@
                 <option value="feature_importances">Feature Importances plot</option>
             </param>
             <when value="learning_curve">
+                <param name="infile1" type="data" format="tabular" label="Select the dataset containing values for plotting learning curve." help="This dataset should be the output of tool model_validation->learning_curve."/>
+                <param name="plot_std_err" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="false" label="Whether to plot standard error bar?"/>
             </when>
             <when value="pr_curve">
             </when>
@@ -59,6 +63,11 @@
             <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
             <param name="selected_column_selector_option" value="all_columns"/>
             <output name="output" file="ml_vis01.html" compare="sim_size"/>
+        </test>
+        <test>
+            <param name="plot_type" value="learning_curve"/>
+            <param name="infile1" value="mv_result03.tabular" ftype="tabular"/>
+            <output name="output" file="ml_vis02.html" compare="sim_size"/>
         </test>
     </tests>
     <help>
