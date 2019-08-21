@@ -7,6 +7,8 @@ import plotly.graph_objs as go
 import warnings
 
 from sklearn.feature_selection.base import SelectorMixin
+from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.metrics import roc_curve, auc
 from sklearn.pipeline import Pipeline
 from galaxy_ml.utils import load_model, read_columns
 
@@ -26,10 +28,11 @@ def main(inputs, infile_estimator=None, infile1=None,
         File path to estimator
 
     infile1 : str, default is None
-        File path to dataset containing features
+        File path to dataset containing features or true labels.
 
     infile2 : str, default is None
-        File path to dataset containing target values
+        File path to dataset containing target values or predicted
+        probabilities.
 
     outfile_result : str, default is None
         File path to save the results, either cv_results or test result
@@ -109,6 +112,92 @@ def main(inputs, infile_estimator=None, infile1=None,
                        y=coefs[indices])
         layout = go.Layout(title="Feature Importances")
         fig = go.Figure(data=[trace], layout=layout)
+
+    elif plot_type == 'pr_curve':
+        df1 = pd.read_csv(infile1, sep='\t', header=None)
+        df2 = pd.read_csv(infile2, sep='\t', header=None)
+
+        precision = {}
+        recall = {}
+        ap = {}
+
+        pos_label = params['plotting_selection']['pos_label'].strip() \
+            or None
+        for col in df1.columns:
+            y_true = df1[col].values
+            y_score = df2[col].values
+
+            precision[col], recall[col], _ = precision_recall_curve(
+                y_true, y_score, pos_label=pos_label)
+            ap[col] = average_precision_score(
+                y_true, y_score, pos_label=pos_label or 1)
+
+        if len(df1.columns) > 1:
+            precision["micro"], recall["micro"], _ = precision_recall_curve(
+                df1.values.ravel(), df2.values.ravel(), pos_label=pos_label)
+            ap['micro'] = average_precision_score(
+                df1.values, df2.values, average='micro', pos_label=pos_label or 1)
+
+        data = []
+        for key in precision.keys():
+            trace = go.Scatter(
+                x=recall[key],
+                y=precision[key],
+                mode='lines',
+                name='%s (area = %.2f)' % (key, ap[key]) if key == 'micro'
+                     else 'column %s (area = %.2f)' % (key, ap[key])
+            )
+            data.append(trace)
+
+        layout = go.Layout(
+            title="Precision-Recall curve",
+            xaxis=dict(title='Recall'),
+            yaxis=dict(title='Precision')
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+
+    elif plot_type == 'roc_curve':
+        df1 = pd.read_csv(infile1, sep='\t', header=None)
+        df2 = pd.read_csv(infile2, sep='\t', header=None)
+
+        fpr = {}
+        tpr = {}
+        roc_auc = {}
+
+        pos_label = params['plotting_selection']['pos_label'].strip() \
+            or None
+        for col in df1.columns:
+            y_true = df1[col].values
+            y_score = df2[col].values
+
+            fpr[col], tpr[col], _ = roc_curve(
+                y_true, y_score, pos_label=pos_label)
+            roc_auc[col] = auc(fpr[col], tpr[col])
+
+        if len(df1.columns) > 1:
+            fpr["micro"], tpr["micro"], _ = roc_curve(
+                df1.values.ravel(), df2.values.ravel(), pos_label=pos_label)
+            roc_auc['micro'] = auc(fpr["micro"], tpr["micro"])
+
+        data = []
+        for key in fpr.keys():
+            trace = go.Scatter(
+                x=fpr[key],
+                y=tpr[key],
+                mode='lines',
+                name='%s (area = %.2f)' % (key, roc_auc[key]) if key == 'micro'
+                     else 'column %s (area = %.2f)' % (key, roc_auc[key])
+            )
+            data.append(trace)
+
+        layout = go.Layout(
+            title="Receiver operating characteristic curve",
+            xaxis=dict(title='False Positive Rate'),
+            yaxis=dict(title='True Positive Rate')
+        )
+
+        fig = go.Figure(data=data, layout=layout)
 
     elif plot_type == 'learning_curve':
         input_df = pd.read_csv(infile1, sep='\t', header='infer')
