@@ -1,4 +1,4 @@
-### Version 0.7.10 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (08-05-2019)
+### Version 0.7.10 / tool_main: 1.0.7.10 / stacking: 0.2.0 / keras: 0.4.0 (08-21-2019)
 
 #### New Features
 
@@ -8,6 +8,8 @@
 - Adds `metrics` in keras model building tools.
 - Makes `train_test_eval` tool.
 - Makes `GenomicVariantBatchGenerator`.
+- Makes `model_prediction` tool to support `vcf` file type.
+- Adds plotly plotting tool facility for `feature_importances`, `learning_curve`, `pr_curve` and `roc_curve`.
 
 #### Changes
 
@@ -15,6 +17,7 @@
 - Moves all tools to folder `tools`.
 - Makes `sklearn.preprocessing.Imputer` deprecated.
 - Updates dependencies in `requrements.txt`.
+- Refactor `keras_model_config` tool by grouping layer key words arguments.
 
 #### Bug Fixes
 
