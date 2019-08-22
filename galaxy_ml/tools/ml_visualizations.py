@@ -10,7 +10,10 @@ from sklearn.feature_selection.base import SelectorMixin
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.pipeline import Pipeline
-from galaxy_ml.utils import load_model, read_columns
+from galaxy_ml.utils import load_model, read_columns, SafeEval
+
+
+safe_eval = SafeEval()
 
 
 def main(inputs, infile_estimator=None, infile1=None,
@@ -60,6 +63,7 @@ def main(inputs, infile_estimator=None, infile1=None,
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
 
+    title = params['plotting_selection']['title'].strip()
     plot_type = params['plotting_selection']['plot_type']
     if plot_type == 'feature_importances':
         with open(infile_estimator, 'rb') as estimator_handler:
@@ -110,7 +114,7 @@ def main(inputs, infile_estimator=None, infile1=None,
 
         trace = go.Bar(x=feature_names[indices],
                        y=coefs[indices])
-        layout = go.Layout(title="Feature Importances")
+        layout = go.Layout(title=title or "Feature Importances")
         fig = go.Figure(data=[trace], layout=layout)
 
     elif plot_type == 'pr_curve':
@@ -150,7 +154,7 @@ def main(inputs, infile_estimator=None, infile1=None,
             data.append(trace)
 
         layout = go.Layout(
-            title="Precision-Recall curve",
+            title=title or "Precision-Recall curve",
             xaxis=dict(title='Recall'),
             yaxis=dict(title='Precision')
         )
@@ -192,12 +196,32 @@ def main(inputs, infile_estimator=None, infile1=None,
             data.append(trace)
 
         layout = go.Layout(
-            title="Receiver operating characteristic curve",
+            title=title or "Receiver operating characteristic curve",
             xaxis=dict(title='False Positive Rate'),
             yaxis=dict(title='True Positive Rate')
         )
 
         fig = go.Figure(data=data, layout=layout)
+
+    elif plot_type == 'rfecv_gridscores':
+        input_df = pd.read_csv(infile1, sep='\t', header='infer')
+        scores = input_df.iloc[:, 0]
+        steps = params['plotting_selection']['steps'].strip()
+        steps = safe_eval(steps)
+
+        data = go.Scatter(
+            x=list(range(len(scores))),
+            y=scores,
+            text=[str(_) for _ in steps] if steps else None,
+            mode='lines'
+        )
+        layout = go.Layout(
+            xaxis=dict(title="Number of features selected"),
+            yaxis=dict(title="Cross validation score"),
+            title=title or None
+        )
+
+        fig = go.Figure(data=[data], layout=layout)
 
     elif plot_type == 'learning_curve':
         input_df = pd.read_csv(infile1, sep='\t', header='infer')
@@ -227,7 +251,7 @@ def main(inputs, infile_estimator=None, infile1=None,
             yaxis=dict(
                 title='Performance Score'
             ),
-            title='Learning Curve'
+            title=title or 'Learning Curve'
         )
         fig = go.Figure(data=[data1, data2], layout=layout)
 
