@@ -76,11 +76,14 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
             - A string, giving an expression as a function of n_jobs,
               as in '2*n_jobs'
     random_state : int or None
+    parallel_backend : str, default is None.
+        Used in `joblib.Parallel`. Common options are 'loky',
+        'multiprocessing', and 'threading'. If None, `loky` is used.
     """
 
     def __init__(self, n_iter=1000, positive_thres=-1, negative_thres=0,
                  verbose=0, n_jobs=1, pre_dispatch='2*n_jobs',
-                 random_state=None):
+                 random_state=None, parallel_backend=None):
         """
         IRAPS turns towwards general Anomaly Detection
         It comapares positive_thres with negative_thres,
@@ -101,6 +104,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.n_jobs = n_jobs
         self.pre_dispatch = pre_dispatch
         self.random_state = random_state
+        self.parallel_backend = parallel_backend
 
     def fit(self, X, y):
         """
@@ -165,7 +169,7 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         parallel = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
                             pre_dispatch=self.pre_dispatch,
-                            backend='threading')
+                            backend=self.parallel_backend)
 
         res = parallel(delayed(_stochastic_sampling)(
                 X, y, index,
