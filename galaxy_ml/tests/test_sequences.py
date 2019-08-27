@@ -100,7 +100,7 @@ def test_fasta_to_array_iterator_params():
     expect1 = ['X', 'batch_size', 'generator__fasta_path',
                'generator__seed', 'generator__seq_length',
                'generator__shuffle', 'generator', 'sample_weight',
-               'seed', 'shuffle', 'steps', 'y']
+               'seed', 'shuffle', 'y']
 
     assert params == expect1, params
 
