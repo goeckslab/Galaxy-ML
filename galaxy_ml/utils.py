@@ -93,13 +93,16 @@ class _SafePickler(pickle.Unpickler, object):
         if module in self.custom_modules:
             return try_get_attr('galaxy_ml.' + module, name)
         if module == '__main__' or module.startswith('galaxy_ml.'):
+            splits = module.split('.')
+            if len(splits) >= 2:
+                module = splits[0] + splits[1]
             return try_get_attr(module, name)
 
         fullname = module + '.' + name
         # keras names
         keras_names = self.keras_names
         if fullname in keras_names:
-            # dynamic import, surppress message:
+            # dynamic import, suppress message:
             # "Using TensorFlow backend."
             exec("import keras")
             mod = sys.modules[module]
