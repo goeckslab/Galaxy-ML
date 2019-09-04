@@ -6,7 +6,7 @@
   <xml name="python_requirements">
       <requirements>
           <requirement type="package" version="3.6">python</requirement>
-          <requirement type="package" version="0.7.10">Galaxy-ML</requirement>
+          <requirement type="package" version="0.7.11">Galaxy-ML</requirement>
           <yield/>
       </requirements>
   </xml>
