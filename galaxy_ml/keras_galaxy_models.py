@@ -20,15 +20,17 @@ from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              TensorBoard, RemoteMonitor,
                              ModelCheckpoint, TerminateOnNaN,
                              CSVLogger, ReduceLROnPlateau)
+from keras.engine.training_utils import iter_sequence_infinite
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
                               Adadelta, Adam, Adamax, Nadam)
 from keras.utils import to_categorical, multi_gpu_model
+from keras.utils.data_utils import (Sequence, OrderedEnqueuer,
+                                    GeneratorEnqueuer)
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin, clone)
 from sklearn.metrics import SCORERS
-from sklearn.model_selection._validation import _score
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
@@ -1126,7 +1128,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         # enable multiple gpu mode
         try:
             self.model_ = multi_gpu_model(self.model_)
-        except:
+        except Exception:
             pass
 
         self.model_.compile(loss=self.loss, optimizer=self._optimizer,
@@ -1190,7 +1192,10 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         pred_data_generator = kwargs.pop('data_generator', None)
         if not pred_data_generator:
-            pred_data_generator = self.data_generator_
+            pred_data_generator = getattr(self, 'data_generator_', None)
+            if not pred_data_generator:
+                pred_data_generator = clone(self.data_batch_generator)
+                pred_data_generator.fit()
 
         check_params(kwargs, Model.predict_generator)
 
@@ -1222,6 +1227,11 @@ class KerasGBatchClassifier(KerasGClassifier):
         return preds
 
     def score(self, X, y=None, **kwargs):
+        """
+        Return evaluation scores based on metrics passed through compile
+        parameters.
+        Only support batch compatible parameters, like acc.
+        """
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
         if y is not None:
             y = np.searchsorted(self.classes_, y)
@@ -1258,38 +1268,47 @@ class KerasGBatchClassifier(KerasGClassifier):
                          'the `model.compile()` method.')
 
     def evaluate(self, X_test, y_test=None, scorer=None, is_multimetric=False,
-                 steps=None):
+                 steps=None, batch_size=None):
         """Compute the score(s) with sklearn scorers on a given test
         set. Will return a single float if is_multimetric is False and a
         dict of floats, if is_multimetric is True
         """
         if not steps:
             steps = self.prediction_steps
-        if steps:
-            sample_size = self.batch_size * steps
-        else:
-            sample_size = X_test.shape[0]
+        if not batch_size:
+            batch_size = self.batch_size
 
-        retrieved_X, targets = self.data_generator_.sample(
-            X_test, sample_size=sample_size)
+        generator = self.data_generator_.flow(X_test, y=y_test,
+                                              batch_size=batch_size)
 
-        act = getattr(self.model_.layers[-1], 'activation', None)
+        pred_probas, y_true = _predict_generator(self.model_, generator,
+                                                 steps=steps)
+
         # binary classification
-        if targets.ndim == 1 or targets.shape[-1] == 1:
-            targets = targets.ravel()
-            scores = _score(self, retrieved_X, targets,
-                            scorer, is_multimetric)
-        # multi-class
-        elif act and act.__name__ == 'softmax':
-            targets = targets.argmax(axis=-1)
-            targets = self.classes_[targets]
-            scores = _score(self, retrieved_X, targets,
-                            scorer, is_multimetric)
+        if y_true.ndim == 1 or y_true.shape[-1] == 1:
+            pred_probas = pred_probas.ravel()
+            pred_labels = (pred_probas > 0.5).astype('int32')
+            targets = y_true.ravel().astype('int32')
+            if not is_multimetric:
+                preds = pred_labels if scorer.__class__.__name__ == \
+                    '_PredictScorer' else pred_probas
+                score = scorer._score_func(targets, preds, **scorer._kwargs)
+
+                return score
+            else:
+                scores = {}
+                for name, one_scorer in scorer.items():
+                    preds = pred_labels if one_scorer.__class__.__name__\
+                        == '_PredictScorer' else pred_probas
+                    score = one_scorer._score_func(targets, preds,
+                                                   **one_scorer._kwargs)
+                    scores[name] = score
+
+        # TODO: multi-class metrics
         # multi-label
         else:
-            pred_probas = self._predict(retrieved_X)
             pred_labels = (pred_probas > 0.5).astype('int32')
-            targets = targets.astype('int32')
+            targets = y_true.astype('int32')
             if not is_multimetric:
                 preds = pred_labels if scorer.__class__.__name__ == \
                     '_PredictScorer' else pred_probas
@@ -1306,3 +1325,101 @@ class KerasGBatchClassifier(KerasGClassifier):
                     scores[name] = score
 
         return scores
+
+
+def _predict_generator(model, generator, steps=None,
+                       max_queue_size=10, workers=1,
+                       use_multiprocessing=False,
+                       verbose=0):
+    """Override keras predict_generator to output true labels together
+    with prediction results
+    """
+    # TODO: support prediction callbacks
+    model._make_predict_function()
+
+    steps_done = 0
+    all_preds = []
+    all_y = []
+
+    use_sequence_api = isinstance(generator, Sequence)
+
+    if not use_sequence_api and use_multiprocessing and workers > 1:
+        warnings.warn(
+            UserWarning('Using a generator with `use_multiprocessing=True`'
+                        ' and multiple workers may duplicate your data.'
+                        ' Please consider using the `keras.utils.Sequence'
+                        ' class.'))
+    if steps is None:
+        if use_sequence_api:
+            steps = len(generator)
+        else:
+            raise ValueError('`steps=None` is only valid for a generator'
+                             ' based on the `keras.utils.Sequence` class.'
+                             ' Please specify `steps` or use the'
+                             ' `keras.utils.Sequence` class.')
+    enqueuer = None
+
+    try:
+        if workers > 0:
+            if use_sequence_api:
+                enqueuer = OrderedEnqueuer(
+                    generator,
+                    use_multiprocessing=use_multiprocessing)
+            else:
+                enqueuer = GeneratorEnqueuer(
+                    generator,
+                    use_multiprocessing=use_multiprocessing)
+            enqueuer.start(workers=workers, max_queue_size=max_queue_size)
+            output_generator = enqueuer.get()
+        else:
+            if use_sequence_api:
+                output_generator = iter_sequence_infinite(generator)
+            else:
+                output_generator = generator
+
+        while steps_done < steps:
+            generator_output = next(output_generator)
+            if isinstance(generator_output, tuple):
+                # Compatibility with the generators
+                # used for training.
+                if len(generator_output) == 2:
+                    x, y = generator_output
+                elif len(generator_output) == 3:
+                    x, y, _ = generator_output
+                else:
+                    raise ValueError('Output of generator should be '
+                                     'a tuple `(x, y, sample_weight)` '
+                                     'or `(x, y)`. Found: ' +
+                                     str(generator_output))
+            else:
+                # Assumes a generator that only
+                # yields inputs (not targets and sample weights).
+                x = generator_output
+
+            outs = model.predict_on_batch(x)
+            outs = to_list(outs)
+
+            if not all_preds:
+                for out in outs:
+                    all_preds.append([])
+                    all_y.append([])
+
+            for i, out in enumerate(outs):
+                all_preds[i].append(out)
+                all_y[i].append(y)
+
+            steps_done += 1
+    finally:
+        if enqueuer is not None:
+            enqueuer.stop()
+
+    if len(all_preds) == 1:
+        if steps_done == 1:
+            return all_preds[0][0], all_y[0][0]
+        else:
+            return np.concatenate(all_preds[0]), np.concatenate(all_y[0])
+    if steps_done == 1:
+        return [out[0] for out in all_preds], [label[0] for label in all_y]
+    else:
+        return ([np.concatenate(out) for out in all_preds],
+                [np.concatenate(label) for label in all_y])

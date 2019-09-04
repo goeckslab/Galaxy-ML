@@ -22,7 +22,7 @@ from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
     check_params, SearchParam, KerasLayers, MetricCallback,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
-    KerasGBatchClassifier)
+    KerasGBatchClassifier, _predict_generator)
 from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
@@ -683,7 +683,8 @@ def test_keras_model_load_and_save_weights():
     model.save_weights(tmp)
 
     got = os.path.getsize(tmp)
-    expect = os.path.getsize('./tools/test-data/keras_model_drosophila_weights01.h5')
+    expect = os.path.getsize(
+        './tools/test-data/keras_model_drosophila_weights01.h5')
 
     assert abs(got - expect) < 40, got - expect
 
@@ -1063,3 +1064,79 @@ def test_meric_callback():
 
     assert np.array_equal(x_val, X)
     assert np.array_equal(y_val, y)
+
+
+def test_predict_generator():
+    ref_genome_path = 'projects/selene/manuscript/case1/data/'\
+        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
+    intervals_path = 'projects/selene/manuscript/case1/data/'\
+        'hg38_TF_intervals.txt'
+    # selene case1 target bed file, file not uploaded
+    target_path = 'projects/selene/manuscript/case1/data/'\
+        'GATA1_proery_bm.bed.gz'
+    seed = 42
+    random_state = 0
+
+    generator = GenomicIntervalBatchGenerator(
+        ref_genome_path=ref_genome_path,
+        intervals_path=intervals_path,
+        target_path=target_path,
+        seed=seed,
+        features=['Proery_BM|GATA1'],
+        random_state=random_state
+    )
+    generator.fit()
+
+    # DeepSea model
+    model = Sequential()
+    model.add(Conv1D(filters=320, kernel_size=8, input_shape=(1000, 4)))
+    model.add(Activation('relu'))
+    model.add(MaxPool1D(pool_size=4, strides=4))
+    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=480, kernel_size=8))
+    model.add(Activation('relu'))
+    model.add(MaxPool1D(pool_size=4, strides=4))
+    model.add(Dropout(0.2))
+    model.add(Conv1D(filters=960, kernel_size=8))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Reshape((50880,)))
+    model.add(Dense(1))
+    model.add(Activation('relu'))
+    model.add(Dense(1))
+    model.add(Activation('sigmoid'))
+
+    config = model.get_config()
+
+    classifier = KerasGBatchClassifier(
+        config, clone(generator), optimizer='sgd',
+        momentum=0.9, decay=1e-6, nesterov=True,
+        batch_size=64, n_jobs=4, epochs=2,
+        steps_per_epoch=3,
+        prediction_steps=10,
+        class_positive_factor=3,
+        validation_steps=10,
+        metrics=['acc', 'sparse_categorical_accuracy'])
+
+    clf = clone(classifier)
+
+    intervals = pd.read_csv(intervals_path, sep='\t', header=None)
+    n_samples = intervals.shape[0]
+    X = np.arange(n_samples)[:, np.newaxis]
+
+    cv = ShuffleSplit(1, test_size=0.2, random_state=123)
+
+    train_index, test_index = next(cv.split(X))
+    X_train, X_test = X[train_index], X[test_index]
+
+    clf.fit(X_train)
+
+    pred_data_generator = generator.flow(X_test, batch_size=64)
+
+    preds, y_true = _predict_generator(clf.model_, pred_data_generator,
+                                       steps=2)
+
+    assert preds.shape == (128, 1), y_true.shape
+    assert 0.47 < preds[0][0] < 0.50, preds[0][0]
+    assert y_true.shape == (128, 1), y_true.shape
+    assert np.sum(y_true) == 9, np.sum(y_true)

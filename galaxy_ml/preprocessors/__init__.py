@@ -9,6 +9,7 @@ from ._fasta_protein_batch_generator import FastaProteinBatchGenerator
 from ._genomic_interval_batch_generator import (IntervalsToArrayIterator,
                                                 GenomicIntervalBatchGenerator)
 from ._genomic_variant_batch_generator import GenomicVariantBatchGenerator
+from ._image_batch_generator import ImageBatchGenerator
 
 
 __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
