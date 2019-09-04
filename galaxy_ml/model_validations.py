@@ -402,20 +402,23 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
         #######################################################################
         #######################################################################
-        if estimator.__class__.__name__ == 'KerasGBatchClassifier' \
-                and hasattr(estimator.data_batch_generator, 'target_path'):
+        if estimator.__class__.__name__ == 'KerasGBatchClassifier':
             test_scores = estimator.evaluate(X_test, y_test,
                                              scorer, is_multimetric)
         else:
             # _score will return dict if is_multimetric is True
             test_scores = _score(estimator, X_test, y_test,
                                  scorer, is_multimetric)
-        #######################################################################
-        #######################################################################
         score_time = time.time() - start_time - fit_time
         if return_train_score:
-            train_scores = _score(estimator, X_train, y_train, scorer,
-                                  is_multimetric)
+            if estimator.__class__.__name__ == 'KerasGBatchClassifier':
+                train_scores = estimator.evaluate(X_train, y_train,
+                                                  scorer, is_multimetric)
+            else:
+                train_scores = _score(estimator, X_train, y_train, scorer,
+                                      is_multimetric)
+        #######################################################################
+        #######################################################################
     if verbose > 2:
         if is_multimetric:
             for scorer_name in sorted(test_scores):
