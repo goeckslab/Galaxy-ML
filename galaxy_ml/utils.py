@@ -94,8 +94,8 @@ class _SafePickler(pickle.Unpickler, object):
             return try_get_attr('galaxy_ml.' + module, name)
         if module == '__main__' or module.startswith('galaxy_ml.'):
             splits = module.split('.')
-            if len(splits) >= 2:
-                module = splits[0] + splits[1]
+            if len(splits) > 2:
+                module = splits[0] + '.' + splits[1]
             return try_get_attr(module, name)
 
         fullname = module + '.' + name
