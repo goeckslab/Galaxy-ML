@@ -112,3 +112,7 @@ class FastaDNABatchGenerator(BaseEstimator):
                 i = 0
 
         return retrieved_X, y
+
+    def close(self):
+        if hasattr(self, 'fasta_file_'):
+            self.fasta_file_.close()

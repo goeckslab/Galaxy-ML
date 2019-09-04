@@ -326,3 +326,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
                 i = 0
 
         return retrieved_sequences, targets
+
+    def close(self):
+        if hasattr(self, 'reference_genome_'):
+            self.reference_genome_.genome.close()

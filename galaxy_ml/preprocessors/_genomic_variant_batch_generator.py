@@ -156,3 +156,7 @@ class GenomicVariantBatchGenerator(BaseEstimator):
             sequence)
 
         return alt_encoding
+
+    def close(self):
+        if hasattr(self, 'reference_genome_'):
+            self.reference_genome_.genome.close()

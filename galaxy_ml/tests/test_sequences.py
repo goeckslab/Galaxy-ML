@@ -185,6 +185,7 @@ def test_fasta_dna_batch_generator():
     assert got4.tolist() == [0., 0., 0., 1.], got4
     assert got5.tolist() == [0., 0., 1., 0.], got5
     assert got6.tolist() == [1., 0., 0., 0.], got6
+    generator.close()
 
 
 def test_fasta_protein_batch_generator():
@@ -202,6 +203,7 @@ def test_fasta_protein_batch_generator():
     assert generator.n_bases == 20, generator.n_bases
 
     cloned_generator = clone(generator)
+    generator.close()
 
 
 def test_protein_one_hot_encoder():
@@ -330,6 +332,8 @@ def test_genomic_interval_batch_generator():
     assert targets.tolist() == \
         [[0], [1], [0], [0], [0], [0], [0], [0], [0], [1]], targets
 
+    generator1.close()
+
     # test steps_per_epoch
     generator2 = clone(generator)
     generator2.fit()
@@ -337,6 +341,7 @@ def test_genomic_interval_batch_generator():
 
     index_arr = next(gen_flow2.index_generator)
     assert index_arr.tolist() == [3, 7], index_arr
+    generator2.close()
 
 
 def test_genomic_variant_batch_generator():
@@ -375,5 +380,6 @@ def test_genomic_variant_batch_generator():
     with np.load('./tools/test-data/vcf_batch1.npz', 'r') as data:
         expect_X = data['arr_0']
 
+    generator1.close()
     assert n_batches == 26, n_batches
     assert np.array_equal(batch_X, expect_X), batch_X
