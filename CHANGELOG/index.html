@@ -111,7 +111,7 @@
     <a class="current" href="./">Change Log</a>
     <ul class="subnav">
             
-    <li class="toctree-l3"><a href="#version-0710-tool_main-1079-stacking-020-keras-040-08-05-2019">Version 0.7.10 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (08-05-2019)</a></li>
+    <li class="toctree-l3"><a href="#version-0711-tool_main-10711-stacking-020-keras-041-09-04-2019">Version 0.7.11 / tool_main: 1.0.7.11 / stacking: 0.2.0 / keras: 0.4.1 (09-04-2019)</a></li>
     
         <ul>
         
@@ -275,7 +275,7 @@
           <div role="main">
             <div class="section">
               
-                <h3 id="version-0710-tool_main-1079-stacking-020-keras-040-08-05-2019">Version 0.7.10 / tool_main: 1.0.7.9 / stacking: 0.2.0 / keras: 0.4.0 (08-05-2019)</h3>
+                <h3 id="version-0711-tool_main-10711-stacking-020-keras-041-09-04-2019">Version 0.7.11 / tool_main: 1.0.7.11 / stacking: 0.2.0 / keras: 0.4.1 (09-04-2019)</h3>
 <h4 id="new-features">New Features</h4>
 <ul>
 <li>Adds searchcv tools to output <code>weights</code> for deep learning models.</li>
@@ -284,6 +284,11 @@
 <li>Adds <code>metrics</code> in keras model building tools.</li>
 <li>Makes <code>train_test_eval</code> tool.</li>
 <li>Makes <code>GenomicVariantBatchGenerator</code>.</li>
+<li>Makes <code>model_prediction</code> tool to support <code>vcf</code> file type.</li>
+<li>Adds plotly plotting tool facility for <code>feature_importances</code>, <code>learning_curve</code>, <code>pr_curve</code> and <code>roc_curve</code>.</li>
+<li>Adds <code>_predict_generator</code> to output y_true together with prediction results.</li>
+<li>Adds support of <code>return_train_score</code> for <code>KerasGBatchClassifier</code> in gridsearchcv.</li>
+<li>Adds <code>ml_visualization.xml</code> tool support many plots.</li>
 </ul>
 <h4 id="changes">Changes</h4>
 <ul>
@@ -291,6 +296,8 @@
 <li>Moves all tools to folder <code>tools</code>.</li>
 <li>Makes <code>sklearn.preprocessing.Imputer</code> deprecated.</li>
 <li>Updates dependencies in <code>requrements.txt</code>.</li>
+<li>Refactor <code>keras_model_config</code> tool by grouping layer key words arguments.</li>
+<li>Refactor the <code>preprocessors.py</code> into folder structure.</li>
 </ul>
 <h4 id="bug-fixes">Bug Fixes</h4>
 <ul>

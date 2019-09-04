@@ -194,15 +194,15 @@
           <div role="main">
             <div class="section">
               
-                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L30">[source]</a></span></p>
+                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_z_random_over_sampler.py#L12">[source]</a></span></p>
 <h2 id="z_randomoversampler">Z_RandomOverSampler</h2>
-<pre><code class="python">galaxy_ml.preprocessors.Z_RandomOverSampler(sampling_strategy='auto', return_indices=False, random_state=None, ratio=None, negative_thres=0, positive_thres=-1)
+<pre><code class="python">galaxy_ml.preprocessors._z_random_over_sampler.Z_RandomOverSampler(sampling_strategy='auto', return_indices=False, random_state=None, ratio=None, negative_thres=0, positive_thres=-1)
 </code></pre>
 
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L112">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_tdm_scaler.py#L9">[source]</a></span></p>
 <h2 id="tdmscaler">TDMScaler</h2>
-<pre><code class="python">galaxy_ml.preprocessors.TDMScaler(q_lower=25.0, q_upper=75.0)
+<pre><code class="python">galaxy_ml.preprocessors._tdm_scaler.TDMScaler(q_lower=25.0, q_upper=75.0)
 </code></pre>
 
 <p>Scale features using Training Distribution Matching (TDM) algorithm</p>
@@ -212,9 +212,9 @@
        learning applications. PeerJ 4, e1621.
 </code></pre>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L195">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_genome_one_hot_encoder.py#L8">[source]</a></span></p>
 <h2 id="genomeonehotencoder">GenomeOneHotEncoder</h2>
-<pre><code class="python">galaxy_ml.preprocessors.GenomeOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
+<pre><code class="python">galaxy_ml.preprocessors._genome_one_hot_encoder.GenomeOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
 </code></pre>
 
 <p>Convert Genomic sequences to one-hot encoded 2d array</p>
@@ -233,9 +233,9 @@
         Sequence length. If None, determined by the the first entry.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L312">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_protein_one_hot_encoder.py#L7">[source]</a></span></p>
 <h2 id="proteinonehotencoder">ProteinOneHotEncoder</h2>
-<pre><code class="python">galaxy_ml.preprocessors.ProteinOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
+<pre><code class="python">galaxy_ml.preprocessors._genome_one_hot_encoder.ProteinOneHotEncoder(fasta_path=None, padding=True, seq_length=None)
 </code></pre>
 
 <p>Convert protein sequences to one-hot encoded 2d array</p>
@@ -254,15 +254,15 @@
         Sequence length. If None, determined by the the first entry.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L380">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_image_batch_generator.py#L5">[source]</a></span></p>
 <h2 id="imagebatchgenerator">ImageBatchGenerator</h2>
 <pre><code class="python">keras.preprocessing.image.ImageBatchGenerator(featurewise_center=False, samplewise_center=False, featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False, zca_epsilon=1e-06, rotation_range=0, width_shift_range=0.0, height_shift_range=0.0, brightness_range=None, shear_range=0.0, zoom_range=0.0, channel_shift_range=0.0, fill_mode='nearest', cval=0.0, horizontal_flip=False, vertical_flip=False, rescale=None, preprocessing_function=None, data_format=None, validation_split=0.0, dtype=None)
 </code></pre>
 
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L390">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_iterator.py#L9">[source]</a></span></p>
 <h2 id="fastaiterator">FastaIterator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaIterator(n, batch_size=32, shuffle=True, seed=0)
+<pre><code class="python">galaxy_ml.preprocessors._fasta_iterator.FastaIterator(n, batch_size=32, shuffle=True, seed=0)
 </code></pre>
 
 <p>Base class for fasta sequence iterators.</p>
@@ -278,9 +278,9 @@
         Random seed number for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L410">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_iterator.py#L29">[source]</a></span></p>
 <h2 id="fastatoarrayiterator">FastaToArrayIterator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None)
+<pre><code class="python">galaxy_ml.preprocessors._fasta_iterator.FastaToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None)
 </code></pre>
 
 <p>Iterator yielding Numpy array from fasta sequences</p>
@@ -302,9 +302,9 @@
         Random seed for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L464">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_dna_batch_generator.py#L9">[source]</a></span></p>
 <h2 id="fastadnabatchgenerator">FastaDNABatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaDNABatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
+<pre><code class="python">galaxy_ml.preprocessors._fasta_dna_batch_generator.FastaDNABatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
 </code></pre>
 
 <p>Fasta squence batch data generator, online transformation of sequences
@@ -321,9 +321,9 @@ to array.</p>
         Random seed for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L572">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_rna_batch_generator.py#L4">[source]</a></span></p>
 <h2 id="fastarnabatchgenerator">FastaRNABatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaRNABatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
+<pre><code class="python">galaxy_ml.preprocessors._fasta_rna_batch_generator.FastaRNABatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
 </code></pre>
 
 <p>Fasta squence batch data generator, online transformation of sequences
@@ -340,9 +340,9 @@ to array.</p>
         Random seed for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L600">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_protein_batch_generator.py#L4">[source]</a></span></p>
 <h2 id="fastaproteinbatchgenerator">FastaProteinBatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.FastaProteinBatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
+<pre><code class="python">galaxy_ml.preprocessors._fasta_protein_batch_generator.FastaProteinBatchGenerator(fasta_path, seq_length=1000, shuffle=True, seed=None)
 </code></pre>
 
 <p>Fasta squence batch data generator, online transformation of sequences
@@ -359,9 +359,9 @@ to array.</p>
         Random seed for data shuffling</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L629">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_genomic_interval_batch_generator.py#L9">[source]</a></span></p>
 <h2 id="intervalstoarrayiterator">IntervalsToArrayIterator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.IntervalsToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None, sample_probabilities=None)
+<pre><code class="python">galaxy_ml.preprocessors._genomic_interval_batch_generator.IntervalsToArrayIterator(X, generator, y=None, batch_size=32, shuffle=True, sample_weight=None, seed=None, sample_probabilities=None)
 </code></pre>
 
 <p>Iterator yielding Numpy array from intervals and reference
@@ -387,9 +387,9 @@ sequences.</p>
         sampling, won't the loss during training.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L699">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_genomic_interval_batch_generator.py#L79">[source]</a></span></p>
 <h2 id="genomicintervalbatchgenerator">GenomicIntervalBatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.GenomicIntervalBatchGenerator(ref_genome_path=None, intervals_path=None, target_path=None, features='infer', blacklist_regions='hg38', shuffle=True, seed=None, seq_length=1000, center_bin_to_predict=200, feature_thresholds=0.5, random_state=None)
+<pre><code class="python">galaxy_ml.preprocessors._genomic_interval_batch_generator.GenomicIntervalBatchGenerator(ref_genome_path=None, intervals_path=None, target_path=None, features='infer', blacklist_regions='hg38', shuffle=True, seed=None, seq_length=1000, center_bin_to_predict=200, feature_thresholds=0.5, random_state=None)
 </code></pre>
 
 <p>Generate sequence array and target values from a reference
@@ -427,9 +427,9 @@ Try to mimic the the
         Random seed for sampling sequences with changing position.</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors.py#L951">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_genomic_variant_batch_generator.py#L9">[source]</a></span></p>
 <h2 id="genomicvariantbatchgenerator">GenomicVariantBatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors.GenomicVariantBatchGenerator(ref_genome_path=None, vcf_path=None, blacklist_regions='hg38', seq_length=1000, output_reference=False)
+<pre><code class="python">galaxy_ml.preprocessors._genomic_variant_batch_generator.GenomicVariantBatchGenerator(ref_genome_path=None, vcf_path=None, blacklist_regions='hg38', seq_length=1000, output_reference=False)
 </code></pre>
 
 <p><code>keras.utils.Sequence</code> capable sequence array generator

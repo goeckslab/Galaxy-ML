@@ -163,7 +163,7 @@
               
                 <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L2">[source]</a></span></p>
 <h2 id="irapscore">IRAPSCore</h2>
-<pre><code class="python">galaxy_ml.iraps_classifier.IRAPSCore(n_iter=1000, positive_thres=-1, negative_thres=0, verbose=0, n_jobs=1, pre_dispatch='2*n_jobs', random_state=None)
+<pre><code class="python">galaxy_ml.iraps_classifier.IRAPSCore(n_iter=1000, positive_thres=-1, negative_thres=0, verbose=0, n_jobs=1, pre_dispatch='2*n_jobs', random_state=None, parallel_backend=None)
 </code></pre>
 
 <p>Base class of IRAPSClassifier
@@ -196,6 +196,9 @@ set_params()</p>
             - A string, giving an expression as a function of n_jobs,
               as in '2*n_jobs'</li>
 <li><strong>random_state</strong>: int or None<br></li>
+<li><strong>parallel_backend</strong>: str, default is None.<br>
+        Used in <code>joblib.Parallel</code>. Common options are 'loky',
+        'multiprocessing', and 'threading'. If None, <code>loky</code> is used.</li>
 </ul>
 <hr />
 <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L3">[source]</a></span></p>
