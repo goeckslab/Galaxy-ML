@@ -1,4 +1,4 @@
-### Version 0.7.10 / tool_main: 1.0.7.10 / stacking: 0.2.0 / keras: 0.4.0 (08-21-2019)
+### Version 0.7.11 / tool_main: 1.0.7.11 / stacking: 0.2.0 / keras: 0.4.1 (09-04-2019)
 
 #### New Features
 
@@ -10,6 +10,9 @@
 - Makes `GenomicVariantBatchGenerator`.
 - Makes `model_prediction` tool to support `vcf` file type.
 - Adds plotly plotting tool facility for `feature_importances`, `learning_curve`, `pr_curve` and `roc_curve`.
+- Adds `_predict_generator` to output y_true together with prediction results.
+- Adds support of `return_train_score` for `KerasGBatchClassifier` in gridsearchcv.
+- Adds `ml_visualization.xml` tool support many plots.
 
 #### Changes
 
@@ -18,6 +21,7 @@
 - Makes `sklearn.preprocessing.Imputer` deprecated.
 - Updates dependencies in `requrements.txt`.
 - Refactor `keras_model_config` tool by grouping layer key words arguments.
+- Refactor the `preprocessors.py` into folder structure.
 
 #### Bug Fixes
 
