@@ -157,9 +157,17 @@ def main(inputs, infile_estimator, outfile_predict,
                     index_array)
 
                 if params['method'] == 'predict':
-                    batch_preds = estimator.predict(batch_X)
+                    batch_preds = estimator.predict(
+                        batch_X,
+                        # The presence of `pred_data_generator` below is to override
+                        # model carrying data_generator if there is any.
+                        data_generator=pred_data_generator)
                 else:
-                    batch_preds = estimator.predict_proba(batch_X)
+                    batch_preds = estimator.predict_proba(
+                        batch_X,
+                        # The presence of `pred_data_generator` below is to override
+                        # model carrying data_generator if there is any.
+                        data_generator=pred_data_generator)
 
                 if batch_preds.ndim == 1:
                     batch_preds = batch_preds[:, np.newaxis]

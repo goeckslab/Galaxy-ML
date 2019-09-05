@@ -1191,11 +1191,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         X = check_array(X, accept_sparse=['csc', 'csr'], allow_nd=True)
 
         pred_data_generator = kwargs.pop('data_generator', None)
-        if not pred_data_generator:
-            pred_data_generator = getattr(self, 'data_generator_', None)
-            if not pred_data_generator:
-                pred_data_generator = clone(self.data_batch_generator)
-                pred_data_generator.fit()
 
         check_params(kwargs, Model.predict_generator)
 
@@ -1207,6 +1202,15 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         # through data generator
         if X.ndim == 2 and X.shape[1] == 1:
+            if not pred_data_generator:
+                pred_data_generator = getattr(self, 'data_generator_', None)
+            if not pred_data_generator:
+                if hasattr(self, 'data_batch_generator'):
+                    pred_data_generator = clone(self.data_batch_generator)
+                    pred_data_generator.fit()
+                else:
+                    raise ValueError("Prediction asks for a data_generator, "
+                                     "but none is provided!")
             preds = self.model_.predict_generator(
                 pred_data_generator.flow(X, batch_size=batch_size),
                 steps=steps,
