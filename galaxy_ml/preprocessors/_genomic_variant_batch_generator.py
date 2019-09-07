@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+import tabix
 
 from . import FastaToArrayIterator
 from ..externals import selene_sdk
@@ -67,6 +68,15 @@ class GenomicVariantBatchGenerator(BaseEstimator):
 
             if not self.reference_genome_.coords_in_bounds(chrom, start, end):
                 continue
+            blacklist_tabix = getattr(self.reference_genome_,
+                                      '_blacklist_tabix', None)
+            if blacklist_tabix:
+                try:
+                    rows = blacklist_tabix.query(chrom, start, end)
+                    for row in rows:
+                        continue
+                except tabix.TabixError:
+                    pass
 
             for al in alt.split(','):
                 self.variants.append((chrom, pos, name, ref, al, strand))

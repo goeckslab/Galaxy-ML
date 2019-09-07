@@ -380,6 +380,18 @@ def test_genomic_variant_batch_generator():
     with np.load('./tools/test-data/vcf_batch1.npz', 'r') as data:
         expect_X = data['arr_0']
 
-    generator1.close()
     assert n_batches == 26, n_batches
+    assert np.array_equal(batch_X, expect_X), batch_X
+
+    generator2 = clone(generator)
+    generator2.set_params(output_reference=True)
+
+    generator2.fit()
+    gen_flow = generator2.flow(batch_size=4)
+
+    batch_X = next(gen_flow)
+    with np.load('./tools/test-data/vcf_batch2.npz', 'r') as data:
+        expect_X = data['arr_0']
+
+    generator2.close()
     assert np.array_equal(batch_X, expect_X), batch_X
