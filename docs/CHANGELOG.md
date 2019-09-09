@@ -1,4 +1,4 @@
-### Version 0.7.11 / tool_main: 1.0.7.11 / stacking: 0.2.0 / keras: 0.4.1 (09-04-2019)
+### Version 0.7.12 / tool_main: 1.0.7.12 / stacking: 0.2.0 / keras: 0.4.2 (09-09-2019)
 
 #### New Features
 
@@ -27,6 +27,7 @@
 
 - Fixes `KerasGBatchClassifier` doesn't work with callbacks.
 - Fixes `GenomicIntervalBatchGenerator` doesn't work in nested model validation.
+- Fixes `GenomicIntervalBatchGenerator` failed for sequences in blacklist matches.
 
 
 ### Version 0.7.5 / tool_main: 1.0.7.5 / stacking: 0.2.0 / keras: 0.3.0 (07-09-2019)
