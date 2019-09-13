@@ -72,8 +72,12 @@ class GenomicVariantBatchGenerator(BaseEstimator):
                                       '_blacklist_tabix', None)
             if blacklist_tabix:
                 try:
+                    found = 0
                     rows = blacklist_tabix.query(chrom, start, end)
                     for row in rows:
+                        found = 1
+                        break
+                    if found:
                         continue
                 except tabix.TabixError:
                     pass
