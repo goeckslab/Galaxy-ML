@@ -493,7 +493,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         Estimator object such as derived from sklearn `RegressionMixin`.
     z_score : float, default=-1.0
         Threshold value based on z_score. Will be ignored when
-        fixed_value is set
+        value is set
     value : float, default=None
         Threshold value
     less_is_positive : boolean, default=True
