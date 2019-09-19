@@ -303,7 +303,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         self.save_prefix = save_prefix
         self.save_format = save_format
         self.interpolation = interpolation
-        self.fit_sample_size = fit_sample_size or 1000
+        self.fit_sample_size = fit_sample_size
         self.kwargs = kwargs
 
         if data_format not in {'channels_last', 'channels_first'}:
