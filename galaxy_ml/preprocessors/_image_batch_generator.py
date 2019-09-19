@@ -413,6 +413,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
             _, classes = DataFrameIterator._filter_classes(self.dataframe,
                                                            self.y_col,
                                                            self.classes)
+            num_classes = len(classes)
             # build an index of all the unique classes
             self.class_indices = dict(zip(classes, range(len(classes))))
             self.classes = self.get_classes(self.dataframe, self.y_col)
@@ -433,6 +434,13 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
 
         self.rng_ = check_random_state(self.seed)
 
+        if self.class_mode in ["input", "multi_output", "raw", None]:
+            print('Found {} image filenames.'
+                  .format(len(self.filenames)))
+        else:
+            print('Found {} image filenames belonging to {} classes.'
+                  .format(len(self.filenames), num_classes))
+
     def flow(self, X, y=None, batch_size=None, sample_weight=None):
         """ Return a Sequence iterator
         """
@@ -449,18 +457,31 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
 
         return ImageFilesIterator(X, self, batch_size=batch_size)
 
-    def sample(self, X, sample_size=None, standardize=True):
+    def sample(self, X=None, sample_size=None, standardize=True):
         """ Retrived fix-sized image tersors
+
+        Parameters
+        ----------
+        X : 2D-array. Default is None
+            Expanded sub-index array of the dataframe.
+            If None, X = np.arange(n_samples)[:, np.newaxis].
+        sample_size : int. Default is None.
+            The number of samples to be retrieved.
+            If None, sample_size = X.shape[0]
+        standardize : bool. Default is True.
+            Whether to transform the image tersor data.
+            If False, return direct results of `img_to_array`.
         """
+        if X is None:
+            X = np.arange(self.dataframe.shape[0])[:, np.newaxis]
         if not sample_size:
             sample_size = X.shape[0]
+
         retrieved_X = np.zeros((sample_size,) + self.image_shape,
                                dtype=self.dtype)
 
         filepaths = self.filepaths
-        filepaths = [filepaths[int(j)] for j in np.squeeze(X)]
-
-        indices = np.arange(len(filepaths))
+        indices = np.squeeze(X)
         sample_index = self.rng_.choice(indices, size=sample_size,
                                         replace=False)
         for i, j in enumerate(sample_index):
@@ -598,10 +619,41 @@ def _filter_valid_filepaths(df, x_col, directory):
     return df[mask]
 
 
-def clean_image_dataframe(df, directory, x_col, y_col, weight_col,
-                          classes, class_mode):
+def clean_image_dataframe(df, directory=None, x_col='filename',
+                          y_col='class', weight_col=None,
+                          classes=None, class_mode='categorical',
+                          validate_filenames=True):
+    """utils to check and clean up the dataframe containing image info.
+    Be used before train_test splitting and before passing to a
+    `ImageDataFrameGenerator`.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame object.
+        Contains image file paths, classes and so on.
+    directory : str. Default is None.
+        A common folder prefix.
+    x_col : str. Default = 'filename'.
+        A column name in `df`. The pointed column contains image file
+        names or relative paths to the `directory`.
+    y_col : str. Default = 'class'.
+        Column name(s) in `df`. The pointed column(s) contain class labels.
+    weight_col : str. Default is None.
+        A column name is `df`. The pointed column contains sample weights.
+    classes : list or tuple. Default is None.
+        A set of class labels to be predicted.
+    class_mode : str or None. Default = 'categorical'.
+        One of the ['binary', 'categorical', 'input', 'multi_output',
+        'raw', 'sparse', None].
+    validate_filenames : bool. Default is True.
+        Whether to filter valid file paths.
+    """
     _check_params(df, x_col, y_col, weight_col, classes, class_mode)
-    df = _filter_valid_filepaths(df, x_col, directory)
-    df, _ = DataFrameIterator._filter_classes(df, y_col, classes)
+    if validate_filenames:
+        df = _filter_valid_filepaths(df, x_col, directory)
+    # this seems to be repeat computation
+    # TODO remove it
+    if class_mode not in ["input", "multi_output", "raw", None]:
+        df, _ = DataFrameIterator._filter_classes(df, y_col, classes)
 
     return df
