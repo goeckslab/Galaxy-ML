@@ -211,16 +211,20 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
             `model.predict_generator()`).
     shuffle: whether to shuffle the data (default: True)
     seed: optional random seed for shuffling and transformations.
+    save_to_dir: Optional directory where to save the pictures
+        being yielded, in a viewable format. This is useful
+        for visualizing the random transformations being
+        applied, for debugging purposes.
+    save_prefix: String prefix to use for saving sample
+        images (if `save_to_dir` is set).
+    save_format: Format to use for saving sample images
+        (if `save_to_dir` is set).
     interpolation: Interpolation method used to resample the image if the
         target size is different from that of the loaded image.
         Supported methods are `"nearest"`, `"bilinear"`, and `"bicubic"`.
         If PIL version 1.1.3 or newer is installed, `"lanczos"` is also
         supported. If PIL version 3.4.0 or newer is installed, `"box"` and
         `"hamming"` are also supported. By default, `"nearest"` is used.
-    validate_filenames: Boolean, whether to validate image filenames in
-        `x_col`. If `True`, invalid images will be ignored. Disabling this
-        option can lead to speed-up in the execution of this function.
-        Default: `True`.
     fit_sample_size : Int. Default is None / 1000.
         Number of training images used in `datagen.fit`.
         Relevant only when `featurewise_center` or
@@ -263,9 +267,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png',
-                 subset=None,
                  interpolation='nearest',
-                 validate_filenames=True,
                  fit_sample_size=None,
                  **kwargs):
         self.featurewise_center = featurewise_center
@@ -300,9 +302,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        self.subset = subset
         self.interpolation = interpolation
-        self.validate_filenames = validate_filenames
         self.fit_sample_size = fit_sample_size or 1000
         self.kwargs = kwargs
 
