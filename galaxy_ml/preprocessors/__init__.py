@@ -10,6 +10,7 @@ from ._genomic_interval_batch_generator import (IntervalsToArrayIterator,
                                                 GenomicIntervalBatchGenerator)
 from ._genomic_variant_batch_generator import GenomicVariantBatchGenerator
 from ._image_batch_generator import ImageDataFrameBatchGenerator
+from ._image_batch_generator import ImageFilesIterator
 
 
 __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
@@ -18,4 +19,4 @@ __all__ = ('Z_RandomOverSampler', 'TDMScaler', 'GenomeOneHotEncoder',
            'FastaDNABatchGenerator', 'FastaRNABatchGenerator',
            'FastaProteinBatchGenerator', 'IntervalsToArrayIterator',
            'GenomicIntervalBatchGenerator', 'GenomicVariantBatchGenerator',
-           'DataFrameIterator')
+           'ImageFilesIterator')

@@ -2,12 +2,15 @@ import numpy as np
 import os
 import warnings
 
-from keras_preprocessing.image import (DataFrameIterator
-                                       as KerasDataFrameIterator)
+from keras_preprocessing.image import Iterator, DataFrameIterator
 from keras_preprocessing.image import ImageDataGenerator
-from keras_preprocessing.image.utils import validate_filename
+from keras_preprocessing.image.utils import (array_to_img,
+                                             img_to_array,
+                                             load_img,
+                                             validate_filename)
 from keras.utils.data_utils import Sequence
 from sklearn.base import BaseEstimator
+from sklearn.utils import check_random_state
 
 
 allowed_class_modes = {
@@ -16,67 +19,107 @@ allowed_class_modes = {
 white_list_formats = ('png', 'jpg', 'jpeg', 'bmp', 'ppm', 'tif', 'tiff')
 
 
-class DataFrameIterator(KerasDataFrameIterator, BaseEstimator, Sequence):
+class ImageFilesIterator(Iterator, BaseEstimator, Sequence):
     """ Override `keras_preprocessing.image.DataFrameIterator`
 
     Parameters
     -----------
-
+    X : 2D-array
+        Index array
+    image_data_generator : Instance of ImageDataFrameBatchGenerator
+    batch_size : Int. Default is 32
     """
-    def __init__(self, dataframe,
-                 directory=None,
-                 image_data_generator=None,
-                 x_col="filename",
-                 y_col="class",
-                 weight_col=None,
-                 target_size=(256, 256),
-                 color_mode='rgb',
-                 classes=None,
-                 class_mode='categorical',
-                 batch_size=32,
-                 shuffle=True,
-                 seed=None,
-                 data_format='channels_last',
-                 save_to_dir=None,
-                 save_prefix='',
-                 save_format='png',
-                 interpolation='nearest',
-                 dtype='float32'):
+    def __init__(self, X,
+                 image_data_generator,
+                 batch_size=32):
+        self.X = np.squeeze(X)
+        self.image_data_generator = image_data_generator
+        self.filepaths = self.image_data_generator.filepaths
+        self.sample_weight = self.image_data_generator.sample_weight
+        self.labels = self.image_data_generator.labels
+        self.target_size = self.image_data_generator.target_size
+        self.color_mode = self.image_data_generator.color_mode
+        self.data_format = self.image_data_generator.data_format
+        self.image_shape = self.image_data_generator.image_shape
+        self.save_to_dir = self.image_data_generator.save_to_dir
+        self.save_prefix = self.image_data_generator.save_prefix
+        self.save_format = self.image_data_generator.save_format
+        self.interpolation = self.image_data_generator.interpolation
+        self.class_mode = self.image_data_generator.class_mode
+        self.dtype = self.image_data_generator.dtype
+        self.shuffle = self.image_data_generator.shuffle
+        self.seed = self.image_data_generator.seed
+        self.class_indices = getattr(self.image_data_generator,
+                                     'class_indices', None)
+        self.classes = getattr(self.image_data_generator,
+                               'classes', None)
 
-        super(DataFrameIterator, self).set_processing_attrs(
-            image_data_generator, target_size, color_mode,
-            data_format, save_to_dir, save_prefix,
-            save_format, interpolation)
+        super(ImageFilesIterator, self).__init__(
+            len(self.X), batch_size, self.shuffle, self.seed)
 
-        df = dataframe.copy()
-        self.directory = directory or ''
-        self.class_mode = class_mode
-        self.dtype = dtype
-        if class_mode not in ["input", "multi_output", "raw", None]:
-            num_classes = len(classes)
-            self.class_indices = dict(zip(classes, range(len(classes))))
-        if class_mode not in ["input", "multi_output", "raw", None]:
-            self.classes = self.get_classes(df, y_col)
-        self.filenames = df[x_col].tolist()
-        self._sample_weight = df[weight_col].values if weight_col else None
-        if class_mode == "multi_output":
-            self._targets = [np.array(df[col].tolist()) for col in y_col]
-        if class_mode == "raw":
-            self._targets = df[y_col].values
-        self.samples = len(self.filenames)
-        if class_mode in ["input", "multi_output", "raw", None]:
-            print('Found {} image filenames.'
-                  .format(self.samples))
+    def _get_batches_of_transformed_samples(self, index_array):
+        """Gets a batch of transformed samples.
+
+        # Arguments
+            index_array: Array of sample indices to include in batch.
+
+        # Returns
+            A batch of transformed samples.
+        """
+        index_array = self.X[index_array]
+        batch_x = np.zeros((len(index_array),) + self.image_shape,
+                           dtype=self.dtype)
+        # build batch of image data
+        # self.filepaths is dynamic, is better to call it once outside the loop
+        filepaths = self.filepaths
+        for i, j in enumerate(index_array):
+            img = load_img(filepaths[j],
+                           color_mode=self.color_mode,
+                           target_size=self.target_size,
+                           interpolation=self.interpolation)
+            x = img_to_array(img, data_format=self.data_format)
+            # Pillow images should be closed after `load_img`,
+            # but not PIL images.
+            if hasattr(img, 'close'):
+                img.close()
+            if self.image_data_generator:
+                params = self.image_data_generator.get_random_transform(
+                    x.shape)
+                x = self.image_data_generator.apply_transform(x, params)
+                x = self.image_data_generator.standardize(x)
+            batch_x[i] = x
+        # optionally save augmented images to disk for debugging purposes
+        if self.save_to_dir:
+            for i, j in enumerate(index_array):
+                img = array_to_img(batch_x[i], self.data_format, scale=True)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e7),
+                    format=self.save_format)
+                img.save(os.path.join(self.save_to_dir, fname))
+        # build batch of labels
+        if self.class_mode == 'input':
+            batch_y = batch_x.copy()
+        elif self.class_mode in {'binary', 'sparse'}:
+            batch_y = np.empty(len(batch_x), dtype=self.dtype)
+            for i, n_observation in enumerate(index_array):
+                batch_y[i] = self.classes[n_observation]
+        elif self.class_mode == 'categorical':
+            batch_y = np.zeros((len(batch_x), len(self.class_indices)),
+                               dtype=self.dtype)
+            for i, n_observation in enumerate(index_array):
+                batch_y[i, self.classes[n_observation]] = 1.
+        elif self.class_mode == 'multi_output':
+            batch_y = [output[index_array] for output in self.labels]
+        elif self.class_mode == 'raw':
+            batch_y = self.labels[index_array]
         else:
-            print('Found {} image filenames belonging to {} classes.'
-                  .format(self.samples, num_classes))
-        self._filepaths = [
-            os.path.join(self.directory, fname) for fname in self.filenames
-        ]
-        super(DataFrameIterator, self).__init__(self.samples,
-                                                batch_size,
-                                                shuffle,
-                                                seed)
+            return batch_x
+        if self.sample_weight is None:
+            return batch_x, batch_y
+        else:
+            return batch_x, batch_y, self.sample_weight[index_array]
 
 
 class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
@@ -166,7 +209,6 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         - `None`, no targets are returned (the generator will only yield
             batches of image data, which is useful to use in
             `model.predict_generator()`).
-    batch_size: size of the batches of data (default: 32).
     shuffle: whether to shuffle the data (default: True)
     seed: optional random seed for shuffling and transformations.
     interpolation: Interpolation method used to resample the image if the
@@ -216,7 +258,6 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
                  color_mode='rgb',
                  classes=None,
                  class_mode='categorical',
-                 batch_size=32,
                  shuffle=True,
                  seed=None,
                  save_to_dir=None,
@@ -227,33 +268,33 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
                  validate_filenames=True,
                  fit_sample_size=None,
                  **kwargs):
-        super(ImageDataFrameBatchGenerator, self).__init__(
-            featurewise_center=featurewise_center,
-            samplewise_center=samplewise_center,
-            featurewise_std_normalization=featurewise_std_normalization,
-            samplewise_std_normalization=samplewise_std_normalization,
-            zca_whitening=zca_whitening, zca_epsilon=zca_epsilon,
-            rotation_range=rotation_range, width_shift_range=width_shift_range,
-            height_shift_range=height_shift_range,
-            brightness_range=brightness_range,
-            shear_range=shear_range, zoom_range=zoom_range,
-            channel_shift_range=channel_shift_range,
-            fill_mode=fill_mode, cval=cval,
-            horizontal_flip=horizontal_flip,
-            vertical_flip=vertical_flip, rescale=rescale,
-            preprocessing_function=preprocessing_function,
-            data_format=data_format,
-            validation_split=0.0, dtype=dtype)
-
+        self.featurewise_center = featurewise_center
+        self.samplewise_center = samplewise_center
+        self.featurewise_std_normalization = featurewise_std_normalization
+        self.samplewise_std_normalization = samplewise_std_normalization
+        self.zca_whitening = zca_whitening
+        self.zca_epsilon = zca_epsilon
+        self.rotation_range = rotation_range
+        self.width_shift_range = width_shift_range
+        self.height_shift_range = height_shift_range
+        self.shear_range = shear_range
+        self.channel_shift_range = channel_shift_range
+        self.fill_mode = fill_mode
+        self.cval = cval
+        self.horizontal_flip = horizontal_flip
+        self.vertical_flip = vertical_flip
+        self.rescale = rescale
+        self.preprocessing_function = preprocessing_function
+        self.interpolation_order = interpolation_order
+        self.dtype = dtype
         self.dataframe = dataframe
         self.directory = directory or ''
         self.x_col = x_col
         self.y_col = y_col
         self.weight_col = weight_col
         self.target_size = target_size
-        self.color_mode = color_mode
         self.classes = classes
-        self.batch_sieze = batch_size
+        self.class_mode = class_mode
         self.shuffle = shuffle
         self.seed = seed
         self.save_to_dir = save_to_dir
@@ -265,43 +306,221 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         self.fit_sample_size = fit_sample_size or 1000
         self.kwargs = kwargs
 
-    def _fit(self, X, augment=False, rounds=1, seed=None):
-        """To replace the method `fit`.
+        if data_format not in {'channels_last', 'channels_first'}:
+            raise ValueError(
+                '`data_format` should be `"channels_last"` '
+                '(channel after row and column) or '
+                '`"channels_first"` (channel before row and column). '
+                'Received: %s' % data_format)
+        self.data_format = data_format
+
+        if not (np.isscalar(zoom_range)
+                or len(zoom_range) == 2):
+            raise ValueError('`zoom_range` should be a float or '
+                             'a tuple or list of two floats. '
+                             'Received: %s' % (zoom_range,))
+        self.zoom_range = zoom_range
+
+        if brightness_range is not None:
+            if (not isinstance(brightness_range, (tuple, list)) or
+                    len(brightness_range) != 2):
+                raise ValueError(
+                    '`brightness_range should be tuple or list of two floats. '
+                    'Received: %s' % (brightness_range,))
+        self.brightness_range = brightness_range
+
+        if color_mode not in {'rgb', 'rgba', 'grayscale'}:
+            raise ValueError('Invalid color mode:', color_mode,
+                             '; expected "rgb", "rgba", or "grayscale".')
+        self.color_mode = color_mode
+
+    @property
+    def filepaths(self):
+        return self._filepaths
+
+    @property
+    def labels(self):
+        if self.class_mode in {"multi_output", "raw"}:
+            return self._targets
+        else:
+            return self.classes
+
+    @property
+    def sample_weight(self):
+        return self._sample_weight
+
+    def set_processing_attrs(self):
+        """set more `ImageDataGenerator` attributes
         """
-        self.fit(X, augment=augment, rounds=rounds, seed=seed)
-        self._fit = True
+        if self.data_format == 'channels_first':
+            self.channel_axis = 1
+            self.row_axis = 2
+            self.col_axis = 3
+        if self.data_format == 'channels_last':
+            self.channel_axis = 3
+            self.row_axis = 1
+            self.col_axis = 2
 
-    def flow(self, X, y=None, batch_size=None):
-        df = self.dataframe.iloc[np.squeeze(X), :]
+        if np.isscalar(self.zoom_range):
+            self.zoom_range = [1 - self.zoom_range, 1 + self.zoom_range]
+        else:
+            self.zoom_range = [self.zoom_range[0], self.zoom_range[1]]
 
-        if self.featurewise_center and not hasattr(self, '_fit'):
+        if self.zca_whitening:
+            if not self.featurewise_center:
+                self.featurewise_center = True
+                warnings.warn('This ImageDataGenerator specifies '
+                              '`zca_whitening`, which overrides '
+                              'setting of `featurewise_center`.')
+            if self.featurewise_std_normalization:
+                self.featurewise_std_normalization = False
+                warnings.warn('This ImageDataGenerator specifies '
+                              '`zca_whitening` '
+                              'which overrides setting of'
+                              '`featurewise_std_normalization`.')
+        if self.featurewise_std_normalization:
+            if not self.featurewise_center:
+                self.featurewise_center = True
+                warnings.warn('This ImageDataGenerator specifies '
+                              '`featurewise_std_normalization`, '
+                              'which overrides setting of '
+                              '`featurewise_center`.')
+        if self.samplewise_std_normalization:
+            if not self.samplewise_center:
+                self.samplewise_center = True
+                warnings.warn('This ImageDataGenerator specifies '
+                              '`samplewise_std_normalization`, '
+                              'which overrides setting of '
+                              '`samplewise_center`.')
+
+        if self.color_mode == 'rgba':
+            if self.data_format == 'channels_last':
+                self.image_shape = self.target_size + (4,)
+            else:
+                self.image_shape = (4,) + self.target_size
+        elif self.color_mode == 'rgb':
+            if self.data_format == 'channels_last':
+                self.image_shape = self.target_size + (3,)
+            else:
+                self.image_shape = (3,) + self.target_size
+        else:
+            if self.data_format == 'channels_last':
+                self.image_shape = self.target_size + (1,)
+            else:
+                self.image_shape = (1,) + self.target_size
+
+        if self.class_mode not in ["input", "multi_output", "raw", None]:
+            _, classes = DataFrameIterator._filter_classes(self.dataframe,
+                                                           self.y_col,
+                                                           self.classes)
+            # build an index of all the unique classes
+            self.class_indices = dict(zip(classes, range(len(classes))))
+            self.classes = self.get_classes(self.dataframe, self.y_col)
+
+        if self.class_mode == "multi_output":
+            self._targets = [np.array(self.dataframe[col].tolist())
+                             for col in self.y_col]
+        if self.class_mode == "raw":
+            self._targets = self.dataframe[self.y_col].values
+
+        self.filenames = self.dataframe[self.x_col].tolist()
+        self._filepaths = [
+            os.path.join(self.directory, fname) for fname in self.filenames
+        ]
+
+        self._sample_weight = self.dataframe[self.weight_col].values \
+            if self.weight_col else None
+
+        self.rng_ = check_random_state(self.seed)
+
+    def flow(self, X, y=None, batch_size=None, sample_weight=None):
+        """ Return a Sequence iterator
+        """
+        if not hasattr(self, 'channel_axis'):
+            self.set_processing_attrs()
+
+        if self.featurewise_center and not hasattr(self, 'mean'):
             X_sample = self.sample(X, sample_size=self.fit_sample_size,
                                    standardize=False)
+            if isinstance(X_sample, tuple):
+                X_sample = X_sample[0]
             # TODO: support other fit parameters.
-            self._fit(X_sample)
+            self.fit(X_sample)
 
-        return DataFrameIterator(
-            df,
-            self,
-            directory=self.directory,
-            x_col=self.x_col,
-            y_col=self.y_col,
-            weight_col=self.weight_col,
-            target_size=self.target_size,
-            color_mode=self.color_mode,
-            classes=self.classes,
-            class_mode=self.class_mode,
-            data_format=self.data_format,
-            batch_size=batch_size or self.batch_size,
-            shuffle=self.shuffle,
-            seed=self.seed,
-            save_to_dir=self.save_to_dir,
-            save_prefix=self.save_prefix,
-            save_format=self.save_format,
-            interpolation=self.interpolation)
+        return ImageFilesIterator(X, self, batch_size=batch_size)
 
     def sample(self, X, sample_size=None, standardize=True):
-        pass
+        """ Retrived fix-sized image tersors
+        """
+        if not sample_size:
+            sample_size = X.shape[0]
+        retrieved_X = np.zeros((sample_size,) + self.image_shape,
+                               dtype=self.dtype)
+
+        filepaths = self.filepaths
+        filepaths = [filepaths[int(j)] for j in np.squeeze(X)]
+
+        indices = np.arange(len(filepaths))
+        sample_index = self.rng_.choice(indices, size=sample_size,
+                                        replace=False)
+        for i, j in enumerate(sample_index):
+            img = load_img(filepaths[j],
+                           color_mode=self.color_mode,
+                           target_size=self.target_size,
+                           interpolation=self.interpolation)
+
+            x = img_to_array(img, data_format=self.data_format)
+            if hasattr(img, 'close'):
+                img.close()
+
+            if not standardize:
+                retrieved_X[i] = x
+                continue
+            params = self.get_random_transform(x.shape)
+            x = self.apply_transform(x, params)
+            x = self.standardize(x)
+            retrieved_X[i] = x
+
+        if self.save_to_dir:
+            for i, j in enumerate(sample_index):
+                img = array_to_img(retrieved_X[i], self.data_format,
+                                   scale=True)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e7),
+                    format=self.save_format)
+                img.save(os.path.join(self.save_to_dir, fname))
+
+        # retrieve labels
+        if self.class_mode == 'input':
+            retrieved_y = retrieved_X.copy()
+        elif self.class_mode in {'binary', 'sparse'}:
+            retrieved_y = np.empty(sample_size, dtype=self.dtype)
+            for i, n_observation in enumerate(sample_index):
+                retrieved_y[i] = self.classes[n_observation]
+        elif self.class_mode == 'categorical':
+            retrieved_y = np.zeros((sample_size, len(self.class_indices)),
+                                   dtype=self.dtype)
+            for i, n_observation in enumerate(sample_index):
+                retrieved_y[i, self.classes[n_observation]] = 1.
+        elif self.class_mode == 'multi_output':
+            retrieved_y = [output[sample_index] for output in self.labels]
+        elif self.class_mode == 'raw':
+            retrieved_y = self.labels[sample_index]
+        else:
+            return retrieved_X
+
+        return retrieved_X, retrieved_y
+
+    def get_classes(self, df, y_col):
+        labels = []
+        for label in df[y_col]:
+            if isinstance(label, (list, tuple)):
+                labels.append([self.class_indices[lbl] for lbl in label])
+            else:
+                labels.append(self.class_indices[label])
+        return labels
 
 
 # Refer to `DataFrameIterator._check_params`
@@ -354,9 +573,6 @@ def _check_params(df, x_col, y_col, weight_col, classes, class_mode):
                         .format(weight_col))
 
 
-_filter_classes = DataFrameIterator._filter_classes
-
-
 # refer to `DataFrameIterator._filter_valid_filepaths`
 def _filter_valid_filepaths(df, x_col, directory):
     """Keep only dataframe rows with valid filenames
@@ -380,3 +596,12 @@ def _filter_valid_filepaths(df, x_col, directory):
             .format(n_invalid, x_col)
         )
     return df[mask]
+
+
+def clean_image_dataframe(df, directory, x_col, y_col, weight_col,
+                          classes, class_mode):
+    _check_params(df, x_col, y_col, weight_col, classes, class_mode)
+    df = _filter_valid_filepaths(df, x_col, directory)
+    df, _ = DataFrameIterator._filter_classes(df, y_col, classes)
+
+    return df
