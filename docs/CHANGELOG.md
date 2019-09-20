@@ -1,4 +1,17 @@
-### Version 0.7.12 / tool_main: 1.0.7.12 / stacking: 0.2.0 / keras: 0.4.2 (09-09-2019)
+### Version 0.8.0.dev  (09-18-2019)
+
+#### New Features
+
+- Adds circleci config and update a lot api tests.
+
+#### Changes
+
+#### Bug Fixes
+
+- Fixes random_state error in `_predict_generator`.
+
+
+### Version 0.7.13 / tool_main: 1.0.7.12 / stacking: 0.2.0 / keras: 0.4.2 (09-18-2019)
 
 #### New Features
 
