@@ -11,16 +11,21 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
-            pip install flake8 nose pytest
+            pip install flake8 nose pytest coverage
             python setup.py build_ext --inplace
+            mkdir test-reports
       - run:
           name: Flake8
           command: |
             . venv/bin/activate
-            flake8 ./
+            flake8 . --count --exit-zero --max-complexity=10 --statistics
+            coverage report && coverage xml -o test-reports/coverage.xml
       - run:
           name: Run API Tests
           command: |
             . venv/bin/activate
             cd ./galaxy_ml
             nosetests ./tests -sv
+      - store_test_results:
+          path: test-reports
+
