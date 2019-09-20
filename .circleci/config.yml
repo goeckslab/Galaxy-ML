@@ -6,15 +6,15 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install venv
+          name: Build Dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
             python setup.py build_ext --inplace
-            pip install nose
+            pip install nose, pytest
       - run:
-          name: run tests
+          name: Run API Tests
           command: |
             . venv/bin/activate
             cd ./galaxy_ml

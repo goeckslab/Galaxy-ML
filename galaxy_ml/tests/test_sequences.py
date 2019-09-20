@@ -233,6 +233,7 @@ def test_protein_one_hot_encoder():
     assert np.array_equal(trans, expect), trans
 
 
+@nottest
 def test_genomic_interval_batch_generator():
     # selene case1 genome file, file not uploaded
     ref_genome_path = '/projects/selene/manuscript/case1/data/'\

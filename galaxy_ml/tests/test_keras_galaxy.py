@@ -329,7 +329,7 @@ def test_get_params_base_keras_model():
             got[key] = value
 
     expect = {
-        'amsgrad': None, 'batch_size': None,
+        'amsgrad': None, 'batch_size': 32,
         'beta_1': None, 'beta_2': None,
         'callbacks': None, 'decay': 0,
         'epochs': 1, 'epsilon': None,
@@ -521,7 +521,7 @@ def test_funtional_model_get_params():
 
     expect = {
         'amsgrad': None,
-        'batch_size': None,
+        'batch_size': 32,
         'beta_1': None,
         'beta_2': None,
         'callbacks': None,
@@ -723,7 +723,7 @@ def test_keras_batch_classifier_get_params():
 
     got.pop('data_batch_generator', None)
     expect = {
-        'amsgrad': None, 'batch_size': None, 'beta_1': None,
+        'amsgrad': None, 'batch_size': 32, 'beta_1': None,
         'beta_2': None, 'callbacks': None,
         'class_positive_factor': 1,
         'data_batch_generator__brightness_range': None,
@@ -873,7 +873,7 @@ def test_keras_fasta_batch_classifier():
            and not key.endswith('generator')}
 
     expect = {
-        'amsgrad': None, 'batch_size': None,
+        'amsgrad': None, 'batch_size': 32,
         'beta_1': None, 'beta_2': None, 'callbacks': None,
         'class_positive_factor': 1,
         'data_batch_generator__fasta_path':
@@ -921,6 +921,7 @@ def test_keras_fasta_protein_batch_classifier():
                                                  seed=42)
     classifier = KerasGBatchClassifier(config, batch_generator,
                                        model_type='functional',
+                                       batch_size=32,
                                        epochs=3, seed=0)
 
     params = classifier.get_params()
@@ -932,7 +933,7 @@ def test_keras_fasta_protein_batch_classifier():
             got[key] = value
 
     expect = {
-        'amsgrad': None, 'batch_size': None, 'beta_1': None,
+        'amsgrad': None, 'batch_size': 32, 'beta_1': None,
         'beta_2': None, 'callbacks': None,
         'class_positive_factor': 1,
         'data_batch_generator__fasta_path': 'None',
@@ -975,8 +976,8 @@ def test_keras_fasta_protein_batch_classifier():
 
     grid.fit(X1, y1)
     print(grid.cv_results_)
-    got = grid.cv_results_['mean_test_acc'].tolist()
-    assert got == [0.48], got
+    got = grid.cv_results_['mean_test_acc'].tolist()[0]
+    assert 0.4 <= got <= 0.6, got
 
 
 @nottest
