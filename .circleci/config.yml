@@ -11,17 +11,16 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
+            pip install flake8 nose pytest
             python setup.py build_ext --inplace
       - run:
           name: Flake8
           command: |
             . venv/bin/activate
-            pip install flake8
-            flake8
+            flake8 ./
       - run:
           name: Run API Tests
           command: |
             . venv/bin/activate
-            pip install nose pytest
             cd ./galaxy_ml
             nosetests ./tests -sv
