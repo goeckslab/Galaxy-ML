@@ -29,6 +29,8 @@ from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
 from galaxy_ml.model_validations import _fit_and_score
 
+from nose.tools import nottest
+
 
 warnings.simplefilter('ignore')
 
@@ -977,6 +979,7 @@ def test_keras_fasta_protein_batch_classifier():
     assert got == [0.48], got
 
 
+@nottest
 def test_keras_genomic_intervals_batch_classifier():
     # selene case1 genome file, file not uploaded
     ref_genome_path = '/projects/selene/manuscript/case1/data/'\
@@ -1066,6 +1069,7 @@ def test_meric_callback():
     assert np.array_equal(y_val, y)
 
 
+@nottest
 def test_predict_generator():
     ref_genome_path = 'projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'

@@ -13,6 +13,8 @@ from galaxy_ml.preprocessors import ProteinOneHotEncoder
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
 from galaxy_ml.preprocessors import GenomicVariantBatchGenerator
 
+from nose.tools import nottest
+
 try:
     import pyfaidx
 except ImportError:
@@ -344,6 +346,7 @@ def test_genomic_interval_batch_generator():
     generator2.close()
 
 
+@nottest
 def test_genomic_variant_batch_generator():
     # selene case2 and 3 genome file, file not uploaded
     ref_genome_path = "/projects/selene/manuscript/case3/"\
