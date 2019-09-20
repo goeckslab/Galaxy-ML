@@ -1,5 +1,3 @@
-import sys
-import os
 from nose.tools import raises
 from galaxy_ml.utils import try_get_attr
 

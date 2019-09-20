@@ -181,4 +181,3 @@ def _handle_long_ref(ref_encoding,
     if not references_match:
         seq_encoding = ref_encoding
     return references_match, seq_encoding, sequence_at_ref
-
