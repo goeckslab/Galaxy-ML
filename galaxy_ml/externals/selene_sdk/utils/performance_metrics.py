@@ -197,7 +197,7 @@ def compute_score(prediction, target, metric_fn,
                     feature_targets, feature_preds)
             except ValueError:  # do I need to make this more generic?
                 continue
-    valid_feature_scores = [s for s in feature_scores if not np.isnan(s)] # Allow 0 or negative values.
+    valid_feature_scores = [s for s in feature_scores if not np.isnan(s)]  # Allow 0 or negative values.
     if not valid_feature_scores:
         return None, feature_scores
     average_score = np.average(valid_feature_scores)
