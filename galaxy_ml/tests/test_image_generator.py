@@ -11,17 +11,57 @@ from sklearn.base import clone
 train_test_split.__test__ = False
 
 
+df = pd.read_csv('./tools/test-data/trainLabels_500.tsv', sep='\t')
+df['id'] = df['id'].apply(lambda x: str(x) + '.png')
+directory = './tools/test-data/cifar-10_500/'
+
+x_col = 'id'
+y_col = 'label'
+class_mode = 'categorical'
+
+df = clean_image_dataframe(df, directory, x_col=x_col, y_col=y_col,
+                           class_mode=class_mode)
+
+
+def test_image_dataframe_generator_get_params():
+    batch_generator = ImageDataFrameBatchGenerator(
+        df, directory=directory,
+        x_col=x_col, y_col=y_col,
+        shuffle=False, seed=42,
+        class_mode=class_mode,
+        target_size=(32, 32),
+        featurewise_center=True,
+        featurewise_std_normalization=True,
+        rotation_range=20,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        horizontal_flip=True,
+        fit_sample_size=None)
+
+    got = batch_generator.get_params()
+    got = {k: v for k, v in got.items() if k != 'dataframe'}
+    expect = {
+        'brightness_range': None, 'channel_shift_range': 0.0,
+        'class_mode': 'categorical', 'classes': None, 'color_mode': 'rgb',
+        'cval': 0.0, 'data_format': 'channels_last',
+        'directory': './tools/test-data/cifar-10_500/',
+        'dtype': 'float32', 'featurewise_center': True,
+        'featurewise_std_normalization': True, 'fill_mode': 'nearest',
+        'fit_sample_size': None, 'height_shift_range': 0.2,
+        'horizontal_flip': True, 'interpolation': 'nearest',
+        'interpolation_order': 1, 'preprocessing_function': None,
+        'rescale': None, 'rotation_range': 20, 'samplewise_center': False,
+        'samplewise_std_normalization': False, 'save_format': 'png',
+        'save_prefix': '', 'save_to_dir': None, 'seed': 42,
+        'shear_range': 0.0, 'shuffle': False, 'target_size': (32, 32),
+        'vertical_flip': False, 'weight_col': None,
+        'width_shift_range': 0.2, 'x_col': 'id', 'y_col': 'label',
+        'zca_epsilon': 1e-06, 'zca_whitening': False, 'zoom_range': 0.0}
+
+    assert got == expect, got
+
+
 def test_image_dataframe_generator():
-    df = pd.read_csv('./tools/test-data/trainLabels_500.tsv', sep='\t')
-    df['id'] = df['id'].apply(lambda x: str(x) + '.png')
-    directory = './tools/test-data/cifar-10_500/'
-
-    x_col = 'id'
-    y_col = 'label'
-    class_mode = 'categorical'
-
-    df = clean_image_dataframe(df, directory, x_col=x_col, y_col=y_col,
-                               class_mode=class_mode)
 
     image_generator = ImageDataFrameBatchGenerator(
         df, directory=directory,
