@@ -1,3 +1,22 @@
+"""
+ImageDataFrameBatchGenerator + ImageFilesIterator vs.
+ImageDataGenerator + DataFrameIterator in Keras
+
+1) Both generate image batch tensor data from a `pandas.DataFrame` file
+    with on-line augumentation.
+
+But,
+
+2) dataframe spit has been stripped, as we plan to use sklearn splitters
+    to manage the validation splitting.
+3) dataframe consistance check and cleanup are moved out into utility
+    function `clean_image_dataframe`, which is better to be used before
+    data splitting and aslo before passing to a generator instance.
+4) all parameters are initiated in the `ImageDataFrameBatchGenerator` and
+    `ImageFilesIterator` becomes very simplified.
+5) `ImageDataFrameBatchGenerator` is sklearn api - compatible.
+"""
+
 import numpy as np
 import os
 import warnings
@@ -124,7 +143,7 @@ class ImageFilesIterator(Iterator, BaseEstimator, Sequence):
 
 class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
     """ Extend `keras_preprocessing.image.ImageDataGenerator` to work with
-    DataFrameIterator exclusively, generating batches of tensor data from
+    DataFrame exclusively, generating batches of tensor data from
     images with online augumentation.
 
     Parameters
@@ -622,6 +641,7 @@ def _filter_valid_filepaths(df, x_col, directory):
 def clean_image_dataframe(df, directory=None, x_col='filename',
                           y_col='class', weight_col=None,
                           classes=None, class_mode='categorical',
+                          drop_duplicates=True,
                           validate_filenames=True):
     """utils to check and clean up the dataframe containing image info.
     Be used before train_test splitting and before passing to a
@@ -645,9 +665,13 @@ def clean_image_dataframe(df, directory=None, x_col='filename',
     class_mode : str or None. Default = 'categorical'.
         One of the ['binary', 'categorical', 'input', 'multi_output',
         'raw', 'sparse', None].
+    drop_duplicates : bool. Default is True.
+        Whether to drop duplicates in the dataframe.
     validate_filenames : bool. Default is True.
         Whether to filter valid file paths.
     """
+    if drop_duplicates:
+        df.drop_duplicates(inplace=True)
     _check_params(df, x_col, y_col, weight_col, classes, class_mode)
     if validate_filenames:
         df = _filter_valid_filepaths(df, x_col, directory)
