@@ -419,7 +419,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.loss = loss
         self.metrics = metrics
         self.epochs = epochs
-        self.batch_size = batch_size
+        self.batch_size = batch_size or 32
         self.seed = seed
         self.callbacks = callbacks
         self.validation_data = validation_data
@@ -667,7 +667,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
         fit_params.update(dict(epochs=self.epochs,
-                               batch_size=self.batch_size or 32,
+                               batch_size=self.batch_size,
                                callbacks=callbacks,
                                validation_data=validation_data,
                                steps_per_epoch=steps_per_epoch,
