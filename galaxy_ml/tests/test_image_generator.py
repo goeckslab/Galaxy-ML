@@ -39,7 +39,7 @@ def test_image_dataframe_generator_get_params():
         fit_sample_size=None)
 
     got = batch_generator.get_params()
-    got = {k: v for k, v in got.items() if k != 'dataframe'}
+    got.pop('dataframe')
     expect = {
         'brightness_range': None, 'channel_shift_range': 0.0,
         'class_mode': 'categorical', 'classes': None, 'color_mode': 'rgb',
