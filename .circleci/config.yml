@@ -15,7 +15,7 @@ jobs:
       - run:
           name: Flake8
           command: |
-            git diff ..master | flake8 ./galaxy_ml --count --statistics --exit-zero
+            git diff ..master | flake8 ./galaxy_ml --statistics --exit-zero
             coverage report && coverage xml -o test-reports/coverage.xml
       - run:
           name: Run API Tests
