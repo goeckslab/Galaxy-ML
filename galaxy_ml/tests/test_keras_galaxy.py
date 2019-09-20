@@ -23,7 +23,6 @@ from galaxy_ml.keras_galaxy_models import (
     check_params, SearchParam, KerasLayers, MetricCallback,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier, _predict_generator)
-from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
