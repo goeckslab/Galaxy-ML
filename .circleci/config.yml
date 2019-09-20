@@ -16,7 +16,7 @@ jobs:
           name: Flake8
           command: |
             coverage report && coverage xml -o test-reports/coverage.xml
-            git diff ..master | flake8 --diff --statistics --exit-zero
+            flake8 . --statistics --exit-zero
       - run:
           name: Run API Tests
           command: |
