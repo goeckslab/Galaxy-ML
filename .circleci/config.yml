@@ -8,9 +8,9 @@ jobs:
       - run:
           name: Build Dependencies
           command: |
-            pip install -r requirements.txt
-            pip install flake8 nose pytest coverage | cat; test ${PIPESTATUS[0]} -eq 0
-            python setup.py build_ext --inplace
+            sudo python3 -m pip install -r requirements.txt
+            sudo pip install flake8 nose pytest coverage | cat; test ${PIPESTATUS[0]} -eq 0
+            sudo python setup.py build_ext --inplace
             mkdir test-reports | cat
       - run:
           name: Flake8
