@@ -20,7 +20,7 @@ jobs:
             . venv/bin/activate
             pwd
             ls -al
-            flake8 ./galaxy_ml --count --exit-zero --max-complexity=10 --statistics
+            flake8 ./galaxy_ml --count --exit-zero --statistics
             coverage report && coverage xml -o test-reports/coverage.xml
       - run:
           name: Run API Tests
