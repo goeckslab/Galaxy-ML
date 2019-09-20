@@ -191,13 +191,15 @@ def compute_score(prediction, target, metric_fn,
     for index, feature_preds in enumerate(prediction.T):
         feature_targets = target[:, index]
         if len(np.unique(feature_targets)) > 0 and \
-                np.count_nonzero(feature_targets) > report_gt_feature_n_positives:
+                (np.count_nonzero(feature_targets) >
+                 report_gt_feature_n_positives):
             try:
                 feature_scores[index] = metric_fn(
                     feature_targets, feature_preds)
             except ValueError:  # do I need to make this more generic?
                 continue
-    valid_feature_scores = [s for s in feature_scores if not np.isnan(s)]  # Allow 0 or negative values.
+    # Allow 0 or negative values.
+    valid_feature_scores = [s for s in feature_scores if not np.isnan(s)]
     if not valid_feature_scores:
         return None, feature_scores
     average_score = np.average(valid_feature_scores)
@@ -268,8 +270,9 @@ class PerformanceMetrics(object):
     def __init__(self,
                  get_feature_from_index_fn,
                  report_gt_feature_n_positives=10,
-                 metrics=dict(roc_auc=roc_auc_score,
-                 average_precision=average_precision_score)):
+                 metrics=dict(
+                     roc_auc=roc_auc_score,
+                     average_precision=average_precision_score)):
         """
         Creates a new object of the `PerformanceMetrics` class.
         """
