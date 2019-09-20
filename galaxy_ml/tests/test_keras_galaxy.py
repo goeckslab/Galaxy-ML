@@ -808,7 +808,7 @@ def test_keras_galaxy_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert round(got1[0], 2) == 0.71, got1
+    assert 0.65 <= round(got1[0], 2) <= 0.75, got1
 
 
 def test_keras_galaxy_model_callbacks_girdisearch():
@@ -855,7 +855,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
 
     got1 = grid.best_score_
 
-    assert round(got1, 2) == 0.67, got1
+    assert 0.60 <= round(got1, 2) <= 0.75, got1
 
 
 def test_keras_fasta_batch_classifier():
