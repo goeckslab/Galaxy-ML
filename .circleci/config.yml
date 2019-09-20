@@ -11,13 +11,15 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r requirements.txt
-            pip install flake8 nose pytest coverage
+            pip install flake8 nose pytest coverage | cat; test ${PIPESTATUS[0]} -eq 0
             python setup.py build_ext --inplace
-            mkdir test-reports
+            mkdir test-reports | cat
       - run:
           name: Flake8
           command: |
             . venv/bin/activate
+            pwd
+            ls -al
             flake8 . --count --exit-zero --max-complexity=10 --statistics
             coverage report && coverage xml -o test-reports/coverage.xml
       - run:
