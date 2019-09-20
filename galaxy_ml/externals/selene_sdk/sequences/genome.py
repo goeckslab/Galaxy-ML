@@ -6,7 +6,6 @@ encodings.
 
 """
 import numpy as np
-import pkg_resources
 import pyfaidx
 import tabix
 

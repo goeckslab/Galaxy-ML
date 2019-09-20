@@ -4,11 +4,7 @@ classes or concepts, but still perform specific and important roles
 across many of the packages modules.
 
 """
-from collections import OrderedDict
-import logging
-
 import numpy as np
-import sys
 
 
 def get_indices_and_probabilities(interval_lengths, indices):
