@@ -8,8 +8,6 @@ jobs:
       - run:
           name: Build Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install -r requirements.txt
             pip install flake8 nose pytest coverage | cat; test ${PIPESTATUS[0]} -eq 0
             python setup.py build_ext --inplace
@@ -17,15 +15,11 @@ jobs:
       - run:
           name: Flake8
           command: |
-            . venv/bin/activate
-            pwd
-            ls -al
-            flake8 ./galaxy_ml --count --exit-zero --statistics
+            git diff ..master | flake8 ./galaxy_ml --count --statistics --exit-zero
             coverage report && coverage xml -o test-reports/coverage.xml
       - run:
           name: Run API Tests
           command: |
-            . venv/bin/activate
             cd ./galaxy_ml
             nosetests ./tests -sv
       - store_test_results:
