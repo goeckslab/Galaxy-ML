@@ -53,7 +53,7 @@ jobs:
           command: |
             . ~/venv/bin/activate
             cd galaxy_ml/tools
-            TESTFILES=$(ls -I "*macros.xml" | circleci tests glob "*.xml" | circleci tests split)
+            TESTFILES=$(ls *[!macros].xml | circleci tests split)
             planemo test ${TESTFILES}
 workflows:
   version: 2
