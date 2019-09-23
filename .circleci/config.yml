@@ -24,3 +24,35 @@ jobs:
       - store_test_results:
           path: test-reports
 
+  test:
+    docker:
+      - image: circleci/python:3.6.8
+    steps:
+      - checkout
+      - run:
+          name: Build Environment
+          command: |
+            cd ~
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install planemo
+            if [[ ! -d ~/miniconda ]]; then
+                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p ~/miniconda;
+            else
+                echo "Using cached miniconda";
+            fi
+      - run:
+          name: Tool Linter
+          command: | 
+            . ~/venv/bin/activate
+            pwd;
+            ls -al
+            cd project/galaxy_ml/tools
+            planemo lint
+      - run:
+          name: Tool Tests
+          command: |
+            . ~/venv/bin/activate
+            cd project/galaxy_ml/tools
+            planemo test
