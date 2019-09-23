@@ -1090,7 +1090,7 @@ def test_predict_generator():
         features=['Proery_BM|GATA1'],
         random_state=random_state
     )
-    generator.fit()
+    generator.set_processing_attrs()
 
     # DeepSea model
     model = Sequential()

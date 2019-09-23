@@ -91,7 +91,7 @@ def test_fasta_iterator():
 def test_fasta_to_array_iterator_params():
     fasta_path = sequence_path
     generator = FastaDNABatchGenerator(fasta_path)
-    generator.fit()
+    generator.set_processing_attrs()
     X = np.arange(2, 8)[:, np.newaxis]
     y = np.array([1, 0, 0, 1, 0, 1])
     toarray_iterator = FastaToArrayIterator(
@@ -125,7 +125,7 @@ def test_fasta_to_array_iterator_params():
 def test_fasta_to_array_iterator_transform():
 
     generator = FastaDNABatchGenerator(sequence_path)
-    generator.fit()
+    generator.set_processing_attrs()
     X = np.arange(2, 8)[:, np.newaxis]
     y = np.array([1, 0, 0, 1, 0, 1])
     toarray_iterator = FastaToArrayIterator(
@@ -262,7 +262,7 @@ def test_genomic_interval_batch_generator():
 
     assert got == expect, got
 
-    generator1.fit()
+    generator1.set_processing_attrs()
 
     features_ = generator1.features_
     n_features_ = generator1.n_features_
@@ -339,7 +339,7 @@ def test_genomic_interval_batch_generator():
 
     # test steps_per_epoch
     generator2 = clone(generator)
-    generator2.fit()
+    generator2.set_processing_attrs()
     gen_flow2 = generator2.flow(X, batch_size=2)
 
     index_arr = next(gen_flow2.index_generator)
@@ -365,7 +365,7 @@ def test_genomic_variant_batch_generator():
 
     assert got == expect, got
 
-    generator1.fit()
+    generator1.set_processing_attrs()
 
     reference_genome_ = generator1.reference_genome_
     start_radius_ = generator1.start_radius_
@@ -390,7 +390,7 @@ def test_genomic_variant_batch_generator():
     generator2 = clone(generator)
     generator2.set_params(output_reference=True)
 
-    generator2.fit()
+    generator2.set_processing_attrs()
     gen_flow = generator2.flow(batch_size=4)
 
     batch_X = next(gen_flow)

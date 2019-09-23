@@ -138,7 +138,7 @@ def main(inputs, infile_estimator, outfile_predict,
         pred_data_generator = klass(
             ref_genome_path=ref_seq, vcf_path=vcf_path, **options)
 
-        pred_data_generator.fit()
+        pred_data_generator.set_processing_attrs()
 
         variants = pred_data_generator.variants
         # TODO : remove the following block after galaxy-ml v0.7.13
