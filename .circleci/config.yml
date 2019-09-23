@@ -23,7 +23,6 @@ jobs:
             nosetests ./tests -sv
       - store_test_results:
           path: test-reports
-
   test:
     docker:
       - image: circleci/python:3.6.8
@@ -56,3 +55,10 @@ jobs:
             . ~/venv/bin/activate
             cd project/galaxy_ml/tools
             planemo test
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
+    
