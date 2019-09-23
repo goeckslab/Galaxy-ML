@@ -45,15 +45,13 @@ jobs:
           name: Tool Linter
           command: | 
             . ~/venv/bin/activate
-            pwd;
-            ls -al
-            cd project/galaxy_ml/tools
+            cd galaxy_ml/tools
             planemo lint
       - run:
           name: Tool Tests
           command: |
             . ~/venv/bin/activate
-            cd project/galaxy_ml/tools
+            cd galaxy_ml/tools
             planemo test
 workflows:
   version: 2
