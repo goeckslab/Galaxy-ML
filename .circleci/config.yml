@@ -23,6 +23,20 @@ jobs:
             nosetests ./tests -sv
       - store_test_results:
           path: test-reports
+  tool_lint:
+    docker:
+      - image: circleci/python:3.6.8
+    steps:
+      - checkout
+      - run:
+          name: Tool Linter
+          command: |
+            cd ~
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install planemo
+            cd project/galaxy_ml/tools
+            planemo lint
   tool_test:
     docker:
       - image: circleci/python:3.6.8
@@ -43,12 +57,6 @@ jobs:
                 echo "Using cached miniconda";
             fi
       - run:
-          name: Tool Linter
-          command: | 
-            . ~/venv/bin/activate
-            cd galaxy_ml/tools
-            planemo lint
-      - run:
           name: Tool Tests
           command: |
             . ~/venv/bin/activate
@@ -60,4 +68,5 @@ workflows:
   build_and_test:
     jobs:
       - build
+      - tool_lint
       - tool_test
