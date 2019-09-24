@@ -33,14 +33,14 @@ class FastaDNABatchGenerator(BaseEstimator):
         }
         self.UNK_BASE = 'N'
 
-    def fit(self):
+    def set_processing_attrs(self):
         self.fasta_file_ = pyfaidx.Fasta(self.fasta_path)
         return self
 
     def flow(self, X, y=None, batch_size=32, sample_weight=None,
              shuffle=None):
         if not hasattr(self, 'fasta_file_'):
-            self.fit()
+            self.set_processing_attrs()
 
         if shuffle is None:
             shuffle = self.shuffle

@@ -6,6 +6,8 @@
 
 #### Changes
 
+- Replaces all generators' `fit` with `set_processing_attrs`.
+
 #### Bug Fixes
 
 - Fixes random_state error in `_predict_generator`.

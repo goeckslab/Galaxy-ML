@@ -1076,7 +1076,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         check_params(kwargs, Model.fit_generator)
 
         self.data_generator_ = clone(self.data_batch_generator)
-        self.data_generator_.fit()
+        self.data_generator_.set_processing_attrs()
 
         if y is not None:
             X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
@@ -1207,7 +1207,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             if not pred_data_generator:
                 if hasattr(self, 'data_batch_generator'):
                     pred_data_generator = clone(self.data_batch_generator)
-                    pred_data_generator.fit()
+                    pred_data_generator.set_processing_attrs()
                 else:
                     raise ValueError("Prediction asks for a data_generator, "
                                      "but none is provided!")
