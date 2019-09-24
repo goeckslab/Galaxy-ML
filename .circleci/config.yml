@@ -23,10 +23,10 @@ jobs:
             nosetests ./tests -sv
       - store_test_results:
           path: test-reports
-  test:
+  tool_test:
     docker:
       - image: circleci/python:3.6.8
-    parallelism: 3
+    parallelism: 4
     steps:
       - checkout
       - run:
@@ -60,5 +60,5 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test
+      - tool_test
     
