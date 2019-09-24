@@ -41,7 +41,7 @@ class GenomicVariantBatchGenerator(BaseEstimator):
         }
         self.UNK_BASE = 'N'
 
-    def fit(self):
+    def set_processing_attrs(self):
         self.reference_genome_ = selene_sdk.sequences.Genome(
             input_path=self.ref_genome_path,
             blacklist_regions=self.blacklist_regions)
@@ -94,7 +94,7 @@ class GenomicVariantBatchGenerator(BaseEstimator):
         batch_size : int, default is 32
         """
         if not hasattr(self, 'reference_genome_'):
-            self.fit()
+            self.set_processing_attrs()
 
         X = np.arange(len(self.variants))[:, np.newaxis]
         return FastaToArrayIterator(

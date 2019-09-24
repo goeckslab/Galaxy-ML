@@ -133,7 +133,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         self.STRAND_SIDES = ('+', '-')
         self.n_bases = 4
 
-    def fit(self):
+    def set_processing_attrs(self):
         if self.features == 'infer':
             features_set = set()
             with open(self.target_path, 'r') as features_file:
@@ -184,7 +184,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
     def flow(self, X, y=None, batch_size=32, sample_weight=None,
              shuffle=None):
         if not hasattr(self, 'reference_genome_'):
-            self.fit()
+            self.set_processing_attrs()
 
         indices, weights = self.get_indices_and_probabilities(X)
 

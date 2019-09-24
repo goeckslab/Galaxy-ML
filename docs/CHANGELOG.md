@@ -2,9 +2,11 @@
 
 #### New Features
 
-- Adds circleci config and update a lot api tests.
+- Adds circleci config for both api and tool tests.
 
 #### Changes
+
+- Replaces all generators' `fit` with `set_processing_attrs`.
 
 #### Bug Fixes
 
