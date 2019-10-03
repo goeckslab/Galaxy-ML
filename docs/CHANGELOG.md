@@ -3,6 +3,7 @@
 #### New Features
 
 - Adds circleci config for both api and tool tests.
+- Adds train_test_split tool which supports shufflesplit, stratifiedshufflesplit, groupshufflesplit and orderedtarget split.
 
 #### Changes
 

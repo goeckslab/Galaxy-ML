@@ -511,8 +511,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                 raise ValueError("GridSearchCV object has no "
                                  "`best_estimator_` when `refit`=False!")
 
-            if best_estimator_.__class__.__name__ == 'KerasGBatchClassifier' \
-                    and hasattr(estimator.data_batch_generator, 'target_path'):
+            if best_estimator_.__class__.__name__ == 'KerasGBatchClassifier':
                 test_score = best_estimator_.evaluate(
                     X_test, scorer=scorer_, is_multimetric=is_multimetric)
             else:
