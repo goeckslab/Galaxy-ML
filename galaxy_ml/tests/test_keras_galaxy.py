@@ -23,7 +23,6 @@ from galaxy_ml.keras_galaxy_models import (
     check_params, SearchParam, KerasLayers, MetricCallback,
     BaseKerasModel, KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier, _predict_generator)
-from galaxy_ml.preprocessors import ImageBatchGenerator
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
@@ -689,78 +688,6 @@ def test_keras_model_load_and_save_weights():
         './tools/test-data/keras_model_drosophila_weights01.h5')
 
     assert abs(got - expect) < 40, got - expect
-
-
-def test_image_batch_generator_get_params():
-    batch_generator = ImageBatchGenerator()
-
-    got = batch_generator.get_params()
-    expect = {'brightness_range': None, 'channel_shift_range': 0.0,
-              'cval': 0.0, 'data_format': 'channels_last',
-              'dtype': 'float32', 'featurewise_center': False,
-              'featurewise_std_normalization': False,
-              'fill_mode': 'nearest', 'height_shift_range': 0.0,
-              'horizontal_flip': False, 'preprocessing_function': None,
-              'rescale': None, 'rotation_range': 0,
-              'samplewise_center': False,
-              'samplewise_std_normalization': False, 'shear_range': 0.0,
-              'validation_split': None, 'vertical_flip': False,
-              'width_shift_range': 0.0, 'zca_epsilon': 1e-06,
-              'zca_whitening': False, 'zoom_range': [1.0, 1.0]}
-
-    assert got == expect, got
-
-
-def test_keras_batch_classifier_get_params():
-    config = model.get_config()
-    batch_generator = ImageBatchGenerator()
-    classifier = KerasGBatchClassifier(
-        config, batch_generator, model_type='sequential', seed=0)
-
-    params = classifier.get_params()
-    got = {key: value for key, value in params.items()
-           if not key.startswith(('config', 'layers'))}
-
-    got.pop('data_batch_generator', None)
-    expect = {
-        'amsgrad': None, 'batch_size': 32, 'beta_1': None,
-        'beta_2': None, 'callbacks': None,
-        'class_positive_factor': 1,
-        'data_batch_generator__brightness_range': None,
-        'data_batch_generator__channel_shift_range': 0.0,
-        'data_batch_generator__cval': 0.0,
-        'data_batch_generator__data_format': 'channels_last',
-        'data_batch_generator__dtype': 'float32',
-        'data_batch_generator__featurewise_center': False,
-        'data_batch_generator__featurewise_std_normalization': False,
-        'data_batch_generator__fill_mode': 'nearest',
-        'data_batch_generator__height_shift_range': 0.0,
-        'data_batch_generator__horizontal_flip': False,
-        'data_batch_generator__preprocessing_function': None,
-        'data_batch_generator__rescale': None,
-        'data_batch_generator__rotation_range': 0,
-        'data_batch_generator__samplewise_center': False,
-        'data_batch_generator__samplewise_std_normalization': False,
-        'data_batch_generator__shear_range': 0.0,
-        'data_batch_generator__validation_split': None,
-        'data_batch_generator__vertical_flip': False,
-        'data_batch_generator__width_shift_range': 0.0,
-        'data_batch_generator__zca_epsilon': 1e-06,
-        'data_batch_generator__zca_whitening': False,
-        'data_batch_generator__zoom_range': [1.0, 1.0],
-        'decay': 0, 'epochs': 1, 'epsilon': None,
-        'loss': 'binary_crossentropy', 'lr': 0.01,
-        'metrics': [], 'model_type': 'sequential', 'momentum': 0,
-        'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
-        'prediction_steps': None, 'rho': None, 'schedule_decay': None,
-        'seed': 0, 'steps_per_epoch': None, 'validation_data': None,
-        'validation_steps': None, 'verbose': 0}
-
-    for k, v in got.items():
-        if k not in expect:
-            print("%s: %s" % (k, v))
-
-    assert got == expect, got
 
 
 def test_keras_galaxy_model_callbacks():

@@ -13,3 +13,4 @@ skrebate==0.6
 imbalanced-learn==0.4.3
 tensorflow==1.13.1
 Keras==2.2.4
+pillow>=6.0.0
