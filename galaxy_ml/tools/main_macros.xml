@@ -6,7 +6,7 @@
   <xml name="python_requirements">
       <requirements>
           <requirement type="package" version="3.6">python</requirement>
-          <requirement type="package" version="0.7.12">Galaxy-ML</requirement>
+          <requirement type="package" version="0.8.0">Galaxy-ML</requirement>
           <yield/>
       </requirements>
   </xml>
@@ -1261,6 +1261,7 @@
         <option value="neg_mean_squared_log_error">Regression -- 'neg_mean_squared_log_error'</option>
         <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
         <option value="r2">Regression -- 'r2'</option>
+        <option value="max_error">Regression -- 'max_error'</option>
         <option value="binarize_auc_scorer">anomaly detection -- binarize_auc_scorer</option>
         <option value="binarize_average_precision_scorer">anomaly detection -- binarize_average_precision_scorer</option>
       </param>
@@ -1291,6 +1292,7 @@
       <when value="neg_mean_squared_log_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="neg_median_absolute_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="r2"><expand macro="secondary_scoring_selection_regression"/></when>
+      <when value="max_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="binarize_auc_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
       <when value="binarize_average_precision_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
     </conditional>
@@ -1329,6 +1331,7 @@
       <option value="neg_mean_squared_log_error">Regression -- 'neg_mean_squared_log_error'</option>
       <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
       <option value="r2">Regression -- 'r2'</option>
+      <option value="max_error">Regression -- 'max_error'</option>
     </param>
   </xml>
 
@@ -1474,6 +1477,8 @@
           <option value="ExtraTreesRegressor">ExtraTreesRegressor</option>
           <option value="GradientBoostingClassifier">GradientBoostingClassifier</option>
           <option value="GradientBoostingRegressor">GradientBoostingRegressor</option>
+          <option value="HistGradientBoostingClassifier">HistGradientBoostingClassifier</option>
+          <option value="HistGradientBoostingRegressor">HistGradientBoostingRegressor</option>
           <option value="IsolationForest">IsolationForest</option>
           <option value="RandomForestClassifier">RandomForestClassifier</option>
           <option value="RandomForestRegressor">RandomForestRegressor</option>

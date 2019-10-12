@@ -1,10 +1,13 @@
-### Version 0.8.0.dev  (09-18-2019)
+### Version 0.8.0  (10-07-2019)
 
 #### New Features
 
 - Adds circleci config for both api and tool tests.
 - Adds train_test_split tool which supports shufflesplit, stratifiedshufflesplit, groupshufflesplit and orderedtarget split.
 - Adds fitted_model_eval tool.
+- Adds 'sklearn.ensemble.HistGradientBoostingClassifier' and 'sklearn.ensemble.HistGradientBoostingRegressor'
+- Adds new regression scorer `max_error`.
+- Upgade scikit-lean to v0.21.3, xgboost to v0.90, mlxtend to v0.17.0, imbalanced-learn to v0.5.0, keras to v2.2.5 and tensorflow to v1.14.0.
 
 #### Changes
 

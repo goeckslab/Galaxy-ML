@@ -389,7 +389,7 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="13" />
-                    <has_text text="0.09003449195911103"/>
+                    <has_text text="0.08719866399898475"/>
                 </assert_contents>
             </output>
         </test>
@@ -420,9 +420,9 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="25" />
-                    <has_text text="0.7879267424165166"/>
-                    <has_text text="0.787865425577799"/>
-                    <has_text text="-29.40436189868029"/>
+                    <has_text text="0.7907463889766593"/>
+                    <has_text text="0.7889248313373195"/>
+                    <has_text text="-29.261532567"/>
                 </assert_contents>
             </output>
         </test>

@@ -412,7 +412,8 @@ def main(inputs, infile_estimator, infile1, infile2,
             rval = cross_validate(
                 searcher, X, y, scoring=options['scoring'],
                 cv=outer_cv, n_jobs=N_JOBS, verbose=0,
-                error_score=options['error_score'])
+                error_score=options['error_score'],
+                return_train_score=True)
         else:
             warnings.simplefilter('always', FitFailedWarning)
             with warnings.catch_warnings(record=True) as w:
@@ -422,7 +423,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                         scoring=options['scoring'],
                         cv=outer_cv, n_jobs=N_JOBS,
                         verbose=0,
-                        error_score=options['error_score'])
+                        error_score=options['error_score'],
+                        return_train_score=True)
                 except ValueError:
                     pass
                 for warning in w:

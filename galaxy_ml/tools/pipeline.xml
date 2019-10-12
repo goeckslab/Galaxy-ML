@@ -32,6 +32,8 @@ from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
 from galaxy_ml.utils import (SafeEval, feature_selector, get_estimator,
                              try_get_attr, get_search_params)
+## TODO remove following imports after scikit-learn v0.22
+from sklearn.experimental import enable_hist_gradient_boosting
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -300,6 +302,25 @@ df.to_csv('$outfile_params', sep='\t', index=False)
     </outputs>
     <tests>
         <test>
+            <conditional name="component_selector">
+                <param name="component_type" value="feature_selection"/>
+                <conditional name="fs_algorithm_selector">
+                    <param name="selected_algorithm" value="RFE"/>
+                    <conditional name="estimator_selector">
+                        <param name="selected_module" value="xgboost"/>
+                        <param name="selected_estimator" value="XGBRegressor"/>
+                        <param name="text_params" value="random_state=0, importance_type='weight'"/>
+                    </conditional>
+                </conditional>
+            </conditional>
+            <section name="final_estimator">
+                <conditional name="estimator_selector">
+                    <param name="selected_module" value="none"/>
+                </conditional>
+            </section>
+            <output name="outfile" file="pipeline12" compare="sim_size" delta="5"/>
+        </test>
+        <test>
             <repeat name="pipeline_component">
                 <conditional name="component_selector">
                     <param name="component_type" value="pre_processor"/>
@@ -445,25 +466,6 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <param name="selected_module" value="ensemble"/>
             <param name="selected_estimator" value="RandomForestRegressor"/>
             <param name="text_params" value="n_estimators=__import__('os').system('ls ~')"/>
-        </test>
-        <test>
-            <conditional name="component_selector">
-                <param name="component_type" value="feature_selection"/>
-                <conditional name="fs_algorithm_selector">
-                    <param name="selected_algorithm" value="RFE"/>
-                    <conditional name="estimator_selector">
-                        <param name="selected_module" value="xgboost"/>
-                        <param name="selected_estimator" value="XGBRegressor"/>
-                        <param name="text_params" value="random_state=0"/>
-                    </conditional>
-                </conditional>
-            </conditional>
-            <section name="final_estimator">
-                <conditional name="estimator_selector">
-                    <param name="selected_module" value="none"/>
-                </conditional>
-            </section>
-            <output name="outfile" file="pipeline12" compare="sim_size" delta="5"/>
         </test>
         <test>
             <conditional name="component_selector">
