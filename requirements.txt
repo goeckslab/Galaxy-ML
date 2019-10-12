@@ -13,4 +13,5 @@ skrebate==0.6
 imbalanced-learn==0.5.0
 tensorflow==1.14.0
 Keras==2.2.5
+pillow>=6.0.0
 readme-renderer==24.0
