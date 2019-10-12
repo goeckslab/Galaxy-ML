@@ -434,22 +434,25 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
     base class to make binarized target specific scorer
     """
     def __call__(self, clf, X, y, sample_weight=None):
-        clf_name = clf.__class__.__name__
-        # support pipeline object
-        if isinstance(clf, Pipeline):
-            main_estimator = clf.steps[-1][-1]
-        # support GridSearchCV/RandomSearchCV
-        elif isinstance(clf, BaseSearchCV):
-            main_estimator = clf.best_estimator_
-        # support stacking ensemble estimators
-        # TODO support nested pipeline/stacking estimators
-        elif clf_name in ['StackingCVClassifier', 'StackingClassifier']:
-            main_estimator = clf.meta_clf_
-        elif clf_name in ['StackingCVRegressor', 'StackingRegressor']:
-            main_estimator = clf.meta_regr_
-        else:
-            main_estimator = clf
 
+        def _get_main_estimator(estimator):
+            est_name = estimator.__class__.__name__
+            # support pipeline object
+            if isinstance(estimator, Pipeline):
+                return _get_main_estimator(estimator.steps[-1][-1])
+            # support GridSearchCV/RandomSearchCV
+            elif isinstance(estimator, BaseSearchCV):
+                return _get_main_estimator(estimator.best_estimator_)
+            # support stacking ensemble estimators
+            # TODO support nested pipeline/stacking estimators
+            elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
+                return _get_main_estimator(estimator.meta_clf_)
+            elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
+                return _get_main_estimator(estimator.meta_regr_)
+            else:
+                return estimator
+
+        main_estimator = _get_main_estimator(clf)
         discretize_value = main_estimator.discretize_value
         less_is_positive = main_estimator.less_is_positive
 
@@ -567,9 +570,10 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         check_is_fitted(self, 'regressor_')
         y_pred = self.regressor_.predict(X)
         if not np.all((y_pred >= 0) & (y_pred <= 1)):
-            y_pred = (y_pred - y_pred.min()) / (y_pred.max() - y_pred.min())
+            raise ValueError("Predict value go out of range [0, 1]")
         if self.less_is_positive:
             y_pred = 1 - y_pred
+
         return y_pred
 
 

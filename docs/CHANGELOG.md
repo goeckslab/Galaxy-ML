@@ -8,10 +8,12 @@
 - Adds 'sklearn.ensemble.HistGradientBoostingClassifier' and 'sklearn.ensemble.HistGradientBoostingRegressor'
 - Adds new regression scorer `max_error`.
 - Upgade scikit-lean to v0.21.3, xgboost to v0.90, mlxtend to v0.17.0, imbalanced-learn to v0.5.0, keras to v2.2.5 and tensorflow to v1.14.0.
+- `binarize_average_precision_scorer` and `binarize_auc_scorer` now support getting `discretize_value` from main_estimator recursively.
 
 #### Changes
 
 - Replaces all generators' `fit` with `set_processing_attrs`.
+- Raise ValueError instead of [0, 1] normalization when predictions from `BinarizeTargetRegressor` go out of range.
 
 #### Bug Fixes
 
