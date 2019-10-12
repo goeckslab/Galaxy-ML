@@ -9,6 +9,7 @@
 #### Changes
 
 - Replaces all generators' `fit` with `set_processing_attrs`.
+- Raise ValueError instead of [0, 1] normalization when predictions from `BinarizeTargetRegressor` go out of range.
 
 #### Bug Fixes
 
