@@ -23,8 +23,8 @@ import six
 from abc import ABCMeta
 from scipy.stats import ttest_ind
 from sklearn import metrics
-from sklearn.base import (BaseEstimator, clone, RegressorMixin,
-                          TransformerMixin)
+from sklearn.base import (BaseEstimator, RegressorMixin,
+                          TransformerMixin, clone)
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.metrics.scorer import _BaseScorer
 from sklearn.model_selection._search import BaseSearchCV
@@ -312,7 +312,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
 
         return self.signature_
 
-    def predict(self, X):
+    def predict_score(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
@@ -326,8 +326,11 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
 
         return corrcoef
 
+    def predict(self, X):
+        return self.predict_score(X)
+
     def predict_label(self, X, clf_cutoff=0.4):
-        return self.predict(X) >= clf_cutoff
+        return self.predict_score(X) >= clf_cutoff
 
 
 class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
@@ -414,76 +417,26 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
 
         return self
 
-    def predict(self, X):
+    def predict_proba(self, X):
         """
         Predict class probabilities of X.
         """
         check_is_fitted(self, 'classifier_')
-        proba = self.classifier_.predict_proba(X)
-        return proba[:, 1]
+        return self.classifier_.predict_proba(X)
 
-    def predict_label(self, X):
+    def predict(self, X):
         """Predict class label of X
         """
         check_is_fitted(self, 'classifier_')
         return self.classifier_.predict(X)
 
-
-class _BinarizeTargetProbaScorer(_BaseScorer):
-    """
-    base class to make binarized target specific scorer
-    """
-    def __call__(self, clf, X, y, sample_weight=None):
-
-        def _get_main_estimator(estimator):
-            est_name = estimator.__class__.__name__
-            # support pipeline object
-            if isinstance(estimator, Pipeline):
-                return _get_main_estimator(estimator.steps[-1][-1])
-            # support GridSearchCV/RandomSearchCV
-            elif isinstance(estimator, BaseSearchCV):
-                return _get_main_estimator(estimator.best_estimator_)
-            # support stacking ensemble estimators
-            # TODO support nested pipeline/stacking estimators
-            elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
-                return _get_main_estimator(estimator.meta_clf_)
-            elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
-                return _get_main_estimator(estimator.meta_regr_)
-            else:
-                return estimator
-
-        main_estimator = _get_main_estimator(clf)
-        discretize_value = main_estimator.discretize_value
-        less_is_positive = main_estimator.less_is_positive
-
-        if less_is_positive:
-            y_trans = y < discretize_value
-        else:
-            y_trans = y > discretize_value
-
-        y_pred = clf.predict(X)
-        if sample_weight is not None:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 sample_weight=sample_weight,
-                                                 **self._kwargs)
-        else:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 **self._kwargs)
-
-
-# roc_auc
-binarize_auc_scorer =\
-        _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
-
-# average_precision_scorer
-binarize_average_precision_scorer =\
-        _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
-
-# roc_auc_scorer
-iraps_auc_scorer = binarize_auc_scorer
-
-# average_precision_scorer
-iraps_average_precision_scorer = binarize_average_precision_scorer
+    def predict_score(self, X):
+        """
+        Output the proba for True label
+        For use in the binarize target scorers.
+        """
+        proba = self.predict_proba(X)
+        return proba[:, 1]
 
 
 class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
@@ -530,6 +483,10 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
                         ensure_2d=False, dtype='numeric')
         y = column_or_1d(y)
 
+        if not np.all((y >= 0) & (y <= 1)):
+            raise ValueError("The target value of BinarizeTargetRegressor "
+                             "must be in the range [0, 1]")
+
         if self.value is None:
             discretize_value = y.mean() + y.std() * self.z_score
         else:
@@ -568,20 +525,18 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         """Predict target value of X
         """
         check_is_fitted(self, 'regressor_')
-        y_pred = self.regressor_.predict(X)
-        if not np.all((y_pred >= 0) & (y_pred <= 1)):
-            raise ValueError("Predict value go out of range [0, 1]")
+        return self.regressor_.predict(X)
+
+    def predict_score(self, X):
+        """
+        Output the proba for True label
+        For use in the binarize target scorers.
+        """
+        pred = self.predict(X)
         if self.less_is_positive:
-            y_pred = 1 - y_pred
+            pred = 1 - pred
 
-        return y_pred
-
-
-# roc_auc_scorer
-regression_auc_scorer = binarize_auc_scorer
-
-# average_precision_scorer
-regression_average_precision_scorer = binarize_average_precision_scorer
+        return pred
 
 
 class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
@@ -661,3 +616,131 @@ class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
         X = check_array(X, dtype=None, accept_sparse='csr')
 
         return self.transformer_.transform(X)
+
+
+def _get_main_estimator(estimator):
+    est_name = estimator.__class__.__name__
+    # support pipeline object
+    if isinstance(estimator, Pipeline):
+        return _get_main_estimator(estimator.steps[-1][-1])
+    # support GridSearchCV/RandomSearchCV
+    elif isinstance(estimator, BaseSearchCV):
+        return _get_main_estimator(estimator.best_estimator_)
+    # support stacking ensemble estimators
+    # TODO support nested pipeline/stacking estimators
+    elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
+        return _get_main_estimator(estimator.meta_clf_)
+    elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
+        return _get_main_estimator(estimator.meta_regr_)
+    else:
+        return estimator
+
+
+class _BinarizeTargetProbaScorer(_BaseScorer):
+    """
+    base class to make binarized target specific scorer
+    """
+    def __call__(self, clf, X, y, sample_weight=None):
+        main_estimator = _get_main_estimator(clf)
+        discretize_value = main_estimator.discretize_value
+        less_is_positive = main_estimator.less_is_positive
+
+        if less_is_positive:
+            y_trans = y < discretize_value
+        else:
+            y_trans = y > discretize_value
+
+        y_score = clf.predict_score(X)
+        if sample_weight is not None:
+            return self._sign * self._score_func(y_trans, y_score,
+                                                 sample_weight=sample_weight,
+                                                 **self._kwargs)
+        else:
+            return self._sign * self._score_func(y_trans, y_score,
+                                                 **self._kwargs)
+
+
+# roc_auc
+binarize_auc_scorer =\
+        _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
+
+# average_precision_scorer
+binarize_average_precision_scorer =\
+        _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
+
+# roc_auc_scorer
+# iraps_auc_scorer = binarize_auc_scorer
+
+# average_precision_scorer
+# iraps_average_precision_scorer = binarize_average_precision_scorer
+
+# roc_auc_scorer
+# regression_auc_scorer = binarize_auc_scorer
+
+# average_precision_scorer
+# regression_average_precision_scorer = binarize_average_precision_scorer
+
+
+class _BinarizeTargetPredictScorer(_BaseScorer):
+    """
+    base class to make binarized target specific scorer
+    """
+    def __call__(self, clf, X, y, sample_weight=None):
+        main_estimator = _get_main_estimator(clf)
+        discretize_value = main_estimator.discretize_value
+        less_is_positive = main_estimator.less_is_positive
+
+        if less_is_positive:
+            y_trans = y < discretize_value
+        else:
+            y_trans = y > discretize_value
+
+        y_pred = clf.predict(X)
+        if sample_weight is not None:
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 sample_weight=sample_weight,
+                                                 **self._kwargs)
+        else:
+            return self._sign * self._score_func(y_trans, y_pred,
+                                                 **self._kwargs)
+
+
+# accuracy_scorer
+binarize_accuracy_scorer =\
+        _BinarizeTargetPredictScorer(metrics.accuracy_score, 1, {})
+
+# balanced_accuracy_scorer
+binarize_balanced_accuracy_scorer =\
+        _BinarizeTargetPredictScorer(
+            metrics.balanced_accuracy_score, 1, {})
+
+BINARIZE_SCORERS = dict(
+    roc_auc=binarize_auc_scorer,
+    average_precision=binarize_average_precision_scorer,
+    accuracy=binarize_accuracy_scorer,
+    balanced_accuracy=binarize_balanced_accuracy_scorer,
+)
+
+
+for name, metric in [('precision', metrics.precision_score),
+                     ('recall', metrics.recall_score),
+                     ('f1', metrics.f1_score)]:
+    BINARIZE_SCORERS[name] = _BinarizeTargetPredictScorer(
+        metric, 1, dict(average='binary'))
+    for average in ['macro', 'micro', 'samples', 'weighted']:
+        qualified_name = '{0}_{1}'.format(name, average)
+        BINARIZE_SCORERS[qualified_name] = _BinarizeTargetPredictScorer(
+            metric, 1, dict(pos_label=None, average=average))
+
+# for regressor scorer
+BINARIZE_SCORERS['explained_variance'] = \
+    metrics.SCORERS['explained_variance']
+BINARIZE_SCORERS['r2'] = metrics.SCORERS['r2']
+BINARIZE_SCORERS['neg_median_absolute_error'] = \
+    metrics.SCORERS['neg_median_absolute_error']
+BINARIZE_SCORERS['neg_mean_absolute_error'] = \
+    metrics.SCORERS['neg_mean_absolute_error']
+BINARIZE_SCORERS['neg_mean_squared_error'] = \
+    metrics.SCORERS['neg_mean_squared_error']
+BINARIZE_SCORERS['neg_mean_squared_log_error'] = \
+    metrics.SCORERS['neg_mean_squared_log_error']
