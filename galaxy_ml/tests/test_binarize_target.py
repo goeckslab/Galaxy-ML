@@ -3,13 +3,13 @@
 import pandas as pd
 import time
 import warnings
-from sklearn.ensemble import RandomForestClassifier 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_validate
 from sklearn.metrics.scorer import balanced_accuracy_scorer
 from sklearn.metrics.scorer import r2_scorer
 from galaxy_ml.model_validations import OrderedKFold
-from galaxy_ml.iraps_classifier import (
+from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer, BINARIZE_SCORERS)
@@ -58,7 +58,7 @@ def test_binarize_target_classifier():
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,
         verbose=0, n_jobs=2)
-    
+
     ap_mean = result_val['test_AP'].mean()
     assert round(ap_mean, 4) == 0.1710, ap_mean
 
@@ -88,7 +88,7 @@ def test_binarize_target_regressor():
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,
         verbose=0, n_jobs=2)
-    
+
     ap_mean = result_val['test_AP'].mean()
     assert round(ap_mean, 4) == 0.1794, ap_mean
     roc_mean = result_val['test_AUC'].mean()
