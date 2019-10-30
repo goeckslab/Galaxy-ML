@@ -1,25 +1,6 @@
+from ..utils import get_main_estimator
 from sklearn import metrics
 from sklearn.metrics.scorer import _BaseScorer
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection._search import BaseSearchCV
-
-
-def _get_main_estimator(estimator):
-    est_name = estimator.__class__.__name__
-    # support pipeline object
-    if isinstance(estimator, Pipeline):
-        return _get_main_estimator(estimator.steps[-1][-1])
-    # support GridSearchCV/RandomSearchCV
-    elif isinstance(estimator, BaseSearchCV):
-        return _get_main_estimator(estimator.best_estimator_)
-    # support stacking ensemble estimators
-    # TODO support nested pipeline/stacking estimators
-    elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
-        return _get_main_estimator(estimator.meta_clf_)
-    elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
-        return _get_main_estimator(estimator.meta_regr_)
-    else:
-        return estimator
 
 
 class _BinarizeTargetProbaScorer(_BaseScorer):
@@ -27,7 +8,7 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
     base class to make binarized target specific scorer
     """
     def __call__(self, clf, X, y, sample_weight=None):
-        main_estimator = _get_main_estimator(clf)
+        main_estimator = get_main_estimator(clf)
         discretize_value = main_estimator.discretize_value
         less_is_positive = main_estimator.less_is_positive
 
@@ -72,7 +53,7 @@ class _BinarizeTargetPredictScorer(_BaseScorer):
     base class to make binarized target specific scorer
     """
     def __call__(self, clf, X, y, sample_weight=None):
-        main_estimator = _get_main_estimator(clf)
+        main_estimator = get_main_estimator(clf)
         discretize_value = main_estimator.discretize_value
         less_is_positive = main_estimator.less_is_positive
 
