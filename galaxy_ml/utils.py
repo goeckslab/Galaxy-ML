@@ -24,6 +24,7 @@ from sklearn import (
     feature_selection, gaussian_process, kernel_approximation, metrics,
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
+from sklearn.pipeline import Pipeline
 
 
 # handle pickle white list file
@@ -723,3 +724,21 @@ def get_module(module):
     if module == 'externals.selene_sdk':
         exec('from externals import selene_sdk')
         return sys.modules['externals.selene_sdk']
+
+
+def get_main_estimator(estimator):
+    est_name = estimator.__class__.__name__
+    # support pipeline object
+    if isinstance(estimator, Pipeline):
+        return get_main_estimator(estimator.steps[-1][-1])
+    # support GridSearchCV/RandomSearchCV
+    elif isinstance(estimator, model_selection._search.BaseSearchCV):
+        return get_main_estimator(estimator.best_estimator_)
+    # support stacking ensemble estimators
+    # TODO support nested pipeline/stacking estimators
+    elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
+        return get_main_estimator(estimator.meta_clf_)
+    elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
+        return get_main_estimator(estimator.meta_regr_)
+    else:
+        return estimator

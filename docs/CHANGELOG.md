@@ -5,10 +5,13 @@
 - Adds circleci config for both api and tool tests.
 - Adds train_test_split tool which supports shufflesplit, stratifiedshufflesplit, groupshufflesplit and orderedtarget split.
 - Adds fitted_model_eval tool.
+- Refactors binarize target estimators. There are a lot of improvements. One of them is that the estimator family now support most sklearn scorers.
 
 #### Changes
 
 - Replaces all generators' `fit` with `set_processing_attrs`.
+- Raise ValueError instead of [0, 1] normalization when predictions from `BinarizeTargetRegressor` go out of range.
+- Refactor `iraps_classifier` module. Binarize target estimators do the same prediction as the wrapped estimator. A delicated `predict_score` is made to work with binarize scorers. 
 
 #### Bug Fixes
 
