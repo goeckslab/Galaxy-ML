@@ -1,4 +1,4 @@
-<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@">
+<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@.1">
     <description>using exhausitive or randomized search</description>
     <macros>
         <import>main_macros.xml</import>
@@ -26,7 +26,9 @@
             --infile1 '$input_options.infile1'
             #end if
             --infile2 '$input_options.infile2'
+            #if $save != 'save_no_fit'
             --outfile_result "`pwd`/tmp_outfile_result"
+            #end if
             #if $save != 'nope'
             --outfile_object '$outfile_object'
             #end if
@@ -36,7 +38,9 @@
             #if $search_schemes.options.cv_selector.selected_cv in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']
             --groups '$search_schemes.options.cv_selector.groups_selector.infile_g'
             #end if
+            #if $save != 'save_no_fit'
             >'$outfile_result' && cp tmp_outfile_result '$outfile_result';
+            #end if
 
         ]]>
     </command>
@@ -91,10 +95,13 @@
             <option value="nope" selected="true">Nope, save is unnecessary</option>
             <option value="save_estimator">Fitted estimator (excluding deep learning)</option>
             <option value="save_weights">Model skeleton and weights, for deep learning exclusively</option>
+            <option value="save_no_fit">Output SearchCV object without fitting</option>
         </param>
     </inputs>
     <outputs>
-        <data format="tabular" name="outfile_result"/>
+        <data format="tabular" name="outfile_result">
+            <filter>save != 'save_no_fit'</filter>
+        </data>
         <data format="zip" name="outfile_object" label="Fitted estimator or estimator skeleton on ${on_string}">
             <filter>save != 'nope'</filter>
         </data>
