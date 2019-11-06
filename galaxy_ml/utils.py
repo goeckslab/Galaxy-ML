@@ -742,3 +742,29 @@ def get_main_estimator(estimator):
         return get_main_estimator(estimator.meta_regr_)
     else:
         return estimator
+
+
+def clean_params(estimator):
+    """clean unwanted hyperparameter settings
+
+    Return
+    ------
+    Cleaned estimator object
+    """
+    ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN',
+                         'ReduceLROnPlateau', 'CSVLogger', 'None')
+
+    estimator_params = estimator.get_params()
+
+    for name, p in estimator_params.items():
+        # all potential unauthorized file write
+        if name.endswith('memory') or name.endswith('_path'):
+            new_p = {name: None}
+            estimator.set_params(**new_p)
+        elif name.endswith('callbacks'):
+            for cb in p:
+                cb_type = cb['callback_selection']['callback_type']
+                if cb_type not in ALLOWED_CALLBACKS:
+                    raise ValueError(
+                        "Prohibited callback type: %s!" % cb_type)
+    return estimator
