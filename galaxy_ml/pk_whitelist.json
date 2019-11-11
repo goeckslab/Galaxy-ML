@@ -691,7 +691,7 @@
     "sklearn.utils.validation.has_fit_parameter", "sklearn.utils.validation.indexable",
     "sklearn.utils.weight_vector.WeightVector", "sklearn.externals.joblib.memory.Memory",
     "sklearn.externals.joblib._store_backends", "sklearn.ensemble.voting.VotingClassifier",
-    "sklearn.ensemble.voting.VotingRegressor"
+    "sklearn.ensemble.voting.VotingRegressor", "sklearn.preprocessing.data.PowerTransformer"
 ],
 
   "SKR_NAMES": [
