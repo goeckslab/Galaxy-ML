@@ -727,6 +727,11 @@ def get_module(module):
 
 
 def get_main_estimator(estimator):
+    """return main estimator. For pipeline, main estimator's
+    final estimator. For fitted SearchCV object, that's the
+    best_estimator_. For stacking ensemble family estimator,
+    main estimator is the meta estimator.
+    """
     est_name = estimator.__class__.__name__
     # support pipeline object
     if isinstance(estimator, Pipeline):
@@ -742,3 +747,37 @@ def get_main_estimator(estimator):
         return get_main_estimator(estimator.meta_regr_)
     else:
         return estimator
+
+
+def clean_params(estimator, n_jobs=None):
+    """clean unwanted hyperparameter settings
+
+    If n_jobs is not None, set it into the estimator, if applicable
+
+    Return
+    ------
+    Cleaned estimator object
+    """
+    ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN',
+                         'ReduceLROnPlateau', 'CSVLogger', 'None')
+
+    estimator_params = estimator.get_params()
+
+    for name, p in estimator_params.items():
+        # all potential unauthorized file write
+        if name == 'memory' or name.endswith('__memory') \
+                or name.endswith('_path'):
+            new_p = {name: None}
+            estimator.set_params(**new_p)
+        elif n_jobs is not None and (name == 'n_jobs' or
+                                     name.endswith('__n_jobs')):
+            new_p = {name: n_jobs}
+            estimator.set_params(**new_p)
+        elif name.endswith('callbacks'):
+            for cb in p:
+                cb_type = cb['callback_selection']['callback_type']
+                if cb_type not in ALLOWED_CALLBACKS:
+                    raise ValueError(
+                        "Prohibited callback type: %s!" % cb_type)
+
+    return estimator
