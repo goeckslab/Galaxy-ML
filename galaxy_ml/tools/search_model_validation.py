@@ -33,8 +33,10 @@ NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
 
 
 # TODO move to galaxy_ml.utils
-def clean_params(estimator):
-    """clean unauthorized hyperparameter settings
+def clean_params(estimator, n_jobs=None):
+    """clean unwanted hyperparameter settings
+
+    If n_jobs is not None, set it into the estimator, if applicable
 
     Return
     ------
@@ -47,8 +49,13 @@ def clean_params(estimator):
 
     for name, p in estimator_params.items():
         # all potential unauthorized file write
-        if name.endswith('memory') or name.endswith('_path'):
+        if name == 'memory' or name.endswith('__memory') \
+                or name.endswith('_path'):
             new_p = {name: None}
+            estimator.set_params(**new_p)
+        elif n_jobs is not None and (name == 'n_jobs' or
+                                     name.endswith('__n_jobs')):
+            new_p = {name: n_jobs}
             estimator.set_params(**new_p)
         elif name.endswith('callbacks'):
             for cb in p:
@@ -56,6 +63,7 @@ def clean_params(estimator):
                 if cb_type not in ALLOWED_CALLBACKS:
                     raise ValueError(
                         "Prohibited callback type: %s!" % cb_type)
+
     return estimator
 
 
@@ -507,13 +515,8 @@ def main(inputs, infile_estimator, infile1, infile2,
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
 
-    # conflict param checker
-    if params['outer_split']['split_mode'] == 'nested_cv' \
-            and params['save'] != 'nope':
-        raise ValueError("Save best estimator is not possible for nested CV!")
-
     if not (params['search_schemes']['options']['refit']) \
-            and params['save'] != 'nope':
+            and params['save'] != 'save_estimator':
         raise ValueError("Save best estimator is not possible when refit "
                          "is False!")
 
@@ -597,10 +600,9 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     searcher = optimizer(estimator, param_grid, **options)
 
-    # do nested CV
     split_mode = params['outer_split'].pop('split_mode')
 
-    if split_mode != 'no':
+    if split_mode == 'nested_cv':
         # make sure refit is choosen
         # this could be True for sklearn models, but not the case for
         # deep learning models
@@ -610,20 +612,63 @@ def main(inputs, infile_estimator, infile1, infile2,
             warnings.warn("Refit is change to `True` for nested validation!")
             setattr(searcher, 'refit', True)
 
+        outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
         # nested CV, outer cv using cross_validate
-        if split_mode == 'nested_cv':
-            outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
-            _do_outer_cv(searcher, X, y, outer_cv, scoring=options['scoring'],
-                         error_score=options['error_score'],
-                         outfile=outfile_result)
-            return 0
+        if options['error_score'] == 'raise':
+            rval = cross_validate(
+                searcher, X, y, scoring=options['scoring'],
+                cv=outer_cv, n_jobs=N_JOBS,
+                verbose=options['verbose'],
+                return_estimator=(params['save'] == 'save_estimator'),
+                error_score=options['error_score'])
+        else:
+            warnings.simplefilter('always', FitFailedWarning)
+            with warnings.catch_warnings(record=True) as w:
+                try:
+                    rval = cross_validate(
+                        searcher, X, y,
+                        scoring=options['scoring'],
+                        cv=outer_cv, n_jobs=N_JOBS,
+                        verbose=options['verbose'],
+                        return_estimator=(params['save'] == 'save_estimator'),
+                        error_score=options['error_score'])
+                except ValueError:
+                    pass
+                for warning in w:
+                    print(repr(warning.message))
 
-        # train test split mode
-        searcher = _do_train_test_split_val(searcher, X, y, params,
-                                            primary_scoring=primary_scoring,
-                                            error_score=options['error_score'],
-                                            groups=groups,
-                                            outfile=outfile_result)
+        fitted_searchers = rval.pop('estimator', [])
+        pwd = __import__('os').getcwd()
+        save_dir = 'fitted_searchcv'
+        __import__('os').mkdir(save_dir)
+        for idx, obj in enumerate(fitted_searchers):
+            obj = clean_params(obj)
+            target_name = obj.__class__.__name__ + '_' + 'split%d' % idx
+            with open(__import__('os').path.join(pwd, save_dir,
+                                                 target_name), 'wb') as f:
+                pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+        keys = list(rval.keys())
+        for k in keys:
+            if k.startswith('test'):
+                rval['mean_' + k] = np.mean(rval[k])
+                rval['std_' + k] = np.std(rval[k])
+            if k.endswith('time'):
+                rval.pop(k)
+        rval = pd.DataFrame(rval)
+        rval = rval[sorted(rval.columns)]
+        rval.to_csv(path_or_buf=outfile_result, sep='\t', header=True,
+                    index=False)
+
+        return 0
+
+        # deprecate train test split mode
+        """searcher = _do_train_test_split_val(
+            searcher, X, y, params,
+            primary_scoring=primary_scoring,
+            error_score=options['error_score'],
+            groups=groups,
+            outfile=outfile_result)"""
 
     # no outer split
     else:
@@ -655,11 +700,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                           "nested gridsearch or `refit` is False!")
             return
 
-        # strip memory
-        for name, p in best_estimator_.get_params().items():
-            if name == 'memory' or name.endswith('__memory'):
-                new_p = {name: None}
-                best_estimator_.set_params(**new_p)
+        # clean prams
+        best_estimator_ = clean_params(best_estimator_)
 
         main_est = get_main_estimator(best_estimator_)
 
