@@ -639,14 +639,14 @@ def main(inputs, infile_estimator, infile1, infile2,
 
         fitted_searchers = rval.pop('estimator', [])
         if fitted_searchers:
-            pwd = __import__('os').getcwd()
-            save_dir = 'cv_results_in_folds'
+            import os
+            pwd = os.getcwd()
+            save_dir = os.path.join(pwd, 'cv_results_in_folds')
             try:
-                __import__('os').mkdir(save_dir)
+                os.mkdir(save_dir)
                 for idx, obj in enumerate(fitted_searchers):
                     target_name = 'cv_results_' + '_' + 'split%d' % idx
-                    target_path = __import__('os').path.join(pwd, save_dir,
-                                                             target_name)
+                    target_path = os.path.join(pwd, save_dir, target_name)
                     cv_results_ = getattr(obj, 'cv_results_', None)
                     if not cv_results_:
                         print("%s is not available" % target_name)
@@ -657,6 +657,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                                        index=False)
             except Exception as e:
                 print(e)
+            finally:
+                del os
 
         keys = list(rval.keys())
         for k in keys:
