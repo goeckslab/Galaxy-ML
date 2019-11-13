@@ -108,10 +108,10 @@
                 <expand macro="cv_reduced" label="Select the outer cv splitter"/>
             </when>
         </conditional>
-        <param name="save" type="select" label="Save best estimator?" help="For a non-deep learning model, save will output fitted best_estimator_ (refit must be true) or a list of fitted SearchCV objects in nested CV mode. For a deep learning model, by checking the boolean option below the model input, the outputs are two parts, model skeleton and weights. Save Deep learning model for nested CV is not supported.">
+        <param name="save" type="select" label="Save best estimator?" help="For a non-deep learning model, save will output fitted best_estimator_ (refit must be true) or a list of cv_results_ from each outer split in nested CV mode. For a deep learning model, by checking the boolean option below the model input, the outputs are two parts, model skeleton and weights. Save Deep learning model for nested CV is not supported.">
             <option value="nope">Nope, save is unnecessary</option>
-            <option value="save_estimator" selected="true">Fitted best estimator and SearCV objects</option>
-            <option value="save_no_fit">Output SearchCV object without fitting</option>
+            <option value="save_estimator" selected="true">Fitted best estimator or Detailed cv_results_ from nested CV</option>
+            <option value="save_no_fit">SearchCV object without fitting</option>
         </param>
     </inputs>
     <outputs>
@@ -124,9 +124,9 @@
         <data format="h5" name="outfile_weights" label="Weights trained on ${on_string}">
             <filter>search_schemes['is_deep_learning'] and save == 'save_estimator' and outer_split['split_mode'] == 'no'</filter>
         </data>
-        <collection type="list" name="outfile_searchcv" label="Fitted nested SearchCV objects on ${on_string}">
+        <collection type="list" name="outfile_in_splits" label="cv_results_ from splits on ${on_string}">
             <filter>not search_schemes['is_deep_learning'] and save == 'save_estimator' and outer_split['split_mode'] == 'nested_cv'</filter>
-            <discover_datasets format="zip" pattern="__name__" directory="fitted_searchcv"/>
+            <discover_datasets format="tabular" pattern="__name__" directory="cv_results_in_folds"/>
         </collection>
         <data format="zip" name="outfile_object_no_fit" label="Unfitted SearchCV on ${on_string}">
             <filter>save == 'save_no_fit'</filter>

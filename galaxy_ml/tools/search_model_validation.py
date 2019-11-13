@@ -640,16 +640,21 @@ def main(inputs, infile_estimator, infile1, infile2,
         fitted_searchers = rval.pop('estimator', [])
         if fitted_searchers:
             pwd = __import__('os').getcwd()
-            save_dir = 'fitted_searchcv'
+            save_dir = 'cv_results_in_folds'
             try:
                 __import__('os').mkdir(save_dir)
                 for idx, obj in enumerate(fitted_searchers):
-                    obj = clean_params(obj)
-                    target_name = obj.__class__.__name__ + '_' \
-                        + 'split%d' % idx
-                    with open(__import__('os').path.join(
-                            pwd, save_dir, target_name), 'wb') as f:
-                        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+                    target_name = 'cv_results_' + '_' + 'split%d' % idx
+                    target_path = __import__('os').path.join(pwd, save_dir,
+                                                             target_name)
+                    cv_results_ = getattr(obj, 'cv_results_', None)
+                    if not cv_results_:
+                        print("%s is not available" % target_name)
+                        continue
+                    cv_results_ = pd.DataFrame(cv_results_)
+                    cv_results_ = cv_results_[sorted(cv_results_.columns)]
+                    cv_results_.to_csv(target_path, sep='\t', header=True,
+                                       index=False)
             except Exception as e:
                 print(e)
 
