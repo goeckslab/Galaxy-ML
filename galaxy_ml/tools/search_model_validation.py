@@ -638,15 +638,20 @@ def main(inputs, infile_estimator, infile1, infile2,
                     print(repr(warning.message))
 
         fitted_searchers = rval.pop('estimator', [])
-        pwd = __import__('os').getcwd()
-        save_dir = 'fitted_searchcv'
-        __import__('os').mkdir(save_dir)
-        for idx, obj in enumerate(fitted_searchers):
-            obj = clean_params(obj)
-            target_name = obj.__class__.__name__ + '_' + 'split%d' % idx
-            with open(__import__('os').path.join(pwd, save_dir,
-                                                 target_name), 'wb') as f:
-                pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        if fitted_searchers:
+            pwd = __import__('os').getcwd()
+            save_dir = 'fitted_searchcv'
+            try:
+                __import__('os').mkdir(save_dir)
+                for idx, obj in enumerate(fitted_searchers):
+                    obj = clean_params(obj)
+                    target_name = obj.__class__.__name__ + '_' \
+                        + 'split%d' % idx
+                    with open(__import__('os').path.join(
+                            pwd, save_dir, target_name), 'wb') as f:
+                        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+            except Exception as e:
+                print(e)
 
         keys = list(rval.keys())
         for k in keys:
