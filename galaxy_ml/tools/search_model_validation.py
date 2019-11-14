@@ -560,7 +560,6 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     splitter, groups = get_cv(options.pop('cv_selector'))
     options['cv'] = splitter
-    options['n_jobs'] = N_JOBS
     primary_scoring = options['scoring']['primary_scoring']
     options['scoring'] = get_scoring(options['scoring'])
     if options['error_score']:
@@ -684,6 +683,7 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     # no outer split
     else:
+        searcher.set_params(n_jobs=N_JOBS)
         if options['error_score'] == 'raise':
             searcher.fit(X, y, groups=groups)
         else:
