@@ -6,7 +6,9 @@
 - Adds train_test_split tool which supports shufflesplit, stratifiedshufflesplit, groupshufflesplit and orderedtarget split.
 - Adds fitted_model_eval tool.
 - Refactors binarize target estimators. There are a lot of improvements. One of them is that the estimator family now support most sklearn scorers.
-- Add clean_params in utils
+- Adds clean_params in utils
+- Adds cv_results_ outputs for nested inner CV and unfitted searchCV object from searchCV tool.
+- 
 
 #### Changes
 
