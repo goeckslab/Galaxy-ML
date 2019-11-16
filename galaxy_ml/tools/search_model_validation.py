@@ -515,10 +515,9 @@ def main(inputs, infile_estimator, infile1, infile2,
     with open(inputs, 'r') as param_handler:
         params = json.load(param_handler)
 
-    if not (params['search_schemes']['options']['refit']) \
-            and params['save'] != 'save_estimator':
-        raise ValueError("Save best estimator is not possible when refit "
-                         "is False!")
+    # Override the refit parameter
+    params['search_schemes']['options']['refit'] = True \
+        if params['save'] != 'nope' else False
 
     with open(infile_estimator, 'rb') as estimator_handler:
         estimator = load_model(estimator_handler)
