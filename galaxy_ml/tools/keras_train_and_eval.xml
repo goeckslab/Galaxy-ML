@@ -227,7 +227,7 @@
                 </assert_contents>
             </output>
             <output name="outfile_weights" file="train_test_eval_weights02.h5" compare="sim_size" delta="5"/>
-            <output name="outfile_y_preds" file="keras_train_eval_preds02.tabular" ftype="tabular"/>
+            <output name="outfile_y_true" file="keras_train_eval_y_true02.tabular" ftype="tabular"/>
         </test>
         <test>
             <conditional name="experiment_schemes">
