@@ -13,6 +13,7 @@
         #if $input_options.selected_input == 'refseq_and_interval'
         bgzip -c '$input_options.target_file' > '${target_file.element_identifier}.gz' &&
         tabix -p bed '${target_file.element_identifier}.gz' &&
+        cp '$input_options.ref_genome_file' '${ref_genome_file.element_identifier}' &&
         #end if
         python '$__tool_directory__/keras_train_and_eval.py'
             --inputs '$inputs'
@@ -20,7 +21,7 @@
             #if $input_options.selected_input == 'seq_fasta'
             --fasta_path '$input_options.fasta_path'
             #elif $input_options.selected_input == 'refseq_and_interval'
-            --ref_seq '$input_options.ref_genome_file'
+            --ref_seq "`pwd`/${ref_genome_file.element_identifier}"
             --interval '$input_options.interval_file'
             --targets "`pwd`/${target_file.element_identifier}.gz"
             #else
