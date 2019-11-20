@@ -8,7 +8,7 @@
 - Refactors binarize target estimators. There are a lot of improvements. One of them is that the estimator family now support most sklearn scorers.
 - Adds clean_params in utils
 - Adds cv_results_ outputs for nested inner CV and unfitted searchCV object from searchCV tool.
-- 
+- Adds keras training and evaluation tool.
 
 #### Changes
 
@@ -19,6 +19,7 @@
 #### Bug Fixes
 
 - Fixes random_state error in `_predict_generator`.
+- Fixes stale path issue by replace relative paths with full paths.
 
 
 ### Version 0.7.13 / tool_main: 1.0.7.12 / stacking: 0.2.0 / keras: 0.4.2 (09-18-2019)

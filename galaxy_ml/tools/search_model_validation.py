@@ -4,6 +4,7 @@ import imblearn
 import joblib
 import json
 import numpy as np
+import os
 import pandas as pd
 import pickle
 import skrebate
@@ -25,9 +26,10 @@ _fit_and_score = try_get_attr('galaxy_ml.model_validations', '_fit_and_score')
 setattr(_search, '_fit_and_score', _fit_and_score)
 setattr(_validation, '_fit_and_score', _fit_and_score)
 
-N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
+N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 # handle  disk cache
-CACHE_DIR = './cached'
+CACHE_DIR = os.path.join(os.getcwd(), 'cached')
+del os
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
                   'nthread', 'callbacks')
 
