@@ -56,7 +56,7 @@
             </param>
             <when value="train_val">
                 <expand macro="estimator_and_hyperparameter"/>
-                <section name="test_split" title="Test holdout" expanded="false">
+                <section name="test_split" title="Validation holdout" expanded="false">
                     <expand macro="train_test_split_params">
                         <expand macro="cv_groups"/>
                     </expand>
@@ -72,7 +72,7 @@
                         <expand macro="cv_groups"/>
                     </expand>
                 </section>
-                <section name="val_split" title="Validation holdout (recommend using the same method for both validation and test)" expanded="false">
+                <section name="val_split" title="Validation holdout (recommend using the same splitting method as for test holdout)" expanded="false">
                     <expand macro="train_test_split_params"/>
                 </section>
                 <section name="metrics" title="Metrics for evaluation" expanded="false">
