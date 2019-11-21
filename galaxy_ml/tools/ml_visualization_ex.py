@@ -124,8 +124,8 @@ def main(inputs, infile_estimator=None, infile1=None,
         fig = go.Figure(data=[trace], layout=layout)
 
     elif plot_type == 'pr_curve':
-        df1 = pd.read_csv(infile1, sep='\t', header=None)
-        df2 = pd.read_csv(infile2, sep='\t', header=None)
+        df1 = pd.read_csv(infile1, sep='\t', header='infer')
+        df2 = pd.read_csv(infile2, sep='\t', header='infer')
 
         precision = {}
         recall = {}
@@ -169,8 +169,8 @@ def main(inputs, infile_estimator=None, infile1=None,
         fig = go.Figure(data=data, layout=layout)
 
     elif plot_type == 'roc_curve':
-        df1 = pd.read_csv(infile1, sep='\t', header=None)
-        df2 = pd.read_csv(infile2, sep='\t', header=None)
+        df1 = pd.read_csv(infile1, sep='\t', header='infer')
+        df2 = pd.read_csv(infile2, sep='\t', header='infer')
 
         fpr = {}
         tpr = {}
