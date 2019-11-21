@@ -1,11 +1,9 @@
 import numpy as np
 
-from ..model_validations import OrderedKFold
 from sklearn.base import (BaseEstimator, clone, RegressorMixin,
                           TransformerMixin)
 from sklearn.utils.validation import (check_array, check_is_fitted,
                                       column_or_1d)
-from sklearn.model_selection import cross_val_predict
 
 
 class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
@@ -97,29 +95,25 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             self.n_outputs_ = self.classifier_.n_outputs_
         if hasattr(self.classifier_, 'n_features_'):
             self.n_features_ = self.classifier_.n_features_
+        if hasattr(self.classifier_, 'decision_function'):
+            self.decision_function = self.classifier_.decision_function
+        if hasattr(self.classifier_, 'predict_proba'):
+            self.predict_proba = self.classifier_.predict_proba
+        self.predict = self.classifier_.predict
 
         return self
-
-    def predict_proba(self, X):
-        """
-        Predict class probabilities of X.
-        """
-        check_is_fitted(self, 'classifier_')
-        return self.classifier_.predict_proba(X)
-
-    def predict(self, X):
-        """Predict class label of X
-        """
-        check_is_fitted(self, 'classifier_')
-        return self.classifier_.predict(X)
 
     def predict_score(self, X):
         """
         Output the proba for True label
         For use in the binarize target scorers.
         """
-        proba = self.predict_proba(X)
-        return proba[:, 1]
+        check_is_fitted(self, 'classifier_')
+        try:
+            return self.classifier_.decision_function(X)
+        except (NotImplementedError, AttributeError):
+            # binary classification
+            return self.classifier_.predict_proba(X)[:, 1]
 
 
 class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):

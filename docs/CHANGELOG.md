@@ -9,6 +9,7 @@
 - Adds clean_params in utils
 - Adds cv_results_ outputs for nested inner CV and unfitted searchCV object from searchCV tool.
 - Adds keras training and evaluation tool.
+- Adds support of decision_function for binarize target classifiers
 
 #### Changes
 
