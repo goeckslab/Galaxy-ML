@@ -9,13 +9,14 @@
 - Adds clean_params in utils
 - Adds cv_results_ outputs for nested inner CV and unfitted searchCV object from searchCV tool.
 - Adds keras training and evaluation tool.
-- Adds support of decision_function for binarize target classifiers
+- Adds support of decision_function for binarize target classifiers.
 
 #### Changes
 
 - Replaces all generators' `fit` with `set_processing_attrs`.
 - Raise ValueError instead of [0, 1] normalization when predictions from `BinarizeTargetRegressor` go out of range.
-- Refactor `iraps_classifier` module. Binarize target estimators do the same prediction as the wrapped estimator. A delicated `predict_score` is made to work with binarize scorers. 
+- Refactor `iraps_classifier` module. Binarize target estimators do the same prediction as the wrapped estimator. A delicated `predict_score` is made to work with binarize scorers.
+- Changes precision-recall curve and ROC curve to take headers  and upgrade plotly to v4.3.0 in ml_visualization_ex tool
 
 #### Bug Fixes
 
