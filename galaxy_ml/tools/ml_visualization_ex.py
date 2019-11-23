@@ -413,7 +413,7 @@ def main(inputs, infile_estimator=None, infile1=None,
     __import__('os').rename('output.html', 'output')
 
     # save pdf file to disk
-    fig.write_image("image.pdf", format='pdf')
+    #fig.write_image("image.pdf", format='pdf')
 
 
 if __name__ == '__main__':
