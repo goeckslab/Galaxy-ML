@@ -484,7 +484,7 @@
             <param name="infile_params" value="get_params05.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 300]"/>
-                <param name="sp_name" value="randomforestregressor__n_estimators"/>
+                <param name="sp_name" value="n_estimators"/>
             </repeat>
             <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
             <param name="header1" value="true" />
@@ -634,11 +634,11 @@
             <param name="infile_params" value="get_params12.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 100, 200]"/>
-                <param name="sp_name" value="rfe__estimator__n_estimators"/>
+                <param name="sp_name" value="estimator__n_estimators"/>
             </repeat>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, None]"/>
-                <param name="sp_name" value="rfe__n_features_to_select"/>
+                <param name="sp_name" value="n_features_to_select"/>
             </repeat>
             <param name="primary_scoring" value="r2"/>
             <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
@@ -654,36 +654,6 @@
                 </assert_contents>
             </output>
         </test>
-        <!--test>
-            <conditional name="search_schemes">
-                <param name="selected_search_scheme" value="GridSearchCV"/>
-                <param name="infile_estimator" value="pipeline05" ftype="zip"/>
-                <section name="search_params_builder">
-                    <param name="infile_params" value="get_params05.tabular" ftype="tabular"/>
-                    <repeat name="param_set">
-                        <param name="sp_list" value="[10, 50, 100, 300]"/>
-                        <param name="sp_name" value="randomforestregressor__n_estimators"/>
-                    </repeat>
-                </section>
-            </conditional>
-            <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
-            <param name="header1" value="true" />
-            <param name="selected_column_selector_option" value="all_columns"/>
-            <param name="infile2" value="regression_y.tabular" ftype="tabular"/>
-            <param name="header2" value="true" />
-            <param name="selected_column_selector_option2" value="all_columns"/>
-            <conditional name="outer_split">
-                <param name="split_mode" value="train_test_split"/>
-                <param name="shuffle" value="simple"/>
-                <param name="random_state" value="123"/>
-            </conditional>
-            <output name="outfile_result">
-                <assert_contents>
-                    <has_n_columns n="1"/>
-                    <has_text text="0.8124083594523798"/>
-                </assert_contents>
-            </output>
-        </test>-->
         <test>
             <conditional name="search_schemes">
                 <param name="selected_search_scheme" value="GridSearchCV"/>
@@ -692,7 +662,7 @@
                     <param name="infile_params" value="get_params05.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_list" value="[10, 50, 100, 300]"/>
-                        <param name="sp_name" value="randomforestregressor__n_estimators"/>
+                        <param name="sp_name" value="n_estimators"/>
                     </repeat>
                 </section>
             </conditional>
