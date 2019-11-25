@@ -17,6 +17,20 @@ from galaxy_ml.utils import load_model, read_columns, SafeEval
 
 safe_eval = SafeEval()
 
+# plotly default colors
+default_colors = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#2ca02c',  # cooked asparagus green
+    '#d62728',  # brick red
+    '#9467bd',  # muted purple
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf'   # blue-teal
+]
+
 
 def main(inputs, infile_estimator=None, infile1=None,
          infile2=None, outfile_result=None,
@@ -71,6 +85,7 @@ def main(inputs, infile_estimator=None, infile1=None,
 
     title = params['plotting_selection']['title'].strip()
     plot_type = params['plotting_selection']['plot_type']
+
     if plot_type == 'feature_importances':
         with open(infile_estimator, 'rb') as estimator_handler:
             estimator = load_model(estimator_handler)
@@ -124,8 +139,8 @@ def main(inputs, infile_estimator=None, infile1=None,
         fig = go.Figure(data=[trace], layout=layout)
 
     elif plot_type == 'pr_curve':
-        df1 = pd.read_csv(infile1, sep='\t', header=None)
-        df2 = pd.read_csv(infile2, sep='\t', header=None)
+        df1 = pd.read_csv(infile1, sep='\t', header='infer')
+        df2 = pd.read_csv(infile2, sep='\t', header='infer')
 
         precision = {}
         recall = {}
@@ -133,9 +148,9 @@ def main(inputs, infile_estimator=None, infile1=None,
 
         pos_label = params['plotting_selection']['pos_label'].strip() \
             or None
-        for col in df1.columns:
-            y_true = df1[col].values
-            y_score = df2[col].values
+        for col in range(df1.shape[1]):
+            y_true = df1.iloc[:, col].values
+            y_score = df2.iloc[:, col].values
 
             precision[col], recall[col], _ = precision_recall_curve(
                 y_true, y_score, pos_label=pos_label)
@@ -150,27 +165,56 @@ def main(inputs, infile_estimator=None, infile1=None,
                 pos_label=pos_label or 1)
 
         data = []
-        for key in precision.keys():
+        for idx, key in enumerate(precision.keys()):
             trace = go.Scatter(
                 x=recall[key],
                 y=precision[key],
                 mode='lines',
+                marker=dict(
+                    color=default_colors[idx % len(default_colors)]
+                ),
                 name='%s (area = %.2f)' % (key, ap[key]) if key == 'micro'
-                     else 'column %s (area = %.2f)' % (key, ap[key])
+                     else 'column %s (area = %.3f)' % (key, ap[key])
             )
             data.append(trace)
 
         layout = go.Layout(
-            title=title or "Precision-Recall curve",
             xaxis=dict(title='Recall'),
-            yaxis=dict(title='Precision')
+            yaxis=dict(title='Precision'),
+            title=dict(
+                text=title or "Precision-Recall curve",
+                x=0.5,
+                y=0.92,
+                xanchor='center',
+                yanchor='top'
+            ),
+            font=dict(
+                family="sans-serif",
+                size=11
+            ),
+            # control backgroud colors
+            plot_bgcolor='rgba(255,255,255,0)'
         )
+        """
+        legend=dict(
+            x=0.95,
+            y=0,
+            traceorder="normal",
+            font=dict(
+                family="sans-serif",
+                size=9,
+                color="black"
+            ),
+            bgcolor="LightSteelBlue",
+            bordercolor="Black",
+            borderwidth=2
+        ),"""
 
         fig = go.Figure(data=data, layout=layout)
 
     elif plot_type == 'roc_curve':
-        df1 = pd.read_csv(infile1, sep='\t', header=None)
-        df2 = pd.read_csv(infile2, sep='\t', header=None)
+        df1 = pd.read_csv(infile1, sep='\t', header='infer')
+        df2 = pd.read_csv(infile2, sep='\t', header='infer')
 
         fpr = {}
         tpr = {}
@@ -178,9 +222,9 @@ def main(inputs, infile_estimator=None, infile1=None,
 
         pos_label = params['plotting_selection']['pos_label'].strip() \
             or None
-        for col in df1.columns:
-            y_true = df1[col].values
-            y_score = df2[col].values
+        for col in range(df1.shape[1]):
+            y_true = df1.iloc[:, col].values
+            y_score = df2.iloc[:, col].values
 
             fpr[col], tpr[col], _ = roc_curve(
                 y_true, y_score, pos_label=pos_label)
@@ -192,13 +236,16 @@ def main(inputs, infile_estimator=None, infile1=None,
             roc_auc['micro'] = auc(fpr["micro"], tpr["micro"])
 
         data = []
-        for key in fpr.keys():
+        for idx, key in enumerate(fpr.keys()):
             trace = go.Scatter(
                 x=fpr[key],
                 y=tpr[key],
                 mode='lines',
+                marker=dict(
+                    color=default_colors[idx % len(default_colors)]
+                ),
                 name='%s (area = %.2f)' % (key, roc_auc[key]) if key == 'micro'
-                     else 'column %s (area = %.2f)' % (key, roc_auc[key])
+                     else 'column %s (area = %.3f)' % (key, roc_auc[key])
             )
             data.append(trace)
 
@@ -209,10 +256,37 @@ def main(inputs, infile_estimator=None, infile1=None,
         data.append(trace)
 
         layout = go.Layout(
-            title=title or "Receiver operating characteristic curve",
             xaxis=dict(title='False Positive Rate'),
-            yaxis=dict(title='True Positive Rate')
+            yaxis=dict(title='True Positive Rate'),
+            title=dict(
+                text=title or "Receiver operating characteristic curve",
+                x=0.5,
+                y=0.92,
+                xanchor='center',
+                yanchor='top'
+            ),
+            font=dict(
+                family="sans-serif",
+                size=11
+            ),
+            # control backgroud colors
+            plot_bgcolor='rgba(255,255,255,0)'
         )
+        """
+        # legend=dict(
+                # x=0.95,
+                # y=0,
+                # traceorder="normal",
+                # font=dict(
+                #    family="sans-serif",
+                #    size=9,
+                #    color="black"
+                # ),
+                # bgcolor="LightSteelBlue",
+                # bordercolor="Black",
+                # borderwidth=2
+            # ),
+        """
 
         fig = go.Figure(data=data, layout=layout)
 
@@ -231,8 +305,35 @@ def main(inputs, infile_estimator=None, infile1=None,
         layout = go.Layout(
             xaxis=dict(title="Number of features selected"),
             yaxis=dict(title="Cross validation score"),
-            title=title or None
+            title=dict(
+                text=title or None,
+                x=0.5,
+                y=0.92,
+                xanchor='center',
+                yanchor='top'
+            ),
+            font=dict(
+                family="sans-serif",
+                size=11
+            ),
+            # control backgroud colors
+            plot_bgcolor='rgba(255,255,255,0)'
         )
+        """
+        # legend=dict(
+                # x=0.95,
+                # y=0,
+                # traceorder="normal",
+                # font=dict(
+                #    family="sans-serif",
+                #    size=9,
+                #    color="black"
+                # ),
+                # bgcolor="LightSteelBlue",
+                # bordercolor="Black",
+                # borderwidth=2
+            # ),
+        """
 
         fig = go.Figure(data=[data], layout=layout)
 
@@ -264,8 +365,37 @@ def main(inputs, infile_estimator=None, infile1=None,
             yaxis=dict(
                 title='Performance Score'
             ),
-            title=title or 'Learning Curve'
+            # modify these configurations to customize image
+            title=dict(
+                text=title or 'Learning Curve',
+                x=0.5,
+                y=0.92,
+                xanchor='center',
+                yanchor='top'
+            ),
+            font=dict(
+                family="sans-serif",
+                size=11
+            ),
+            # control backgroud colors
+            plot_bgcolor='rgba(255,255,255,0)'
         )
+        """
+        # legend=dict(
+                # x=0.95,
+                # y=0,
+                # traceorder="normal",
+                # font=dict(
+                #    family="sans-serif",
+                #    size=9,
+                #    color="black"
+                # ),
+                # bgcolor="LightSteelBlue",
+                # bordercolor="Black",
+                # borderwidth=2
+            # ),
+        """
+
         fig = go.Figure(data=[data1, data2], layout=layout)
 
     elif plot_type == 'keras_plot_model':
@@ -281,6 +411,9 @@ def main(inputs, infile_estimator=None, infile1=None,
                         auto_open=False)
     # to be discovered by `from_work_dir`
     __import__('os').rename('output.html', 'output')
+
+    # save pdf file to disk
+    #fig.write_image("image.pdf", format='pdf')
 
 
 if __name__ == '__main__':

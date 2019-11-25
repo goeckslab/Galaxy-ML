@@ -1,13 +1,15 @@
-<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@">
+<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@.1">
     <description>includes several types of plotting for machine learning</description>
     <macros>
         <import>main_macros.xml</import>
         <import>keras_macros.xml</import>
     </macros>
     <expand macro="python_requirements">
-        <requirement type="package" version="3.1.1">plotly</requirement>
+        <requirement type="package" version="4.3.0">plotly</requirement>
         <requirement type="package" version="2.40.1">graphviz</requirement>
         <requirement type="package" version="1.4.1">pydot</requirement>
+        <requirement type="package" version="5.6.5">psutil</requirement>
+        <requirement type="package" version="2.22.0">requests</requirement>
     </expand>
     <expand macro="macro_stdio"/>
     <version_command>echo "@VERSION@"</version_command>
@@ -47,14 +49,14 @@
                 <param name="title" type="text" value="" optional="true" label="Plot title" help="Optional. If change is desired."/>
             </when>
             <when value="pr_curve">
-                <param name="infile1" type="data" format="tabular" label="Select the dataset containing true labels." help="No headers. For 2-class, single column contains both class labels (e.g. True and False). For multi-label, each column, hot-encoded, corresponds to one label."/>
-                <param name="infile2" type="data" format="tabular" label="Select the dataset containing predicted probabilities." help="No headers. For 2-class, sinle column or the first column contains scores for the positive label. For multi-label, each column corresponds to one label."/>
+                <param name="infile1" type="data" format="tabular" label="Select the dataset containing true labels." help="y_true. Headered. For 2-class, single column contains both class labels (e.g. True and False). For multi-label, each column, hot-encoded, corresponds to one label."/>
+                <param name="infile2" type="data" format="tabular" label="Select the dataset containing predicted probabilities." help="y_preds. Headered. For 2-class, sinle column or the first column contains scores for the positive label. For multi-label, each column corresponds to one label."/>
                 <param name="pos_label" type="text" value="" optional="true" label="pos_label" help="The label of positive class. If not specified, it will be 1 by default."/>
                 <param name="title" type="text" value="" optional="true" label="Plot title" help="Optional. If change is desired."/>
             </when>
             <when value="roc_curve">
-                <param name="infile1" type="data" format="tabular" label="Select the dataset containing true labels." help="No headers. For 2-class, single column contains both class labels (e.g. True and False). For multi-label, each column, hot-encoded, corresponds to one label."/>
-                <param name="infile2" type="data" format="tabular" label="Select the dataset containing predicted probabilities." help="No headers. For 2-class, sinle column or the first column contains scores for the positive label. For multi-label, each column corresponds to one label."/>
+                <param name="infile1" type="data" format="tabular" label="Select the dataset containing true labels." help="y_true. Headered. For 2-class, single column contains both class labels (e.g. True and False). For multi-label, each column, hot-encoded, corresponds to one label."/>
+                <param name="infile2" type="data" format="tabular" label="Select the dataset containing predicted probabilities." help="y_preds. Headered. For 2-class, sinle column or the first column contains scores for the positive label. For multi-label, each column corresponds to one label."/>
                 <param name="pos_label" type="text" value="" optional="true" label="pos_label" help="The label of positive class. If not specified, it will be 1 by default."/>
                 <param name="drop_intermediate" type="boolean" truevalue="booltrue" falsevalue="boolfalse" optional="true" checked="true" label="drop_intermediate" help="Whether to drop some suboptimal thresholds which would not appear on a plotted ROC curve."/>
                 <param name="title" type="text" value="" optional="true" label="Plot title" help="Optional. If change is desired."/>
