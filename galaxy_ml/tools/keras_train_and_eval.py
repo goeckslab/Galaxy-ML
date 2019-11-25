@@ -476,9 +476,13 @@ def main(inputs, infile_estimator, infile1, infile2,
         scores = _score(estimator, X_test, y_test, scorer,
                         is_multimetric=True)
     if outfile_y_true:
-        pd.DataFrame(y_true).to_csv(outfile_y_true, sep='\t', index=False)
-        pd.DataFrame(predictions).to_csv(outfile_y_preds, sep='\t',
-                                         index=False)
+        try:
+            pd.DataFrame(y_true).to_csv(outfile_y_true, sep='\t',
+                                        index=False)
+            pd.DataFrame(predictions).to_csv(outfile_y_preds, sep='\t',
+                                             index=False)
+        except Exception as e:
+            print("Error in saving predictions: %s" % e)
 
     # handle output
     for name, score in scores.items():
