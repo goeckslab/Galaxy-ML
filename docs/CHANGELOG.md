@@ -17,6 +17,7 @@
 - Raise ValueError instead of [0, 1] normalization when predictions from `BinarizeTargetRegressor` go out of range.
 - Refactor `iraps_classifier` module. Binarize target estimators do the same prediction as the wrapped estimator. A delicated `predict_score` is made to work with binarize scorers.
 - Changes precision-recall curve and ROC curve to take headers  and upgrade plotly to v4.3.0 in ml_visualization_ex tool
+- Change to dynamic output of pipeline or final main estimator
 
 #### Bug Fixes
 
