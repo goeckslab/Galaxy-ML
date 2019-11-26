@@ -560,9 +560,9 @@ df.to_csv('$outfile_params', sep='\t', index=False)
 **What it does**
 This tool not only builds sklearn pipeline object, but also builds single main estimator or even a single preprocessing component. The script automatically chooses the output type based on length of pipeline steps. When there is only one step, either a main estimator or preprocessor, the element is output directly instead of wrapping in a pipeline object.
 
-Pipeline is an importand concept in supervised machine learning. It often relates to accuracy of model evaluation. It's recommended that all preprocessing steps should be included in pipeline whenever it's possible.
+Pipeline is one of key utilities that scikit-learn provides, which not only offers convenience to combine a chain of transforms together with a final estimator, but also relates to accuracy of model evaluation. It's recommended that all preprocessing steps should be included in pipeline whenever it's possible.
 
-A typical pipeline in sklearn contains one or more preprocessing steps plus a final main estimator. For example, one can stack a sklearn feature selctor, preprocessing scaler and a main estimator together, i.e., [VarianceThreshold, StandardScaler, SGDClassifier].
+A typical pipeline in sklearn chains one or more preprocessing steps plus a final main estimator. For example, one can stack a sklearn feature selctor, preprocessing scaler and a main estimator together, i.e., [VarianceThreshold, StandardScaler, SGDClassifier].
 For more information, please refer to `Scikit-learn pipeline Pipeline`_.
 
 **Pre-processing components** allow None, one or a combination of up to 5 transformations from `sklearn.preprocessing`_, `feature_selection`_, `decomposition`_, `kernel_approximation`_, `cluster.FeatureAgglomeration`_ and/or `skrebate`_.
