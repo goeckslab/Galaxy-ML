@@ -479,8 +479,9 @@ def main(inputs, infile_estimator, infile1, infile2,
         try:
             pd.DataFrame(y_true).to_csv(outfile_y_true, sep='\t',
                                         index=False)
-            pd.DataFrame(predictions).to_csv(outfile_y_preds, sep='\t',
-                                             index=False)
+            pd.DataFrame(predictions).astype(np.float32).to_csv(
+                outfile_y_preds, sep='\t', index=False,
+                float_format='%g', chunksize=10000)
         except Exception as e:
             print("Error in saving predictions: %s" % e)
 
