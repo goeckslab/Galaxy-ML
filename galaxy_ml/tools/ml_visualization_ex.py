@@ -114,11 +114,9 @@ def visualize_pr_curve_plotly(df1, df2, pos_label, title=None):
     # to be discovered by `from_work_dir`
     os.rename('output.html', 'output')
 
-    return 0
-
 
 def visualize_pr_curve_matplotlib(df1, df2, pos_label, title=None):
-    """visualize pr-curve using matplotlib and output png image
+    """visualize pr-curve using matplotlib and output svg image
     """
     backend = matplotlib.get_backend()
     if "inline" not in backend:
@@ -148,8 +146,6 @@ def visualize_pr_curve_matplotlib(df1, df2, pos_label, title=None):
     plt.savefig(os.path.join(folder, "output.svg"), format="svg")
     os.rename(os.path.join(folder, "output.svg"),
               os.path.join(folder, "output"))
-
-    return 0
 
 
 def visualize_roc_curve_plotly(df1, df2, pos_label,
@@ -235,13 +231,11 @@ def visualize_roc_curve_plotly(df1, df2, pos_label,
     # to be discovered by `from_work_dir`
     os.rename('output.html', 'output')
 
-    return 0
-
 
 def visualize_roc_curve_matplotlib(df1, df2, pos_label,
                                    drop_intermediate=True,
                                    title=None):
-    """visualize roc-curve using matplotlib and output png image
+    """visualize roc-curve using matplotlib and output svg image
     """
     backend = matplotlib.get_backend()
     if "inline" not in backend:
@@ -270,8 +264,6 @@ def visualize_roc_curve_matplotlib(df1, df2, pos_label,
     plt.savefig(os.path.join(folder, "output.svg"), format="svg")
     os.rename(os.path.join(folder, "output.svg"),
               os.path.join(folder, "output"))
-
-    return 0
 
 
 def main(inputs, infile_estimator=None, infile1=None,
@@ -386,6 +378,8 @@ def main(inputs, infile_estimator=None, infile1=None,
         # to be discovered by `from_work_dir`
         os.rename('output.html', 'output')
 
+        return 0
+
     elif plot_type in ('pr_curve', 'roc_curve'):
         df1 = pd.read_csv(infile1, sep='\t', header='infer')
         df2 = pd.read_csv(infile2, sep='\t', header='infer').astype(np.float32)
@@ -417,6 +411,8 @@ def main(inputs, infile_estimator=None, infile1=None,
                     df1, df2, pos_label,
                     drop_intermediate=drop_intermediate,
                     title=title)
+
+        return 0
 
     elif plot_type == 'rfecv_gridscores':
         input_df = pd.read_csv(infile1, sep='\t', header='infer')
@@ -468,6 +464,8 @@ def main(inputs, infile_estimator=None, infile1=None,
                             auto_open=False)
         # to be discovered by `from_work_dir`
         os.rename('output.html', 'output')
+
+        return 0
 
     elif plot_type == 'learning_curve':
         input_df = pd.read_csv(infile1, sep='\t', header='infer')
@@ -533,6 +531,8 @@ def main(inputs, infile_estimator=None, infile1=None,
                             auto_open=False)
         # to be discovered by `from_work_dir`
         os.rename('output.html', 'output')
+
+        return 0
 
     elif plot_type == 'keras_plot_model':
         with open(model_config, 'r') as f:
