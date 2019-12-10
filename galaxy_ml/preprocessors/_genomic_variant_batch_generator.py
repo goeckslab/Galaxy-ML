@@ -52,6 +52,10 @@ class GenomicVariantBatchGenerator(BaseEstimator):
         variants = selene_sdk.predict._variant_effect_prediction.\
             read_vcf_file(self.vcf_path)
 
+        # store indices of variants whose ref sequence doesn't match the
+        # reference genome
+        self.unmatches = []
+
         # clean variants
         self.variants = []
         for chrom, pos, name, ref, alt, strand in variants:
@@ -134,6 +138,7 @@ class GenomicVariantBatchGenerator(BaseEstimator):
                               "reference does not match the reference genome. "
                               "Reference genome contains {5} instead. ".format(
                                   chrom, pos, name, ref, alt, seq_at_ref))
+                self.unmatches.append(idx)
             return seq_encoding
 
         # return variant encoding
