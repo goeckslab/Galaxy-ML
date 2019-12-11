@@ -573,7 +573,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
             curr_dir = __import__('os').getcwd()
 
-            if callback_type == 'None':
+            if callback_type in ('None', ''):
                 continue
             elif callback_type == 'ModelCheckpoint':
                 if not params.get('filepath', None):

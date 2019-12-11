@@ -581,7 +581,7 @@ def get_scoring(scoring_json):
         my_scorers['balanced_accuracy'] =\
             metrics.make_scorer(balanced_accuracy_score)
 
-    if scoring_json['secondary_scoring'] != 'None'\
+    if scoring_json['secondary_scoring'] not in ('None', '')\
             and scoring_json['secondary_scoring'] !=\
             scoring_json['primary_scoring']:
         return_scoring = {}
