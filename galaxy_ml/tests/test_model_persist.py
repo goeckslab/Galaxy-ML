@@ -10,11 +10,14 @@ from sklearn import (
     naive_bayes, neighbors, pipeline, preprocessing, svm,
     tree, discriminant_analysis)
 
+from nose.tools import nottest
+
 
 test_model = './tools/test-data/gbr_model01_py3'
 result_json = './tools/test-data/gbr_model01_py3.json'
 
 
+@nottest
 def test_jpikle_dumpc():
     with open(test_model, 'rb') as f:
         model = pickle.load(f)
