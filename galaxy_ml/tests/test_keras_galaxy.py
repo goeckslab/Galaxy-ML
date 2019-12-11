@@ -196,6 +196,7 @@ def test_update_dict():
         'config': {
             'name': 'dense_1',
             'trainable': True,
+            'dtype': 'float32',
             'units': 64,
             'activation': 'linear',
             'use_bias': True,
@@ -227,6 +228,7 @@ def test_get_params_keras_layers():
         'layers_0_Dense__class_name', 'layers_0_Dense__config',
         'layers_0_Dense__config__name',
         'layers_0_Dense__config__trainable',
+        'layers_0_Dense__config__dtype',
         'layers_0_Dense__config__units',
         'layers_0_Dense__config__activation',
         'layers_0_Dense__config__use_bias',
@@ -249,14 +251,17 @@ def test_get_params_keras_layers():
         'layers_1_Activation__config',
         'layers_1_Activation__config__name',
         'layers_1_Activation__config__trainable',
+        'layers_1_Activation__config__dtype',
         'layers_1_Activation__config__activation',
         'layers_2_Activation__class_name', 'layers_2_Activation__config',
         'layers_2_Activation__config__name',
         'layers_2_Activation__config__trainable',
+        'layers_2_Activation__config__dtype',
         'layers_2_Activation__config__activation',
         'layers_3_Dense__class_name',
         'layers_3_Dense__config', 'layers_3_Dense__config__name',
         'layers_3_Dense__config__trainable',
+        'layers_3_Dense__config__dtype',
         'layers_3_Dense__config__units',
         'layers_3_Dense__config__activation',
         'layers_3_Dense__config__use_bias',
@@ -405,7 +410,8 @@ def test_gridsearchcv_keras_g_classifier():
     cv = StratifiedKFold(n_splits=5)
 
     grid = GridSearchCV(classifier, param_grid, cv=cv,
-                        scoring='accuracy', refit=True)
+                        scoring='accuracy', refit=True,
+                        error_score='raise')
     grid_result = grid.fit(X, y)
 
     got1 = round(grid_result.best_score_, 2)
@@ -418,7 +424,7 @@ def test_gridsearchcv_keras_g_classifier():
             ['kernel_initializer']['config']['seed'])
 
     print(grid_result.best_score_)
-    assert got1 == 0.71, got1
+    assert got1 == 0.70, got1
     assert got2 == 0.003, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -470,7 +476,7 @@ def test_gridsearchcv_keras_g_regressor():
     got6 = (grid_result.best_estimator_.config['layers'][1]['config']
             ['kernel_initializer']['config']['seed'])
 
-    assert got1 == 0.0, got1
+    assert got1 == 0.02, got1
     assert got2 == 0.002, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -546,6 +552,7 @@ def test_funtional_model_get_params():
         'layers_1_Conv2D__config': {
             'name': 'conv2d_1',
             'trainable': True,
+            'dtype': 'float32',
             'filters': 32,
             'kernel_size': (3, 3),
             'strides': (1, 1),
@@ -570,6 +577,7 @@ def test_funtional_model_get_params():
             'bias_constraint': None},
         'layers_1_Conv2D__config__name': 'conv2d_1',
         'layers_1_Conv2D__config__trainable': True,
+        'layers_1_Conv2D__config__dtype': 'float32',
         'layers_1_Conv2D__config__filters': 32,
         'layers_1_Conv2D__config__kernel_size': (3, 3),
         'layers_1_Conv2D__config__strides': (1, 1),
@@ -645,7 +653,9 @@ def test_to_json_keras_g_classifier():
 
     with open('./tools/test-data/to_json.txt', 'r') as f:
         expect = f.read()
-    assert got == expect, got
+    expect = json.loads(expect)
+
+    assert json.loads(got) == expect, got
 
 
 def test_keras_model_to_json():
