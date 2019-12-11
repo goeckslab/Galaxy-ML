@@ -376,6 +376,14 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         score_time = 0.0
         if error_score == 'raise':
             raise
+        elif error_score == 'raise-deprecating':
+            warnings.warn("From version 0.22, errors during fit will result "
+                          "in a cross validation score of NaN by default. Use "
+                          "error_score='raise' if you want an exception "
+                          "raised or error_score=np.nan to adopt the "
+                          "behavior from version 0.22.",
+                          FutureWarning)
+            raise
         elif isinstance(error_score, numbers.Number):
             if is_multimetric:
                 test_scores = dict(zip(scorer.keys(),
