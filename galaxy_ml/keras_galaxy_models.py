@@ -369,8 +369,6 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-    epsilon : None or float
-        optimizer parameter, default change with `optimizer`
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
@@ -408,8 +406,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     def __init__(self, config, model_type='sequential',
                  optimizer='sgd', loss='binary_crossentropy',
                  metrics=[], lr=None, momentum=None, decay=None,
-                 nesterov=None, rho=None, epsilon=None, amsgrad=None,
-                 beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
+                 nesterov=None, rho=None, amsgrad=None, beta_1=None,
+                 beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, callbacks=None,
                  validation_data=None, steps_per_epoch=None,
                  validation_steps=None, verbose=0, **fit_params):
@@ -956,8 +954,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-    epsilon : None or float
-        optimizer parameter, default change with `optimizer`
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
@@ -1005,18 +1001,17 @@ class KerasGBatchClassifier(KerasGClassifier):
                  model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None,
                  momentum=None, decay=None, nesterov=None, rho=None,
-                 epsilon=None, amsgrad=None, beta_1=None,
-                 beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=None, n_jobs=1,
-                 callbacks=None, validation_data=None,
-                 steps_per_epoch=None, validation_steps=None,
-                 verbose=0, prediction_steps=None,
-                 class_positive_factor=1,
+                 amsgrad=None, beta_1=None, beta_2=None,
+                 schedule_decay=None, epochs=1, batch_size=None,
+                 seed=None, n_jobs=1, callbacks=None,
+                 validation_data=None, steps_per_epoch=None,
+                 validation_steps=None, verbose=0,
+                 prediction_steps=None, class_positive_factor=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
             loss=loss, metrics=metrics, lr=lr, momentum=momentum,
-            decay=decay, nesterov=nesterov, rho=rho, epsilon=epsilon,
+            decay=decay, nesterov=nesterov, rho=rho,
             amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
             schedule_decay=schedule_decay, epochs=epochs,
             batch_size=batch_size, seed=seed, callbacks=callbacks,

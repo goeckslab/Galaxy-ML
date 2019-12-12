@@ -5,6 +5,7 @@ check_feature_importances
 """
 import numpy as np
 
+from joblib import Parallel, delayed, effective_n_jobs
 from imblearn import under_sampling, over_sampling, combine
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn import (cluster, compose, decomposition, ensemble,
@@ -20,7 +21,6 @@ from sklearn.feature_selection.rfe import _rfe_single_fit, RFE, RFECV
 from sklearn.model_selection import check_cv
 from sklearn.metrics.scorer import check_scoring
 from sklearn.utils import check_X_y, safe_indexing, safe_sqr
-from sklearn.utils._joblib import Parallel, delayed, effective_n_jobs
 
 
 __all__ = ('DyRFE', 'DyRFECV', '_MyPipeline', '_MyimbPipeline',

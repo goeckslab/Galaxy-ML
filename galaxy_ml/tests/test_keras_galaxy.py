@@ -336,9 +336,9 @@ def test_get_params_base_keras_model():
         'amsgrad': None, 'batch_size': 32,
         'beta_1': None, 'beta_2': None,
         'callbacks': None, 'decay': 0,
-        'epochs': 1, 'epsilon': None,
-        'loss': 'binary_crossentropy', 'lr': 0.01,
-        'metrics': [], 'model_type': 'sequential',
+        'epochs': 1, 'loss': 'binary_crossentropy',
+        'lr': 0.01, 'metrics': [],
+        'model_type': 'sequential',
         'momentum': 0, 'nesterov': False,
         'optimizer': 'sgd', 'rho': None,
         'schedule_decay': None, 'seed': None,
@@ -381,8 +381,8 @@ def test_get_params_keras_g_classifier():
 
     expect = [
         'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'callbacks',
-        'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
-        'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+        'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
+        'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
         'validation_data', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
@@ -441,8 +441,8 @@ def test_get_params_keras_g_regressor():
 
     expect = [
         'amsgrad', 'batch_size', 'beta_1', 'beta_2', 'callbacks',
-        'config', 'decay', 'epochs', 'epsilon', 'loss', 'lr',
-        'metrics', 'model_type', 'momentum', 'nesterov', 'optimizer',
+        'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
+        'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
         'validation_data', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
@@ -467,7 +467,7 @@ def test_gridsearchcv_keras_g_regressor():
     grid = GridSearchCV(regressor, param_grid, cv=cv, scoring='r2', refit=True)
     grid_result = grid.fit(X, y)
 
-    got1 = round(grid_result.best_score_, 2)
+    got1 = round(grid_result.best_score_, 1)
     got2 = grid_result.best_estimator_.lr
     got3 = grid_result.best_estimator_.epochs
     got4 = grid_result.best_estimator_.batch_size
@@ -476,7 +476,7 @@ def test_gridsearchcv_keras_g_regressor():
     got6 = (grid_result.best_estimator_.config['layers'][1]['config']
             ['kernel_initializer']['config']['seed'])
 
-    assert got1 == 0.02, got1
+    assert got1 == 0., got1
     assert got2 == 0.002, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -532,7 +532,6 @@ def test_funtional_model_get_params():
         'callbacks': None,
         'decay': 0,
         'epochs': 1,
-        'epsilon': None,
         'loss': 'binary_crossentropy',
         'lr': 0.01,
         'metrics': [],
@@ -818,7 +817,7 @@ def test_keras_fasta_batch_classifier():
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 1000,
         'data_batch_generator__shuffle': True, 'decay': 0,
-        'epochs': 1, 'epsilon': None, 'loss': 'binary_crossentropy',
+        'epochs': 1, 'loss': 'binary_crossentropy',
         'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
         'momentum': 0, 'n_jobs': 1, 'nesterov': False,
         'optimizer': 'sgd', 'prediction_steps': None,
@@ -877,11 +876,10 @@ def test_keras_fasta_protein_batch_classifier():
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 500,
         'data_batch_generator__shuffle': True,
-        'decay': 0, 'epochs': 3, 'epsilon': None,
-        'loss': 'binary_crossentropy', 'lr': 0.01,
-        'metrics': [], 'model_type': 'functional', 'momentum': 0,
-        'n_jobs': 1, 'nesterov': False, 'optimizer': 'sgd',
-        'prediction_steps': None, 'rho': None,
+        'decay': 0, 'epochs': 3, 'loss': 'binary_crossentropy',
+        'lr': 0.01, 'metrics': [], 'model_type': 'functional',
+        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+        'optimizer': 'sgd', 'prediction_steps': None, 'rho': None,
         'schedule_decay': None, 'seed': 0, 'steps_per_epoch': None,
         'validation_data': None, 'validation_steps': None,
         'verbose': 0}
