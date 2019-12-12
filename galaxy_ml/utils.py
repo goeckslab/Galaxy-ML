@@ -25,6 +25,8 @@ from sklearn import (
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.pipeline import Pipeline
+# TODO remove following imports after scikit-learn v0.22
+from sklearn.experimental import enable_hist_gradient_boosting
 
 
 # handle pickle white list file
@@ -93,7 +95,12 @@ class _SafePickler(pickle.Unpickler, object):
         # compatible with models from versions before 1.0.7.0
         if module in self.custom_modules:
             return try_get_attr('galaxy_ml.' + module, name)
-        if module == '__main__' or module.startswith('galaxy_ml.'):
+
+        # Load objects serialized in older versions
+        # TODO make this deprecate
+        if module.startswith('__main__.'):
+            module = 'galaxy_ml.' + module[9:]
+        if module.startswith('galaxy_ml.'):
             splits = module.split('.')
             if len(splits) > 2:
                 module = splits[0] + '.' + splits[1]
@@ -641,8 +648,7 @@ def try_get_attr(module, name):
     class or function
     """
     if module.split('.')[-1] not in (
-            '__main__', 'keras_galaxy_models',
-            'feature_selectors', 'preprocessors',
+            'keras_galaxy_models', 'feature_selectors', 'preprocessors',
             'iraps_classifier', 'model_validations'):
         raise NameError("%s is not recognized as a valid custom "
                         "module in Galaxy-ML!" % module)

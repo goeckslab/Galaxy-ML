@@ -33,6 +33,9 @@ from imblearn.pipeline import make_pipeline as imb_make_pipeline
 from galaxy_ml.utils import (SafeEval, feature_selector, get_estimator,
                              try_get_attr, get_search_params, load_model)
 
+## TODO remove following imports after scikit-learn v0.22
+from sklearn.experimental import enable_hist_gradient_boosting
+
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 

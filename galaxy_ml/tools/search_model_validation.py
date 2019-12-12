@@ -620,7 +620,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                 cv=outer_cv, n_jobs=N_JOBS,
                 verbose=options['verbose'],
                 return_estimator=(params['save'] == 'save_estimator'),
-                error_score=options['error_score'])
+                error_score=options['error_score'],
+                return_train_score=True)
         else:
             warnings.simplefilter('always', FitFailedWarning)
             with warnings.catch_warnings(record=True) as w:
@@ -631,7 +632,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                         cv=outer_cv, n_jobs=N_JOBS,
                         verbose=options['verbose'],
                         return_estimator=(params['save'] == 'save_estimator'),
-                        error_score=options['error_score'])
+                        error_score=options['error_score'],
+                        return_train_score=True)
                 except ValueError:
                     pass
                 for warning in w:
