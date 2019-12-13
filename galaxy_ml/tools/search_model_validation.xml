@@ -1,5 +1,5 @@
-<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@.1">
-    <description>using exhausitive or randomized search</description>
+<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@">
+    <description>performs hyperparameter optimization using various SearchCVs</description>
     <macros>
         <import>main_macros.xml</import>
          <macro name="search_cv_estimator">
@@ -420,40 +420,7 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="13" />
-                    <has_text text="0.09003449195911103"/>
-                </assert_contents>
-            </output>
-        </test>
-        <test>
-            <param name="selected_search_scheme" value="GridSearchCV"/>
-            <param name="infile_estimator" value="pipeline09" ftype="zip"/>
-            <param name="infile_params" value="get_params09.tabular" ftype="tabular"/>
-            <repeat name="param_set">
-                <param name="sp_list" value="[50, 100, 150, 200]"/>
-                <param name="sp_name" value="relieff__n_neighbors"/>
-            </repeat>
-            <repeat name="param_set">
-                <param name="sp_list" value="[324089]"/>
-                <param name="sp_name" value="randomforestregressor__random_state"/>
-            </repeat>
-            <param name="primary_scoring" value="explained_variance"/>
-            <param name="secondary_scoring" value="neg_mean_squared_error,r2"/>
-            <param name='selected_cv' value="StratifiedKFold"/>
-            <param name="n_splits" value="3"/>
-            <param name="shuffle" value="true" />
-            <param name="random_state" value="10"/>
-            <param name="infile1" value="regression_X.tabular" ftype="tabular"/>
-            <param name="header1" value="true" />
-            <param name="selected_column_selector_option" value="all_columns"/>
-            <param name="infile2" value="regression_y.tabular" ftype="tabular"/>
-            <param name="header2" value="true" />
-            <param name="selected_column_selector_option2" value="all_columns"/>
-            <output name="outfile_result" >
-                <assert_contents>
-                    <has_n_columns n="25" />
-                    <has_text text="0.7879267424165166"/>
-                    <has_text text="0.787865425577799"/>
-                    <has_text text="-29.40436189868029"/>
+                    <has_text text="0.08719866399898475"/>
                 </assert_contents>
             </output>
         </test>

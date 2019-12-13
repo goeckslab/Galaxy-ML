@@ -1,5 +1,5 @@
-<tool id="sklearn_build_pipeline" name="Pipeline Builder" version="@VERSION@.1">
-    <description>constructs a list of transforms and a final estimator</description>
+<tool id="sklearn_build_pipeline" name="Pipeline Builder" version="@VERSION@">
+    <description>an all-in-one platform to build pipeline, single estimator, preprocessor and custom wrappers</description>
     <macros>
         <import>main_macros.xml</import>
     </macros>
@@ -421,7 +421,9 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <param name="selected_module" value="ensemble"/>
             <param name="selected_estimator" value="RandomForestRegressor"/>
             <param name="text_params" value="n_estimators=100, random_state=42"/>
+            <param name="get_params" value="true"/>
             <output name="outfile" file="pipeline05" compare="sim_size" delta="5"/>
+            <output name="outfile_params" file="pipeline_params05.tabular" ftype="tabular"/>
         </test>
         <test>
             <conditional name="component_selector">
@@ -561,19 +563,31 @@ df.to_csv('$outfile_params', sep='\t', index=False)
     <help>
         <![CDATA[
 **What it does**
-This tool not only builds sklearn pipeline object, but also builds single main estimator or even a single preprocessing component. The script automatically chooses the output type based on length of pipeline steps. When there is only one step, either a main estimator or preprocessor, the element is output directly instead of wrapping in a pipeline object.
+This tool not only builds sklearn pipeline object, but also builds single main estimator or single preprocessing component. The output object type is based on the length of pipeline steps. When there is only one step (choose `None` for others), either a main estimator or preprocessor, the component is output directly instead of wrapping in a pipeline object.
 
-Pipeline is one of key utilities that scikit-learn provides, which not only offers convenience to combine a chain of transforms together with a final estimator, but also relates to accuracy of model evaluation. It's recommended that all preprocessing steps should be included in pipeline whenever it's possible.
-
-A typical pipeline in sklearn chains one or more preprocessing steps plus a final main estimator. For example, one can stack a sklearn feature selctor, preprocessing scaler and a main estimator together, i.e., [VarianceThreshold, StandardScaler, SGDClassifier].
+A typical pipeline chains one or more preprocessing steps plus a final main estimator, for example, [VarianceThreshold, StandardScaler, SGDClassifier] which is composed of a feature selctor, a preprocessing scaler and a main estimator together.
 For more information, please refer to `Scikit-learn pipeline Pipeline`_.
 
-**Pre-processing components** allow None, one or a combination of up to 5 transformations from `sklearn.preprocessing`_, `feature_selection`_, `decomposition`_, `kernel_approximation`_, `cluster.FeatureAgglomeration`_ and/or `skrebate`_.
+**Pre-processing components** come from `sklearn.preprocessing`_, `feature_selection`_, `decomposition`_, `kernel_approximation`_, `cluster.FeatureAgglomeration`_, `skrebate`_ and more.
 
-**Estimator** selector supports estimators from `xgboost`_ and many scikit-learn modules, including `svm`_, `linear_model`_, `ensemble`_, `naive_bayes`_, `tree`_ and `neighbors`_.
+**Final Estimator** supports estimators from `xgboost`_ and many scikit-learn modules, including `svm`_, `linear_model`_, `ensemble`_, `naive_bayes`_, `tree`_, `neighbors`_ and so on.
+
+**Custom estimators**
+
+- `GenomeOneHotEncoder`_
+
+- `ProteinOnehotEncoder`_
+
+- `IRAPSClassifier`_
+
+- `BinarizeTargetClassifier`_
+
+- `BinarizeTargetRegressor`_
 
 **Output**
+
 - Pickled pipeline/estimator object
+
 - Hyperparameter of the ojbect (optional)
 
 
@@ -592,6 +606,12 @@ For more information, please refer to `Scikit-learn pipeline Pipeline`_.
 .. _`kernel_approximation`: http://scikit-learn.org/stable/modules/classes.html#module-sklearn.kernel_approximation
 .. _`cluster.FeatureAgglomeration`: http://scikit-learn.org/stable/modules/generated/sklearn.cluster.FeatureAgglomeration.html
 .. _`skrebate`: https://epistasislab.github.io/scikit-rebate/using/
+
+.. _`GenomeOneHotEncoder`: https://goeckslab.github.io/Galaxy-ML/APIs/preprocessors/#genomeonehotencoder
+.. _`ProteinOnehotEncoder`: https://goeckslab.github.io/Galaxy-ML/APIs/preprocessors/#proteinonehotencoder
+.. _`IRAPSClassifier`: https://goeckslab.github.io/Galaxy-ML/APIs/iraps-classifier/#irapsclassifier
+.. _`BinarizeTargetClassifier`: https://goeckslab.github.io/Galaxy-ML/APIs/binarize-target/#binarizetargetclassifier
+.. _`BinarizeTargetRegressor`: https://goeckslab.github.io/Galaxy-ML/APIs/binarize-target/#binarizetargetregressor
 
         ]]>
     </help>

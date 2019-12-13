@@ -1,17 +1,10 @@
-<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@.1">
+<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@">
     <description>includes several types of plotting for machine learning</description>
     <macros>
         <import>main_macros.xml</import>
         <import>keras_macros.xml</import>
     </macros>
-    <expand macro="python_requirements">
-        <requirement type="package" version="4.3.0">plotly</requirement>
-        <requirement type="package" version="2.40.1">graphviz</requirement>
-        <requirement type="package" version="1.4.1">pydot</requirement>
-        <requirement type="package" version="5.6.5">psutil</requirement>
-        <requirement type="package" version="2.22.0">requests</requirement>
-        <requirement type="package" version="3.1.2">matplotlib</requirement>
-    </expand>
+    <expand macro="python_requirements"/>
     <expand macro="macro_stdio"/>
     <version_command>echo "@VERSION@"</version_command>
     <command>

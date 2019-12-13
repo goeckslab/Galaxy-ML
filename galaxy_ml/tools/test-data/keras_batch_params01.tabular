@@ -6,11 +6,10 @@
 @	callbacks	callbacks: [{'callback_selection': {'callback_type': 'None'}}]
 @	class_positive_factor	class_positive_factor: 1.0
 @	config	config: {'name': 'sequential_1', 'layers': [{'class_name': 'Dense', 'config': {'name': 'dense_1', 'trainable
-@	data_batch_generator	"data_batch_generator: FastaDNABatchGenerator(fasta_path='to_be_determined', seed=999,
-            seq_length=1000, shuffle=True)"
+@	data_batch_generator	"data_batch_generator: FastaDNABatchGenerator(fasta_path='to_be_determined', seed=999, seq_length=1000,
+                       shuffle=True)"
 @	decay	decay: 0.0
 @	epochs	epochs: 100
-@	epsilon	epsilon: None
 @	layers_0_Dense	layers_0_Dense: {'class_name': 'Dense', 'config': {'name': 'dense_1', 'trainable': True, 'batch_input_shape': [None,
 @	layers_1_Activation	layers_1_Activation: {'class_name': 'Activation', 'config': {'name': 'activation_1', 'trainable': True, 'dtype': 'float32
 @	layers_2_Dense	layers_2_Dense: {'class_name': 'Dense', 'config': {'name': 'dense_2', 'trainable': True, 'dtype': 'float32', 'units'
