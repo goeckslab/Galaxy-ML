@@ -369,8 +369,6 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-    epsilon : None or float
-        optimizer parameter, default change with `optimizer`
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
@@ -408,8 +406,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     def __init__(self, config, model_type='sequential',
                  optimizer='sgd', loss='binary_crossentropy',
                  metrics=[], lr=None, momentum=None, decay=None,
-                 nesterov=None, rho=None, epsilon=None, amsgrad=None,
-                 beta_1=None, beta_2=None, schedule_decay=None, epochs=1,
+                 nesterov=None, rho=None, amsgrad=None, beta_1=None,
+                 beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, callbacks=None,
                  validation_data=None, steps_per_epoch=None,
                  validation_steps=None, verbose=0, **fit_params):
@@ -440,25 +438,21 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         elif self.optimizer == 'rmsprop':
             self.lr = 0.001 if lr is None else lr
             self.rho = 0.9 if rho is None else rho
-            self.epsilon = None if epsilon is None else epsilon
             self.decay = 0 if decay is None else decay
 
         elif self.optimizer == 'adagrad':
             self.lr = 0.01 if lr is None else lr
-            self.epsilon = None if epsilon is None else epsilon
             self.decay = 0 if decay is None else decay
 
         elif self.optimizer == 'adadelta':
             self.lr = 1.0 if lr is None else lr
             self.rho = 0.95 if rho is None else rho
-            self.epsilon = None if epsilon is None else epsilon
             self.decay = 0 if decay is None else decay
 
         elif self.optimizer == 'adam':
             self.lr = 0.001 if lr is None else lr
             self.beta_1 = 0.9 if beta_1 is None else beta_1
             self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.epsilon = None if epsilon is None else epsilon
             self.decay = 0 if decay is None else decay
             self.amsgrad = False if amsgrad is None else amsgrad
 
@@ -466,14 +460,12 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             self.lr = 0.002 if lr is None else lr
             self.beta_1 = 0.9 if beta_1 is None else beta_1
             self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.epsilon = None if epsilon is None else epsilon
             self.decay = 0 if decay is None else decay
 
         elif self.optimizer == 'nadam':
             self.lr = 0.002 if lr is None else lr
             self.beta_1 = 0.9 if beta_1 is None else beta_1
             self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.epsilon = None if epsilon is None else epsilon
             self.schedule_decay = 0.004 if schedule_decay is None\
                 else schedule_decay
 
@@ -495,30 +487,21 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         elif self.optimizer == 'rmsprop':
             if not hasattr(self, 'rho'):
                 self.rho = 0.9
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            return RMSprop(lr=self.lr, rho=self.rho,
-                           epsilon=self.epsilon, decay=self.decay)
+            return RMSprop(lr=self.lr, rho=self.rho, decay=self.decay)
 
         elif self.optimizer == 'adagrad':
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            return Adagrad(lr=self.lr, epsilon=self.epsilon,
-                           decay=self.decay)
+            return Adagrad(lr=self.lr, decay=self.decay)
 
         elif self.optimizer == 'adadelta':
             if not hasattr(self, 'rho'):
                 self.rho = 0.95
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             if not hasattr(self, 'decay'):
                 self.decay = 0
             return Adadelta(lr=self.lr, rho=self.rho,
-                            epsilon=self.epsilon,
                             decay=self.decay)
 
         elif self.optimizer == 'adam':
@@ -528,13 +511,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                 self.beta_2 = 0.999
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             if not hasattr(self, 'amsgrad'):
                 self.amsgrad = False
             return Adam(lr=self.lr, beta_1=self.beta_1,
-                        beta_2=self.beta_2, epsilon=self.epsilon,
-                        decay=self.decay, amsgrad=self.amsgrad)
+                        beta_2=self.beta_2, decay=self.decay,
+                        amsgrad=self.amsgrad)
 
         elif self.optimizer == 'adamax':
             if not hasattr(self, 'beta_1'):
@@ -543,10 +524,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                 self.beta_2 = 0.999
             if not hasattr(self, 'decay'):
                 self.decay = 0
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             return Adamax(lr=self.lr, beta_1=self.beta_1,
-                          beta_2=self.beta_2, epsilon=self.epsilon,
+                          beta_2=self.beta_2,
                           decay=self.decay)
 
         elif self.optimizer == 'nadam':
@@ -554,12 +533,10 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                 self.beta_1 = 0.9
             if not hasattr(self, 'beta_2'):
                 self.beta_2 = 0.999
-            if not hasattr(self, 'epsilon'):
-                self.epsilon = None
             if not hasattr(self, 'schedule_decay'):
                 self.schedule_decay = 0.004
             return Nadam(lr=self.lr, beta_1=self.beta_1,
-                         beta_2=self.beta_2, epsilon=self.epsilon,
+                         beta_2=self.beta_2,
                          schedule_decay=self.schedule_decay)
 
     @property
@@ -594,7 +571,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
             curr_dir = __import__('os').getcwd()
 
-            if callback_type == 'None':
+            if callback_type in ('None', ''):
                 continue
             elif callback_type == 'ModelCheckpoint':
                 if not params.get('filepath', None):
@@ -628,17 +605,18 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             if self.seed is not None:
                 np.random.seed(self.seed)
                 random.seed(self.seed)
-                tf.set_random_seed(self.seed)
+                tf.compat.v1.set_random_seed(self.seed)
                 intra_op = 1
                 inter_op = 1
 
-            session_conf = tf.ConfigProto(
+            session_conf = tf.compat.v1.ConfigProto(
                 intra_op_parallelism_threads=intra_op,
                 inter_op_parallelism_threads=inter_op,
                 log_device_placement=bool(self.verbose))
 
-            sess = tf.Session(graph=tf.get_default_graph(),
-                              config=session_conf)
+            sess = tf.compat.v1.Session(
+                graph=tf.compat.v1.get_default_graph(),
+                config=session_conf)
             K.set_session(sess)
 
         config = self.config
@@ -976,8 +954,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         optimizer parameter, default change with `optimizer`
     rho : None or float
         optimizer parameter, default change with `optimizer`
-    epsilon : None or float
-        optimizer parameter, default change with `optimizer`
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
@@ -1025,18 +1001,17 @@ class KerasGBatchClassifier(KerasGClassifier):
                  model_type='sequential', optimizer='sgd',
                  loss='binary_crossentropy', metrics=[], lr=None,
                  momentum=None, decay=None, nesterov=None, rho=None,
-                 epsilon=None, amsgrad=None, beta_1=None,
-                 beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=None, n_jobs=1,
-                 callbacks=None, validation_data=None,
-                 steps_per_epoch=None, validation_steps=None,
-                 verbose=0, prediction_steps=None,
-                 class_positive_factor=1,
+                 amsgrad=None, beta_1=None, beta_2=None,
+                 schedule_decay=None, epochs=1, batch_size=None,
+                 seed=None, n_jobs=1, callbacks=None,
+                 validation_data=None, steps_per_epoch=None,
+                 validation_steps=None, verbose=0,
+                 prediction_steps=None, class_positive_factor=1,
                  **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
             loss=loss, metrics=metrics, lr=lr, momentum=momentum,
-            decay=decay, nesterov=nesterov, rho=rho, epsilon=epsilon,
+            decay=decay, nesterov=nesterov, rho=rho,
             amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
             schedule_decay=schedule_decay, epochs=epochs,
             batch_size=batch_size, seed=seed, callbacks=callbacks,
@@ -1060,17 +1035,17 @@ class KerasGBatchClassifier(KerasGClassifier):
             if self.seed is not None:
                 np.random.seed(self.seed)
                 random.seed(self.seed)
-                tf.set_random_seed(self.seed)
+                tf.compat.v1.set_random_seed(self.seed)
                 intra_op = 1
                 inter_op = 1
 
-            session_conf = tf.ConfigProto(
+            session_conf = tf.compat.v1.ConfigProto(
                 intra_op_parallelism_threads=intra_op,
                 inter_op_parallelism_threads=inter_op,
                 log_device_placement=bool(self.verbose))
 
-            sess = tf.Session(graph=tf.get_default_graph(),
-                              config=session_conf)
+            sess = tf.compat.v1.Session(
+                graph=tf.compat.v1.get_default_graph(), config=session_conf)
             K.set_session(sess)
 
         check_params(kwargs, Model.fit_generator)

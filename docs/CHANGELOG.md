@@ -1,4 +1,4 @@
-### Version 0.8.0.dev  (09-18-2019)
+### Version 0.8.0 (12-10-2019)
 
 #### New Features
 
@@ -11,6 +11,9 @@
 - Adds keras training and evaluation tool.
 - Adds support of decision_function for binarize target classifiers.
 - Adds matplotlib svg format option in `ml_visualization_ex` tool.
+- Adds 'sklearn.ensemble.HistGradientBoostingClassifier' and 'sklearn.ensemble.HistGradientBoostingRegressor'
+- Adds new regression scorer `max_error`.
+- Upgade scikit-lean to v0.21.3, mlxtend to v0.17.0, imbalanced-learn to v0.5.0, keras to v2.3.1 and tensorflow to v1.15.0.
 
 #### Changes
 

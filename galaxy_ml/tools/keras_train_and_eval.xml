@@ -1,5 +1,5 @@
 <tool id="keras_train_and_eval" name="Deep learning training and evaluation" version="@VERSION@">
-    <description>explicitly control settings for training, validation and Evaluation</description>
+    <description>conduct deep training and evaluation either implicitly or explicitly</description>
     <macros>
         <import>main_macros.xml</import>
         <import>keras_macros.xml</import>
@@ -156,8 +156,8 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="2"/>
-                    <has_text text="0.68419"/>
-                    <has_text text="5.2990"/>
+                    <has_text text="0.6626"/>
+                    <has_text text="5.5986"/>
                 </assert_contents>
             </output>
             <output name="outfile_object" file="train_test_eval_model01" compare="sim_size" delta="5"/>
@@ -223,8 +223,8 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="2"/>
-                    <has_text text="0.69617"/>
-                    <has_text text="5.2261"/>
+                    <has_text text="0.667"/>
+                    <has_text text="5.586"/>
                 </assert_contents>
             </output>
             <output name="outfile_weights" file="train_test_eval_weights02.h5" compare="sim_size" delta="5"/>
@@ -280,11 +280,16 @@
         <![CDATA[
 **What it does**
 
-This tool provides a user interface to control deep learning training, validation and testing settings. In the hyperparameter swapping section, model hyperparameters are allowed to be changed before entering training, which helps tweak the model and training parameters without rebuild a new model. There are two modes: train-test and train-val-test.
+Given a pre-built keras deep learning model and labeled training dataset, this tool works in two modes.
 
-- train-test: input data sets will be split into train and validation portions. Estimator is training on the train portion, and performance is validated on the validation portion and finally output evalation scores on the validation portion.
+- Train and Validate: training dataset is split into train and validation portions. The model fits on the train portion, in the meantime performances are validated on the validation portion multiple times along with the training progressing. Finally, a fitted model (skeleton + weights) and its validation performance scores are outputted. 
 
-- train-val-test: data sets are split into three portions, train, val and test. Validations happen along with the training process. After training finished, the model is evaluated on the test portion.
+
+- Train, Validate and and Evaluate: training dataset is split into three portions, train, val and test. The same `Train and Validate` happens on the train and val portions. The test portion is hold out exclusively for testing (evaluation). As a result, a fitted model (skeleton + weights) and test performance scores are outputted.
+
+In both modes, besides the performance scores, the true labels and predicted values are able to be ouputted, which could be used in generating plots in other tools, machine learning visualization extensions, for example.
+
+Note that since all training and model parameters are accessible and changeable in the `Hyperparameter Swapping` section, the training and evaluation processes are transparent and fully controllable.
 
 **Input**
 

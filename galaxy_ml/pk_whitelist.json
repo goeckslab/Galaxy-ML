@@ -151,6 +151,8 @@
     "sklearn.ensemble.voting_classifier._parallel_fit_estimator", "sklearn.ensemble.weight_boosting.AdaBoostClassifier",
     "sklearn.ensemble.weight_boosting.AdaBoostRegressor", "sklearn.ensemble.weight_boosting.BaseWeightBoosting",
     "sklearn.ensemble.weight_boosting._samme_proba", "sklearn.ensemble.weight_boosting.inner1d",
+    "sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingRegressor",
+    "sklearn.ensemble._hist_gradient_boosting.gradient_boosting.HistGradientBoostingClassifier",
     "sklearn.feature_extraction.DictVectorizer", "sklearn.feature_extraction.FeatureHasher",
     "sklearn.feature_extraction._hashing.transform", "sklearn.feature_extraction.dict_vectorizer.DictVectorizer",
     "sklearn.feature_extraction.dict_vectorizer._tosequence", "sklearn.feature_extraction.grid_to_graph",
