@@ -84,9 +84,6 @@
     <li class="toctree-l3"><a href="#proteinonehotencoder">ProteinOneHotEncoder</a></li>
     
 
-    <li class="toctree-l3"><a href="#imagedataframebatchgenerator">ImageDataFrameBatchGenerator</a></li>
-    
-
     <li class="toctree-l3"><a href="#fastaiterator">FastaIterator</a></li>
     
 
@@ -109,6 +106,9 @@
     
 
     <li class="toctree-l3"><a href="#genomicvariantbatchgenerator">GenomicVariantBatchGenerator</a></li>
+    
+
+    <li class="toctree-l3"><a href="#imagedataframebatchgenerator">ImageDataFrameBatchGenerator</a></li>
     
 
     </ul>
@@ -253,119 +253,6 @@
 <li><strong>seq_length</strong>: None or int<br>
         Sequence length. If None, determined by the the first entry.</li>
 </ul>
-<hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_image_batch_generator.py#L144">[source]</a></span></p>
-<h2 id="imagedataframebatchgenerator">ImageDataFrameBatchGenerator</h2>
-<pre><code class="python">galaxy_ml.preprocessors._image_batch_generator.ImageDataFrameBatchGenerator(dataframe, featurewise_center=False, samplewise_center=False, featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False, zca_epsilon=1e-06, rotation_range=0, width_shift_range=0.0, height_shift_range=0.0, brightness_range=None, shear_range=0.0, zoom_range=0.0, channel_shift_range=0.0, fill_mode='nearest', cval=0.0, horizontal_flip=False, vertical_flip=False, rescale=None, preprocessing_function=None, data_format='channels_last', interpolation_order=1, dtype='float32', directory=None, x_col='filename', y_col='class', weight_col=None, target_size=(256, 256), color_mode='rgb', classes=None, class_mode='categorical', shuffle=True, seed=None, save_to_dir=None, save_prefix='', save_format='png', interpolation='nearest', fit_sample_size=None)
-</code></pre>
-
-<p>Extend <code>keras_preprocessing.image.ImageDataGenerator</code> to work with
-DataFrame exclusively, generating batches of tensor data from
-images with online augumentation.</p>
-<p><strong>Parameters</strong></p>
-<pre><code>From `keras_preprocessing.image.ImageDataGenerator`.
-</code></pre>
-<ul>
-<li><strong>featurewise_center</strong>: Boolean.<br>
-        Set input mean to 0 over the dataset, feature-wise.</li>
-<li><strong>samplewise_center</strong>: Boolean. Set each sample mean to 0.<br></li>
-<li><strong>featurewise_std_normalization</strong>: Boolean.<br>
-        Divide inputs by std of the dataset, feature-wise.</li>
-<li><strong>samplewise_std_normalization</strong>: Boolean. Divide each input by its std.<br></li>
-<li><strong>zca_whitening</strong>: Boolean. Apply ZCA whitening.<br></li>
-<li><strong>zca_epsilon</strong>: epsilon for ZCA whitening. Default is 1e-6.<br></li>
-<li><strong>rotation_range</strong>: Int. Degree range for random rotations.<br></li>
-<li><strong>width_shift_range</strong>: Float, 1-D array-like or int.<br></li>
-<li><strong>height_shift_range</strong>: Float, 1-D array-like or int.<br></li>
-<li><strong>brightness_range</strong>: Tuple or list of two floats.<br></li>
-<li><strong>shear_range</strong>: Float. Shear Intensity.<br></li>
-<li><strong>zoom_range</strong>: Float or [lower, upper].<br></li>
-<li><strong>channel_shift_range</strong>: Float. Range for random channel shifts.<br>
-    fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
-        Default is 'nearest'.
-        Points outside the boundaries of the input are filled
-        according to the given mode:
-        - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-        - 'nearest':  aaaaaaaa|abcd|dddddddd
-        - 'reflect':  abcddcba|abcd|dcbaabcd
-        - 'wrap':  abcdabcd|abcd|abcdabcd</li>
-<li><strong>cval</strong>: Float or Int.<br></li>
-<li><strong>horizontal_flip</strong>: Boolean.<br>
-        Randomly flip inputs horizontally.</li>
-<li><strong>vertical_flip</strong>: Boolean.<br></li>
-<li><strong>rescale</strong>: rescaling factor. Defaults to None.<br></li>
-<li><strong>preprocessing_function</strong>: function that will be applied on each input.<br>
-        The function will run after the image is resized and augmented.
-        The function should take one argument:
-        one image (Numpy tensor with rank 3),
-        and should output a Numpy tensor with the same shape.</li>
-<li><strong>data_format</strong>: Image data format,<br>
-        either "channels_first" or "channels_last".
-        "channels_last" mode means that the images should have shape
-        <code>(samples, height, width, channels)</code>,
-        "channels_first" mode means that the images should have shape
-        <code>(samples, channels, height, width)</code>.
-        It defaults to the <code>image_data_format</code> value found in your
-        Keras config file at <code>~/.keras/keras.json</code>.
-        If you never set it, then it will be "channels_last".</li>
-<li><strong>interpolation_order</strong>: Int.<br></li>
-<li><strong>dtype</strong>: Dtype to use for the generated arrays. Default is 'float32'<br>.</li>
-</ul>
-<p>From <code>keras_preprocessing.image.ImageDataGenerator.flow_from_dataframe</code>.
-dataframe : Pandas dataframe containing the filepaths relative to
-<code>directory</code>.
-directory: string, path to the directory to read images from. If <code>None</code>,
-data in <code>x_col</code> column should be absolute paths.
-x_col: string, column in <code>dataframe</code> that contains the filenames (or
-absolute paths if <code>directory</code> is <code>None</code>).
-y_col: string or list, column/s in <code>dataframe</code> that has the target data.
-weight_col: string, column in <code>dataframe</code> that contains the sample
-weights. Default: <code>None</code>.
-target_size: tuple of integers <code>(height, width)</code>, default: <code>(256, 256)</code>.
-The dimensions to which all images found will be resized.
-color_mode: one of "grayscale", "rgb", "rgba". Default: "rgb".
-Whether the images will be converted to have 1 or 3 color channels.
-classes: optional list of classes (e.g. <code>['dogs', 'cats']</code>).
-Default: None. If not provided, the list of classes will be
-automatically inferred from the <code>y_col</code>,
-which will map to the label indices, will be alphanumeric).
-The dictionary containing the mapping from class names to class
-indices can be obtained via the attribute <code>class_indices</code>.
-class_mode: one of "binary", "categorical", "input", "multi_output",
-"raw", sparse" or None. Default: "categorical".
-Mode for yielding the targets:
-- <code>"binary"</code>: 1D numpy array of binary labels,
-- <code>"categorical"</code>: 2D numpy array of one-hot encoded labels.
-Supports multi-label output.
-- <code>"input"</code>: images identical to input images (mainly used to
-work with autoencoders),
-- <code>"multi_output"</code>: list with the values of the different columns,
-- <code>"raw"</code>: numpy array of values in <code>y_col</code> column(s),
-- <code>"sparse"</code>: 1D numpy array of integer labels,
-- <code>None</code>, no targets are returned (the generator will only yield
-batches of image data, which is useful to use in
-<code>model.predict_generator()</code>).
-shuffle: whether to shuffle the data (default: True)
-seed: optional random seed for shuffling and transformations.
-save_to_dir: Optional directory where to save the pictures
-being yielded, in a viewable format. This is useful
-for visualizing the random transformations being
-applied, for debugging purposes.
-save_prefix: String prefix to use for saving sample
-images (if <code>save_to_dir</code> is set).
-save_format: Format to use for saving sample images
-(if <code>save_to_dir</code> is set).
-interpolation: Interpolation method used to resample the image if the
-target size is different from that of the loaded image.
-Supported methods are <code>"nearest"</code>, <code>"bilinear"</code>, and <code>"bicubic"</code>.
-If PIL version 1.1.3 or newer is installed, <code>"lanczos"</code> is also
-supported. If PIL version 3.4.0 or newer is installed, <code>"box"</code> and
-<code>"hamming"</code> are also supported. By default, <code>"nearest"</code> is used.
-fit_sample_size : Int. Default is None / 1000.
-Number of training images used in <code>datagen.fit</code>.
-Relevant only when <code>featurewise_center</code> or
-<code>featurewise_std_normalization</code> or <code>zca_whitening are set</code> are set
-to True.</p>
 <hr />
 <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_fasta_iterator.py#L9">[source]</a></span></p>
 <h2 id="fastaiterator">FastaIterator</h2>
@@ -556,6 +443,119 @@ from a reference genome and VCF (variant call format) file.</p>
 <li><strong>output_reference</strong>: bool, default is False.<br>
         If True, output reference sequence instead.</li>
 </ul>
+<hr />
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/preprocessors/_image_batch_generator.py#L144">[source]</a></span></p>
+<h2 id="imagedataframebatchgenerator">ImageDataFrameBatchGenerator</h2>
+<pre><code class="python">galaxy_ml.preprocessors._image_batch_generator.ImageDataFrameBatchGenerator(dataframe, featurewise_center=False, samplewise_center=False, featurewise_std_normalization=False, samplewise_std_normalization=False, zca_whitening=False, zca_epsilon=1e-06, rotation_range=0, width_shift_range=0.0, height_shift_range=0.0, brightness_range=None, shear_range=0.0, zoom_range=0.0, channel_shift_range=0.0, fill_mode='nearest', cval=0.0, horizontal_flip=False, vertical_flip=False, rescale=None, preprocessing_function=None, data_format='channels_last', interpolation_order=1, dtype='float32', directory=None, x_col='filename', y_col='class', weight_col=None, target_size=(256, 256), color_mode='rgb', classes=None, class_mode='categorical', shuffle=True, seed=None, save_to_dir=None, save_prefix='', save_format='png', interpolation='nearest', fit_sample_size=None)
+</code></pre>
+
+<p>Extend <code>keras_preprocessing.image.ImageDataGenerator</code> to work with
+DataFrame exclusively, generating batches of tensor data from
+images with online augumentation.</p>
+<p><strong>Parameters</strong></p>
+<pre><code>From `keras_preprocessing.image.ImageDataGenerator`.
+</code></pre>
+<ul>
+<li><strong>featurewise_center</strong>: Boolean.<br>
+        Set input mean to 0 over the dataset, feature-wise.</li>
+<li><strong>samplewise_center</strong>: Boolean. Set each sample mean to 0.<br></li>
+<li><strong>featurewise_std_normalization</strong>: Boolean.<br>
+        Divide inputs by std of the dataset, feature-wise.</li>
+<li><strong>samplewise_std_normalization</strong>: Boolean. Divide each input by its std.<br></li>
+<li><strong>zca_whitening</strong>: Boolean. Apply ZCA whitening.<br></li>
+<li><strong>zca_epsilon</strong>: epsilon for ZCA whitening. Default is 1e-6.<br></li>
+<li><strong>rotation_range</strong>: Int. Degree range for random rotations.<br></li>
+<li><strong>width_shift_range</strong>: Float, 1-D array-like or int.<br></li>
+<li><strong>height_shift_range</strong>: Float, 1-D array-like or int.<br></li>
+<li><strong>brightness_range</strong>: Tuple or list of two floats.<br></li>
+<li><strong>shear_range</strong>: Float. Shear Intensity.<br></li>
+<li><strong>zoom_range</strong>: Float or [lower, upper].<br></li>
+<li><strong>channel_shift_range</strong>: Float. Range for random channel shifts.<br>
+    fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+        Default is 'nearest'.
+        Points outside the boundaries of the input are filled
+        according to the given mode:
+        - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+        - 'nearest':  aaaaaaaa|abcd|dddddddd
+        - 'reflect':  abcddcba|abcd|dcbaabcd
+        - 'wrap':  abcdabcd|abcd|abcdabcd</li>
+<li><strong>cval</strong>: Float or Int.<br></li>
+<li><strong>horizontal_flip</strong>: Boolean.<br>
+        Randomly flip inputs horizontally.</li>
+<li><strong>vertical_flip</strong>: Boolean.<br></li>
+<li><strong>rescale</strong>: rescaling factor. Defaults to None.<br></li>
+<li><strong>preprocessing_function</strong>: function that will be applied on each input.<br>
+        The function will run after the image is resized and augmented.
+        The function should take one argument:
+        one image (Numpy tensor with rank 3),
+        and should output a Numpy tensor with the same shape.</li>
+<li><strong>data_format</strong>: Image data format,<br>
+        either "channels_first" or "channels_last".
+        "channels_last" mode means that the images should have shape
+        <code>(samples, height, width, channels)</code>,
+        "channels_first" mode means that the images should have shape
+        <code>(samples, channels, height, width)</code>.
+        It defaults to the <code>image_data_format</code> value found in your
+        Keras config file at <code>~/.keras/keras.json</code>.
+        If you never set it, then it will be "channels_last".</li>
+<li><strong>interpolation_order</strong>: Int.<br></li>
+<li><strong>dtype</strong>: Dtype to use for the generated arrays. Default is 'float32'<br>.</li>
+</ul>
+<p>From <code>keras_preprocessing.image.ImageDataGenerator.flow_from_dataframe</code>.
+dataframe : Pandas dataframe containing the filepaths relative to
+<code>directory</code>.
+directory: string, path to the directory to read images from. If <code>None</code>,
+data in <code>x_col</code> column should be absolute paths.
+x_col: string, column in <code>dataframe</code> that contains the filenames (or
+absolute paths if <code>directory</code> is <code>None</code>).
+y_col: string or list, column/s in <code>dataframe</code> that has the target data.
+weight_col: string, column in <code>dataframe</code> that contains the sample
+weights. Default: <code>None</code>.
+target_size: tuple of integers <code>(height, width)</code>, default: <code>(256, 256)</code>.
+The dimensions to which all images found will be resized.
+color_mode: one of "grayscale", "rgb", "rgba". Default: "rgb".
+Whether the images will be converted to have 1 or 3 color channels.
+classes: optional list of classes (e.g. <code>['dogs', 'cats']</code>).
+Default: None. If not provided, the list of classes will be
+automatically inferred from the <code>y_col</code>,
+which will map to the label indices, will be alphanumeric).
+The dictionary containing the mapping from class names to class
+indices can be obtained via the attribute <code>class_indices</code>.
+class_mode: one of "binary", "categorical", "input", "multi_output",
+"raw", sparse" or None. Default: "categorical".
+Mode for yielding the targets:
+- <code>"binary"</code>: 1D numpy array of binary labels,
+- <code>"categorical"</code>: 2D numpy array of one-hot encoded labels.
+Supports multi-label output.
+- <code>"input"</code>: images identical to input images (mainly used to
+work with autoencoders),
+- <code>"multi_output"</code>: list with the values of the different columns,
+- <code>"raw"</code>: numpy array of values in <code>y_col</code> column(s),
+- <code>"sparse"</code>: 1D numpy array of integer labels,
+- <code>None</code>, no targets are returned (the generator will only yield
+batches of image data, which is useful to use in
+<code>model.predict_generator()</code>).
+shuffle: whether to shuffle the data (default: True)
+seed: optional random seed for shuffling and transformations.
+save_to_dir: Optional directory where to save the pictures
+being yielded, in a viewable format. This is useful
+for visualizing the random transformations being
+applied, for debugging purposes.
+save_prefix: String prefix to use for saving sample
+images (if <code>save_to_dir</code> is set).
+save_format: Format to use for saving sample images
+(if <code>save_to_dir</code> is set).
+interpolation: Interpolation method used to resample the image if the
+target size is different from that of the loaded image.
+Supported methods are <code>"nearest"</code>, <code>"bilinear"</code>, and <code>"bicubic"</code>.
+If PIL version 1.1.3 or newer is installed, <code>"lanczos"</code> is also
+supported. If PIL version 3.4.0 or newer is installed, <code>"box"</code> and
+<code>"hamming"</code> are also supported. By default, <code>"nearest"</code> is used.
+fit_sample_size : Int. Default is None / 1000.
+Number of training images used in <code>datagen.fit</code>.
+Relevant only when <code>featurewise_center</code> or
+<code>featurewise_std_normalization</code> or <code>zca_whitening are set</code> are set
+to True.</p>
               
             </div>
           </div>
