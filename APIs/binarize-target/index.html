@@ -164,9 +164,9 @@
           <div role="main">
             <div class="section">
               
-                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L4">[source]</a></span></p>
+                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L9">[source]</a></span></p>
 <h2 id="binarizetargetclassifier">BinarizeTargetClassifier</h2>
-<pre><code class="python">galaxy_ml.iraps_classifier.BinarizeTargetClassifier(classifier, z_score=-1, value=None, less_is_positive=True)
+<pre><code class="python">galaxy_ml.binarize_target._binarize_estimators.BinarizeTargetClassifier(classifier, z_score=-1, value=None, less_is_positive=True, verbose=0)
 </code></pre>
 
 <p>Convert continuous target to binary labels (True and False)
@@ -183,6 +183,8 @@ and apply a classification estimator.</p>
 <li><strong>less_is_positive</strong>: boolean, default=True<br>
         When target is less the threshold value, it will be converted
         to True, False otherwise.</li>
+<li><strong>verbose</strong>: int, default=0<br>
+        If greater than 0, print discretizing info.</li>
 </ul>
 <p><strong>Attributes</strong></p>
 <ul>
@@ -192,9 +194,9 @@ and apply a classification estimator.</p>
         The threshold value used to discretize True and False targets</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L5">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L119">[source]</a></span></p>
 <h2 id="binarizetargetregressor">BinarizeTargetRegressor</h2>
-<pre><code class="python">galaxy_ml.iraps_classifier.BinarizeTargetRegressor(regressor, z_score=-1, value=None, less_is_positive=True)
+<pre><code class="python">galaxy_ml.binarize_target._binarize_estimators.BinarizeTargetRegressor(regressor, z_score=-1, value=None, less_is_positive=True, verbose=0)
 </code></pre>
 
 <p>Extend regression estimator to have discretize_value</p>
@@ -204,12 +206,14 @@ and apply a classification estimator.</p>
         Estimator object such as derived from sklearn <code>RegressionMixin</code>.</li>
 <li><strong>z_score</strong>: float, default=-1.0<br>
         Threshold value based on z_score. Will be ignored when
-        fixed_value is set</li>
+        value is set</li>
 <li><strong>value</strong>: float, default=None<br>
         Threshold value</li>
 <li><strong>less_is_positive</strong>: boolean, default=True<br>
         When target is less the threshold value, it will be converted
         to True, False otherwise.</li>
+<li><strong>verbose</strong>: int, default=0<br>
+        If greater than 0, print discretizing info.</li>
 </ul>
 <p><strong>Attributes</strong></p>
 <ul>
@@ -219,9 +223,9 @@ and apply a classification estimator.</p>
         The threshold value used to discretize True and False targets</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/iraps_classifier.py#L583">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L240">[source]</a></span></p>
 <h2 id="binarizetargettransformer">BinarizeTargetTransformer</h2>
-<pre><code class="python">galaxy_ml.iraps_classifier.BinarizeTargetTransformer(transformer, z_score=-1, value=None, less_is_positive=True)
+<pre><code class="python">galaxy_ml.binarize_target._binarize_estimators.BinarizeTargetTransformer(transformer, z_score=-1, value=None, less_is_positive=True)
 </code></pre>
 
 <p>Extend transformaer to work for binarized target.</p>
