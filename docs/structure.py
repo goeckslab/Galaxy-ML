@@ -22,7 +22,6 @@ PAGES = [
             preprocessors.TDMScaler,
             preprocessors.GenomeOneHotEncoder,
             preprocessors.ProteinOneHotEncoder,
-            preprocessors.ImageBatchGenerator,
             preprocessors.FastaIterator,
             preprocessors.FastaToArrayIterator,
             preprocessors.FastaDNABatchGenerator,
@@ -30,7 +29,8 @@ PAGES = [
             preprocessors.FastaProteinBatchGenerator,
             preprocessors.IntervalsToArrayIterator,
             preprocessors.GenomicIntervalBatchGenerator,
-            preprocessors.GenomicVariantBatchGenerator
+            preprocessors.GenomicVariantBatchGenerator,
+            preprocessors.ImageDataFrameBatchGenerator
         ]
     },
     {

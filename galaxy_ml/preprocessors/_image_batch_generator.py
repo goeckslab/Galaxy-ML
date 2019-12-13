@@ -194,27 +194,27 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
     interpolation_order : Int.
     dtype : Dtype to use for the generated arrays. Default is 'float32'.
 
-    From `keras_preprocessing.image.ImageDataGenerator.flow_from_dataframe`.
     dataframe : Pandas dataframe containing the filepaths relative to
-        `directory`.
-    directory: string, path to the directory to read images from. If `None`,
+        `directory`. From `keras_preprocessing.image.ImageDataGenerator.
+        flow_from_dataframe`.
+    directory : string, path to the directory to read images from. If `None`,
         data in `x_col` column should be absolute paths.
-    x_col: string, column in `dataframe` that contains the filenames (or
+    x_col : string, column in `dataframe` that contains the filenames (or
                 absolute paths if `directory` is `None`).
-    y_col: string or list, column/s in `dataframe` that has the target data.
-    weight_col: string, column in `dataframe` that contains the sample
+    y_col : string or list, column/s in `dataframe` that has the target data.
+    weight_col : string, column in `dataframe` that contains the sample
         weights. Default: `None`.
-    target_size: tuple of integers `(height, width)`, default: `(256, 256)`.
+    target_size : tuple of integers `(height, width)`, default: `(256, 256)`.
         The dimensions to which all images found will be resized.
-    color_mode: one of "grayscale", "rgb", "rgba". Default: "rgb".
+    color_mode : one of "grayscale", "rgb", "rgba". Default: "rgb".
         Whether the images will be converted to have 1 or 3 color channels.
-    classes: optional list of classes (e.g. `['dogs', 'cats']`).
+    classes : optional list of classes (e.g. `['dogs', 'cats']`).
         Default: None. If not provided, the list of classes will be
         automatically inferred from the `y_col`,
         which will map to the label indices, will be alphanumeric).
         The dictionary containing the mapping from class names to class
         indices can be obtained via the attribute `class_indices`.
-    class_mode: one of "binary", "categorical", "input", "multi_output",
+    class_mode : one of "binary", "categorical", "input", "multi_output",
         "raw", sparse" or None. Default: "categorical".
         Mode for yielding the targets:
         - `"binary"`: 1D numpy array of binary labels,
@@ -228,17 +228,17 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         - `None`, no targets are returned (the generator will only yield
             batches of image data, which is useful to use in
             `model.predict_generator()`).
-    shuffle: whether to shuffle the data (default: True)
-    seed: optional random seed for shuffling and transformations.
-    save_to_dir: Optional directory where to save the pictures
+    shuffle : whether to shuffle the data (default: True)
+    seed : optional random seed for shuffling and transformations.
+    save_to_dir : Optional directory where to save the pictures
         being yielded, in a viewable format. This is useful
         for visualizing the random transformations being
         applied, for debugging purposes.
-    save_prefix: String prefix to use for saving sample
+    save_prefix : String prefix to use for saving sample
         images (if `save_to_dir` is set).
-    save_format: Format to use for saving sample images
+    save_format : Format to use for saving sample images
         (if `save_to_dir` is set).
-    interpolation: Interpolation method used to resample the image if the
+    interpolation : Interpolation method used to resample the image if the
         target size is different from that of the loaded image.
         Supported methods are `"nearest"`, `"bilinear"`, and `"bicubic"`.
         If PIL version 1.1.3 or newer is installed, `"lanczos"` is also
