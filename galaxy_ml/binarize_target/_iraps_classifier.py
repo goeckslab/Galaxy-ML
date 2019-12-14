@@ -26,8 +26,7 @@ from scipy.stats import ttest_ind
 from sklearn.base import BaseEstimator, RegressorMixin, clone
 from sklearn.feature_selection.univariate_selection import _BaseFilter
 from sklearn.utils import as_float_array, check_X_y, check_random_state
-from sklearn.utils.validation import (check_array, check_is_fitted,
-                                      column_or_1d, check_memory)
+from sklearn.utils.validation import check_is_fitted, check_memory
 
 
 VERSION = '0.1.1'
@@ -302,7 +301,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
 
         return self.signature_
 
-    def predict_score(self, X):
+    def decision_function(self, X):
         """
         compute the correlation coefficient with irpas signature
         """
@@ -317,7 +316,7 @@ class IRAPSClassifier(six.with_metaclass(ABCMeta, _BaseFilter,
         return corrcoef
 
     def predict(self, X):
-        return self.predict_score(X)
+        return self.decision_function(X)
 
     def predict_label(self, X, clf_cutoff=0.4):
-        return self.predict_score(X) >= clf_cutoff
+        return self.decision_function(X) >= clf_cutoff

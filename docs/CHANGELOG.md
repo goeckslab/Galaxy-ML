@@ -1,4 +1,16 @@
-### Version 0.8.0 (12-10-2019)
+### Version 0.8.1 / tool_main: 1.0.8.1 / keras: 0.5.0 (12-12-2019)
+
+#### Changes
+
+- Changes all `predict_score` to `decision_functions`.
+
+#### Bug Fixes
+
+- Fixes `_SafePickler` desn't recognize `binarize_target` module.
+- Fixes `GridSearchCV` has no `predict_score` issue.
+
+
+### Version 0.8.0 / tool_main: 1.0.8.0 / keras: 0.5.0 (12-10-2019)
 
 #### New Features
 
