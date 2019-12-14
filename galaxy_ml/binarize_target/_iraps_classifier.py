@@ -29,7 +29,7 @@ from sklearn.utils import as_float_array, check_X_y, check_random_state
 from sklearn.utils.validation import check_is_fitted, check_memory
 
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 
 class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
