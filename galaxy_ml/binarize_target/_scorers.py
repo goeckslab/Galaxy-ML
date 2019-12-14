@@ -1,5 +1,7 @@
+import numpy as np
 from ..utils import get_main_estimator
 from sklearn import metrics
+from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics.scorer import _BaseScorer
 
 
@@ -17,7 +19,32 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
         else:
             y_trans = y > discretize_value
 
-        y_score = clf.predict_score(X)
+        y_type = type_of_target(y_trans)
+        if y_type not in ("binary", "multilabel-indicator"):
+            raise ValueError("{0} format is not supported".format(y_type))
+
+        try:
+            y_score = clf.decision_function(X)
+
+            # For multi-output multi-class estimator
+            if isinstance(y_score, list):
+                y_score = np.vstack([p for p in y_score]).T
+
+        except (NotImplementedError, AttributeError):
+            y_score = clf.predict_proba(X)
+
+            if y_type == "binary":
+                if y_score.shape[1] == 2:
+                    y_score = y_score[:, 1]
+                else:
+                    raise ValueError('got predict_proba of shape {},'
+                                     ' but need classifier with two'
+                                     ' classes for {} scoring'.format(
+                                         y_score.shape,
+                                         self._score_func.__name__))
+            elif isinstance(y_score, list):
+                y_score = np.vstack([p[:, -1] for p in y_score]).T
+
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_score,
                                                  sample_weight=sample_weight,

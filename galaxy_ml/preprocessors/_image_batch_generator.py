@@ -164,7 +164,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
     shear_range : Float. Shear Intensity.
     zoom_range : Float or [lower, upper].
     channel_shift_range : Float. Range for random channel shifts.
-    fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+    fill_mode : One of {"constant", "nearest", "reflect" or "wrap"}.
         Default is 'nearest'.
         Points outside the boundaries of the input are filled
         according to the given mode:
@@ -193,7 +193,6 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         If you never set it, then it will be "channels_last".
     interpolation_order : Int.
     dtype : Dtype to use for the generated arrays. Default is 'float32'.
-
     dataframe : Pandas dataframe containing the filepaths relative to
         `directory`. From `keras_preprocessing.image.ImageDataGenerator.
         flow_from_dataframe`.

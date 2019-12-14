@@ -1,10 +1,12 @@
 # test for irpas_classifier
 
 import pandas as pd
+import pickle
 import time
 import warnings
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVC
 from sklearn.model_selection import cross_validate
 from sklearn.metrics.scorer import balanced_accuracy_scorer
 from sklearn.metrics.scorer import r2_scorer
@@ -13,6 +15,7 @@ from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer, BINARIZE_SCORERS)
+from galaxy_ml.utils import load_model
 
 
 warnings.simplefilter('ignore')
@@ -73,6 +76,28 @@ def test_binarize_target_classifier():
 
     f1_macro_mean = result_val['test_F1_MACRO'].mean()
     assert round(f1_macro_mean, 4) == 0.4922, f1_macro_mean
+
+    # new test
+    clf = SVC(random_state=10)
+    estimator = BinarizeTargetClassifier(clf)
+
+    # save models
+    with open('./tools/test-data/binarize_svc.zip', 'wb') as f:
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+
+    # load models
+    with open('./tools/test-data/binarize_svc.zip', 'rb') as f:
+        estimator = load_model(f)
+
+    result_val = cross_validate(
+        estimator, X, y, cv=cv, scoring=scoring,
+        verbose=0, n_jobs=2)
+
+    ap_mean = result_val['test_AP'].mean()
+    assert round(ap_mean, 2) == 0.42, ap_mean
+
+    roc_mean = result_val['test_AUC'].mean()
+    assert round(roc_mean, 2) == 0.75, roc_mean
 
 
 def test_binarize_target_regressor():

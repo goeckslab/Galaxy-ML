@@ -103,18 +103,6 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
 
         return self
 
-    def predict_score(self, X):
-        """
-        Output the proba for True label
-        For use in the binarize target scorers.
-        """
-        check_is_fitted(self, 'classifier_')
-        try:
-            return self.classifier_.decision_function(X)
-        except (NotImplementedError, AttributeError):
-            # binary classification
-            return self.classifier_.predict_proba(X)[:, 1]
-
 
 class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
     """
@@ -215,7 +203,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         check_is_fitted(self, 'regressor_')
         return self.regressor_.predict(X)
 
-    def predict_score(self, X):
+    def decision_function(self, X):
         """
         Output the proba for True label
         For use in the binarize target scorers.
@@ -233,7 +221,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         ----------
         cutoff : float
         """
-        scores = self.predict_score(X)
+        scores = self.decision_function(X)
         return scores > cutoff
 
 
