@@ -1,18 +1,10 @@
 """
-class IRAPSCore
-class IRAPSClassifier
-class BinarizeTargetClassifier
-class BinarizeTargetRegressor
-class _BinarizeTargetScorer
-class _BinarizeTargetProbaScorer
+Refer to:
 
-binarize_auc_scorer
-binarize_average_precision_scorer
-
-binarize_accuracy_scorer
-binarize_balanced_accuracy_scorer
-binarize_precision_scorer
-binarize_recall_scorer
+McGrail, D.J., Lin, C.C., Garnett, J. et al. Improved prediction of
+PARP inhibitor response and identification of synergizing agents
+through use of a novel gene expression signature generation algorithm.
+npj Syst Biol Appl 3, 8 (2017) doi:10.1038/s41540-017-0011-6
 """
 
 
