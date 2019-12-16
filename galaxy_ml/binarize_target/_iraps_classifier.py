@@ -1,5 +1,5 @@
 """
-Refer to:
+Reference:
 
 McGrail, D.J., Lin, C.C., Garnett, J. et al. Improved prediction of
 PARP inhibitor response and identification of synergizing agents
