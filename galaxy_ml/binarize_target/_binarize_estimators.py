@@ -67,7 +67,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             y_trans = y > discretize_value
 
         n_positives = np.sum(y_trans)
-        if self.verbose > 0:
+        # for older version compatibility
+        if self.verbose and self.verbose > 0:
             print("{0} out of total {1} samples are discretized into "
                   "positive.".format(n_positives, X.shape[0]))
 
@@ -87,6 +88,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         else:
             self.classifier_.fit(X, y_trans, **fit_params)
 
+        # Used in RFE or SelectFromModel
         if hasattr(self.classifier_, 'feature_importances_'):
             self.feature_importances_ = self.classifier_.feature_importances_
         if hasattr(self.classifier_, 'coef_'):
@@ -95,13 +97,23 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             self.n_outputs_ = self.classifier_.n_outputs_
         if hasattr(self.classifier_, 'n_features_'):
             self.n_features_ = self.classifier_.n_features_
-        if hasattr(self.classifier_, 'decision_function'):
-            self.decision_function = self.classifier_.decision_function
-        if hasattr(self.classifier_, 'predict_proba'):
-            self.predict_proba = self.classifier_.predict_proba
-        self.predict = self.classifier_.predict
 
         return self
+
+    def predict(self, X):
+        """Predict using a fitted estimator
+        """
+        return self.classifier_.predict(X)
+
+    def decision_function(self, X):
+        """Predict using a fitted estimator
+        """
+        return self.classifier_.decision_function(X)
+
+    def predict_proba(self, X):
+        """Predict using a fitted estimator
+        """
+        return self.classifier_.predict_proba(X)
 
 
 class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
@@ -165,7 +177,8 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         else:
             n_positives = np.sum(y > discretize_value)
 
-        if self.verbose > 0:
+        # for older version compatibility
+        if self.verbose and self.verbose > 0:
             print("{0} out of total {1} samples are discretized into "
                   "positive.".format(n_positives, X.shape[0]))
 

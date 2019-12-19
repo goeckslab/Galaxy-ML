@@ -2,13 +2,16 @@
 
 import pandas as pd
 import pickle
+import tempfile
 import time
 import warnings
+from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
-from sklearn.metrics.scorer import balanced_accuracy_scorer
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics.scorer import r2_scorer
 from galaxy_ml.model_validations import OrderedKFold
 from galaxy_ml.binarize_target import (
@@ -98,6 +101,33 @@ def test_binarize_target_classifier():
 
     roc_mean = result_val['test_AUC'].mean()
     assert round(roc_mean, 2) == 0.75, roc_mean
+
+
+def test_pipeline_in_binarize_target_classifier():
+
+    std = StandardScaler()
+    clf = SVC(random_state=10)
+    pipe = Pipeline([('std', std), ('clf', clf)])
+    estimator = BinarizeTargetClassifier(pipe)
+
+    cv = OrderedKFold(5)
+    scoring = dict(
+        AUC=binarize_auc_scorer,
+        AP=binarize_average_precision_scorer
+    )
+
+    search = GridSearchCV(estimator, {}, cv=cv, scoring=scoring,
+                          refit='AP')
+    search.fit(X, y)
+
+    best_est = search.best_estimator_
+    best_score = search.best_score_
+
+    assert round(best_score, 2) == 0.33, best_score
+
+    # save models
+    with tempfile.TemporaryFile() as f:
+        pickle.dump(best_est, f, pickle.HIGHEST_PROTOCOL)
 
 
 def test_binarize_target_regressor():
