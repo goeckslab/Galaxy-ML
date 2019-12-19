@@ -67,7 +67,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             y_trans = y > discretize_value
 
         n_positives = np.sum(y_trans)
-        # for older version compatibility 
+        # for older version compatibility
         if self.verbose and self.verbose > 0:
             print("{0} out of total {1} samples are discretized into "
                   "positive.".format(n_positives, X.shape[0]))
@@ -177,7 +177,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         else:
             n_positives = np.sum(y > discretize_value)
 
-        # for older version compatibility 
+        # for older version compatibility
         if self.verbose and self.verbose > 0:
             print("{0} out of total {1} samples are discretized into "
                   "positive.".format(n_positives, X.shape[0]))
