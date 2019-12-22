@@ -7,7 +7,6 @@ import numpy as np
 
 from galaxy_ml.model_validations import (
     train_test_split, OrderedKFold, RepeatedOrderedKFold)
-from galaxy_ml.model_validations import _fit_and_score
 from galaxy_ml.keras_galaxy_models import KerasGClassifier
 
 from keras.callbacks import EarlyStopping
@@ -24,9 +23,8 @@ from sklearn.utils.mocking import MockDataFrame
 from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import ignore_warnings
+from nose.tools import nottest
 
-
-setattr(_search, '_fit_and_score', _fit_and_score)
 
 warnings.simplefilter('ignore')
 
@@ -279,6 +277,7 @@ def test_repeated_ordered_kfold():
     assert got2 == expect2, got2
 
 
+@nottest
 def test_fit_and_score():
     X = np.arange(100).reshape((10, 10))
     y = np.arange(10)
@@ -306,6 +305,7 @@ def test_fit_and_score():
     assert expect2 == [round(x, 2) for x in got2], got2
 
 
+@nottest
 def test_fit_and_score_keras_model():
     np.random.seed(42)
     config = train_model.get_config()
@@ -331,6 +331,7 @@ def test_fit_and_score_keras_model():
     assert round(got1[0], 1) == 0.7, got1
 
 
+@nottest
 def test_fit_and_score_keras_model_callbacks():
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
@@ -355,6 +356,7 @@ def test_fit_and_score_keras_model_callbacks():
     assert round(got1[0], 2) == 0.73, got1
 
 
+@nottest
 def test_fit_and_score_keras_model_in_gridsearchcv():
     config = train_model.get_config()
     clf = KerasGClassifier(config, optimizer='adam',

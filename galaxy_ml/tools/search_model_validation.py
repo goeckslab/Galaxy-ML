@@ -23,10 +23,6 @@ from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                              clean_params, get_main_estimator)
 
 
-_fit_and_score = try_get_attr('galaxy_ml.model_validations', '_fit_and_score')
-setattr(_search, '_fit_and_score', _fit_and_score)
-setattr(_validation, '_fit_and_score', _fit_and_score)
-
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 # handle  disk cache
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')

@@ -38,10 +38,7 @@ from sklearn.model_selection import _validation
 
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                    read_columns, get_module)
-from galaxy_ml.model_validations import _fit_and_score
 
-
-setattr(_validation, '_fit_and_score', _fit_and_score)
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')

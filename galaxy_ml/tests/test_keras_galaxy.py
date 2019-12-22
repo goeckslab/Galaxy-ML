@@ -27,7 +27,6 @@ from galaxy_ml.keras_galaxy_models import (
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
-# from galaxy_ml.model_validations import _fit_and_score
 
 from nose.tools import nottest
 
@@ -393,8 +392,6 @@ def test_get_params_keras_g_classifier():
 
 
 def test_gridsearchcv_keras_g_classifier():
-    # setattr(_search, '_fit_and_score', _fit_and_score)
-    # GridSearchCV = getattr(_search, 'GridSearchCV')
 
     config = train_model.get_config()
     classifier = KerasGClassifier(config, optimizer='adam',
@@ -751,9 +748,6 @@ def test_keras_galaxy_model_callbacks():
 
 def test_keras_galaxy_model_callbacks_girdisearch():
 
-    # setattr(_search, '_fit_and_score', _fit_and_score)
-    # GridSearchCV = getattr(_search, 'GridSearchCV')
-
     config = train_model.get_config()
     cbacks = [
         {'callback_selection':
@@ -895,9 +889,6 @@ def test_keras_fasta_protein_batch_classifier():
     }
     cloned_clf.set_params(**new_params)
 
-    # setattr(_search, '_fit_and_score', _fit_and_score)
-    # GridSearchCV = getattr(_search, 'GridSearchCV')
-
     # X = np.arange(560118)[:, np.newaxis]
     X1 = np.arange(1000)[:, np.newaxis]
     # y = np.random.randint(2, size=560118)
@@ -983,8 +974,6 @@ def test_keras_genomic_intervals_batch_classifier():
     scoring = 'balanced_accuracy'
     param_grid = {}
 
-    # setattr(_search, '_fit_and_score', _fit_and_score)
-    # GridSearchCV = getattr(_search, 'GridSearchCV')
     grid = GridSearchCV(classifier1, param_grid, scoring=scoring,
                         cv=cv, refit=False, error_score='raise',
                         n_jobs=1)
