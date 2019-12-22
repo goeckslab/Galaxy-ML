@@ -363,7 +363,7 @@ def main(inputs, infile_estimator, infile1, infile2,
                                   **val_split_options)
 
     # train and eval
-    if hasattr(estimator, 'validation_data'):
+    if hasattr(estimator, 'config') and hasattr(estimator, 'model_type'):
         if exp_scheme == 'train_val_test':
             estimator.fit(X_train, y_train,
                           validation_data=(X_val, y_val))
@@ -402,7 +402,6 @@ def main(inputs, infile_estimator, infile1, infile2,
             del main_est.model_
             del main_est.fit_params
             del main_est.model_class_
-            del main_est.validation_data
             if getattr(main_est, 'data_generator_', None):
                 del main_est.data_generator_
 

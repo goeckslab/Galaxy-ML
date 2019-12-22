@@ -29,11 +29,12 @@ from keras.utils.data_utils import (Sequence, OrderedEnqueuer,
                                     GeneratorEnqueuer)
 from keras.utils.generic_utils import has_arg, to_list
 from sklearn.base import (BaseEstimator, ClassifierMixin,
-                          RegressorMixin, clone)
+                          RegressorMixin, clone, is_classifier)
 from sklearn.metrics import SCORERS
+from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, check_random_state
 from .externals.selene_sdk.utils import compute_score
 
 
@@ -391,8 +392,10 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_data : None or tuple of arrays, (X_test, y_test)
-        fit_param
+    validation_fraction : Float. default=0.1
+        The proportion of training data to set aside as validation set.
+        Must be within [0, 1). Will be ignored if `validation_data` is
+        set via fit_params.
     steps_per_epoch : int, default is None
         fit param. The number of train batches per epoch
     validation_steps : None or int, default is None
@@ -409,7 +412,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  nesterov=None, rho=None, amsgrad=None, beta_1=None,
                  beta_2=None, schedule_decay=None, epochs=1,
                  batch_size=None, seed=None, callbacks=None,
-                 validation_data=None, steps_per_epoch=None,
+                 validation_fraction=0.1, steps_per_epoch=None,
                  validation_steps=None, verbose=0, **fit_params):
         self.config = config
         self.model_type = model_type
@@ -420,7 +423,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.batch_size = batch_size or 32
         self.seed = seed
         self.callbacks = callbacks
-        self.validation_data = validation_data
+
+        if not (0.0 <= validation_fraction < 1.0):
+            raise ValueError("validation_fraction must be in range [0, 1)")
+        self.validation_fraction = validation_fraction
+
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
         self.verbose = verbose
@@ -596,6 +603,36 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             return None
         return callbacks
 
+    def _make_validation_split(self, X, y):
+        n_samples = X.shape[0]
+
+        if y is not None and is_classifier(self):
+            splitter_type = StratifiedShuffleSplit
+        else:
+            splitter_type = ShuffleSplit
+        random_state = check_random_state(self.seed)
+        cv = splitter_type(test_size=self.validation_fraction,
+                           random_state=random_state)
+        idx_train, idx_val = next(cv.split(X, y))
+        if idx_train.shape[0] == 0 or idx_val.shape[0] == 0:
+            raise ValueError(
+                "Splitting %d samples into a train set and a validation set "
+                "with validation_fraction=%r led to an empty set (%d and %d "
+                "samples). Please either change validation_fraction or "
+                "increase number of samples"
+                % (n_samples, self.validation_fraction, idx_train.shape[0],
+                   idx_val.shape[0]))
+
+        if y is None:
+            X_train = X[idx_train]
+            validation_data = (X[idx_val],)
+            return X_train, None, validation_data
+        else:
+            X_train, y_train = X[idx_train], y[idx_train]
+            validation_data = (X[idx_val], y[idx_val])
+
+        return X_train, y_train, validation_data
+
     def _fit(self, X, y, **kwargs):
         # base fit
         if K.backend() == 'tensorflow':
@@ -640,14 +677,19 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             y = to_categorical(y)
 
         fit_params = self.fit_params
+
+        # make validation split
+        if self.validation_fraction and 'validation_data' not in kwargs \
+                and 'validation_data' not in fit_params:
+            X, y, validation_data = self._make_validation_split(X, y)
+            fit_params['validation_data'] = validation_data
+
         callbacks = self._callbacks
-        validation_data = self.validation_data
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
                                callbacks=callbacks,
-                               validation_data=validation_data,
                                steps_per_epoch=steps_per_epoch,
                                validation_steps=validation_steps))
         fit_params.update(kwargs)
@@ -976,8 +1018,10 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_data : None or tuple of arrays, (X_test, y_test)
-        fit_param
+    validation_fraction : Float. default=0.1
+        The proportion of training data to set aside as validation set.
+        Must be within [0, 1). Will be ignored if `validation_data` is
+        set via fit_params.
     steps_per_epoch : int, default is None
         fit param. The number of train batches per epoch
     validation_steps : None or int, default is None
@@ -1004,7 +1048,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  amsgrad=None, beta_1=None, beta_2=None,
                  schedule_decay=None, epochs=1, batch_size=None,
                  seed=None, n_jobs=1, callbacks=None,
-                 validation_data=None, steps_per_epoch=None,
+                 validation_fraction=0.1, steps_per_epoch=None,
                  validation_steps=None, verbose=0,
                  prediction_steps=None, class_positive_factor=1,
                  **fit_params):
@@ -1015,7 +1059,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
             schedule_decay=schedule_decay, epochs=epochs,
             batch_size=batch_size, seed=seed, callbacks=callbacks,
-            validation_data=validation_data,
+            validation_fraction=validation_fraction,
             steps_per_epoch=steps_per_epoch,
             validation_steps=validation_steps,
             verbose=verbose,
@@ -1110,11 +1154,17 @@ class KerasGBatchClassifier(KerasGClassifier):
                             metrics=self.metrics)
 
         fit_params = self.fit_params
+
+        # make validation split
+        if self.validation_fraction and 'validation_data' not in kwargs \
+                and 'validation_data' not in fit_params:
+            X, y, validation_data = self._make_validation_split(X, y)
+            fit_params['validation_data'] = validation_data
+
         batch_size = self.batch_size or 32
         epochs = self.epochs
         n_jobs = self.n_jobs
         callbacks = self._callbacks
-        validation_data = self.validation_data
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
 
@@ -1123,7 +1173,6 @@ class KerasGBatchClassifier(KerasGClassifier):
             workers=n_jobs,
             callbacks=callbacks,
             use_multiprocessing=False,
-            validation_data=validation_data,
             steps_per_epoch=steps_per_epoch,
             validation_steps=validation_steps))
 
