@@ -1,3 +1,15 @@
+### Version 0.8.2.dev
+
+#### Changes
+
+- Makes `validation_fraction` in keras galaxy models to replace `validation_data`. `validation_data` still can be set via fit_params. In such a case, the `validation_fraction` is ignored.
+- Makes `galaxy_ml.model_validations._fit_and_score` depreciated in tools.
+
+#### Bug Fixes
+
+- Fixes `BinaraizeTargetClassifier` pickle error when persisting a fitted object. 
+
+
 ### Version 0.8.1 / tool_main: 1.0.8.1 / keras: 0.5.0 (12-12-2019)
 
 #### Changes

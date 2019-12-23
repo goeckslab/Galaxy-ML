@@ -12,6 +12,7 @@ from keras.layers import (Dense, Activation, Conv1D, Flatten,
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection._validation import _fit_and_score
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import ShuffleSplit
@@ -26,7 +27,6 @@ from galaxy_ml.keras_galaxy_models import (
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
-from galaxy_ml.model_validations import _fit_and_score
 
 from nose.tools import nottest
 
@@ -342,7 +342,7 @@ def test_get_params_base_keras_model():
         'momentum': 0, 'nesterov': False,
         'optimizer': 'sgd', 'rho': None,
         'schedule_decay': None, 'seed': None,
-        'steps_per_epoch': None, 'validation_data': None,
+        'steps_per_epoch': None, 'validation_fraction': 0.1,
         'validation_steps': None,
         'verbose': 0}
 
@@ -384,7 +384,7 @@ def test_get_params_keras_g_classifier():
         'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
         'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
-        'validation_data', 'validation_steps', 'verbose',
+        'validation_fraction', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -392,8 +392,6 @@ def test_get_params_keras_g_classifier():
 
 
 def test_gridsearchcv_keras_g_classifier():
-    setattr(_search, '_fit_and_score', _fit_and_score)
-    GridSearchCV = getattr(_search, 'GridSearchCV')
 
     config = train_model.get_config()
     classifier = KerasGClassifier(config, optimizer='adam',
@@ -424,7 +422,7 @@ def test_gridsearchcv_keras_g_classifier():
             ['kernel_initializer']['config']['seed'])
 
     print(grid_result.best_score_)
-    assert got1 == 0.70, got1
+    assert 0.68 <= got1 <= 0.72, got1
     assert got2 == 0.003, got2
     assert got3 == 60, got3
     assert got4 == 20, got4
@@ -444,7 +442,7 @@ def test_get_params_keras_g_regressor():
         'config', 'decay', 'epochs', 'loss', 'lr', 'metrics',
         'model_type', 'momentum', 'nesterov', 'optimizer',
         'rho', 'schedule_decay', 'seed', 'steps_per_epoch',
-        'validation_data', 'validation_steps', 'verbose',
+        'validation_fraction', 'validation_steps', 'verbose',
         'layers_0_Dense__config__kernel_initializer__config__seed',
         'layers_1_Dense__config__kernel_initializer__config__seed']
 
@@ -543,7 +541,7 @@ def test_funtional_model_get_params():
         'schedule_decay': None,
         'seed': 0,
         'steps_per_epoch': None,
-        'validation_data': None,
+        'validation_fraction': 0.1,
         'validation_steps': None,
         'verbose': 0,
         'layers_1_Conv2D__name': 'conv2d_1',
@@ -744,13 +742,11 @@ def test_keras_galaxy_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert 0.65 <= round(got1[0], 2) <= 0.75, got1
+    print(got1)
+    assert 0.65 <= round(got1[0], 2) <= 0.70, got1
 
 
 def test_keras_galaxy_model_callbacks_girdisearch():
-
-    setattr(_search, '_fit_and_score', _fit_and_score)
-    GridSearchCV = getattr(_search, 'GridSearchCV')
 
     config = train_model.get_config()
     cbacks = [
@@ -822,7 +818,7 @@ def test_keras_fasta_batch_classifier():
         'momentum': 0, 'n_jobs': 1, 'nesterov': False,
         'optimizer': 'sgd', 'prediction_steps': None,
         'rho': None, 'schedule_decay': None, 'seed': None,
-        'steps_per_epoch': None, 'validation_data': None,
+        'steps_per_epoch': None, 'validation_fraction': 0.1,
         'validation_steps': None, 'verbose': 0}
     assert got == expect, got
 
@@ -858,6 +854,7 @@ def test_keras_fasta_protein_batch_classifier():
     classifier = KerasGBatchClassifier(config, batch_generator,
                                        model_type='functional',
                                        batch_size=32,
+                                       validation_fraction=0,
                                        epochs=3, seed=0)
 
     params = classifier.get_params()
@@ -881,7 +878,7 @@ def test_keras_fasta_protein_batch_classifier():
         'momentum': 0, 'n_jobs': 1, 'nesterov': False,
         'optimizer': 'sgd', 'prediction_steps': None, 'rho': None,
         'schedule_decay': None, 'seed': 0, 'steps_per_epoch': None,
-        'validation_data': None, 'validation_steps': None,
+        'validation_fraction': 0, 'validation_steps': None,
         'verbose': 0}
     assert got == expect, got
 
@@ -891,9 +888,6 @@ def test_keras_fasta_protein_batch_classifier():
             './tools/test-data/uniprot_sprot_10000L.fasta'
     }
     cloned_clf.set_params(**new_params)
-
-    setattr(_search, '_fit_and_score', _fit_and_score)
-    GridSearchCV = getattr(_search, 'GridSearchCV')
 
     # X = np.arange(560118)[:, np.newaxis]
     X1 = np.arange(1000)[:, np.newaxis]
@@ -980,8 +974,6 @@ def test_keras_genomic_intervals_batch_classifier():
     scoring = 'balanced_accuracy'
     param_grid = {}
 
-    setattr(_search, '_fit_and_score', _fit_and_score)
-    GridSearchCV = getattr(_search, 'GridSearchCV')
     grid = GridSearchCV(classifier1, param_grid, scoring=scoring,
                         cv=cv, refit=False, error_score='raise',
                         n_jobs=1)
