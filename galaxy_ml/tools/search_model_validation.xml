@@ -100,7 +100,7 @@
         </conditional>
         <expand macro="sl_mixed_input_plus_sequence"/>
         <conditional name="outer_split">
-            <param name="split_mode" type="select" label="Whether to hold a portion of samples for test exclusively?" help="Nested CV or train_test_split">
+            <param name="split_mode" type="select" label="Whether to hold a portion of samples for test exclusively?" help="Nested CV">
                 <option value="no" selected="true">Nope</option>
                 <option value="nested_cv">Yes - do nested CV</option>
             </param>
@@ -685,7 +685,7 @@ Examples:
 
 - np_random_choice(list(range(1, 51)) + [None], size=20)
 
-- scipy_stats_randin(1, 11)
+- scipy_stats_randint(1, 11)
 
 **Estimator / Preprocessor search (additional `:` in the front)**::
 

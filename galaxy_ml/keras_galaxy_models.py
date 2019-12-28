@@ -424,6 +424,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.seed = seed
         self.callbacks = callbacks
 
+        if validation_fraction is None:
+            validation_fraction = 0.
         if not (0.0 <= validation_fraction < 1.0):
             raise ValueError("validation_fraction must be in range [0, 1)")
         self.validation_fraction = validation_fraction
