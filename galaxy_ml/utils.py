@@ -618,7 +618,7 @@ def get_search_params(estimator):
         # especially useful for keras models
         k, v = param.s_param, param.value
         keywords = ('n_jobs', 'pre_dispatch', 'memory', 'name', 'nthread',
-                    'verbose', '_path')
+                    '_path')
         exact_keywords = ('steps')
         if k.endswith(keywords) or k in exact_keywords:
             results.append(['*', k, k+": "+repr(v)])
