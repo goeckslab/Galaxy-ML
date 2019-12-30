@@ -5,7 +5,7 @@ from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics.scorer import _BaseScorer
 
 
-class _BinarizeTargetProbaScorer(_BaseScorer):
+class _BinarizeTargetThresholdScorer(_BaseScorer):
     """
     base class to make binarized target specific scorer
     """
@@ -54,13 +54,16 @@ class _BinarizeTargetProbaScorer(_BaseScorer):
                                                  **self._kwargs)
 
 
+# TODO deprecate in next major version
+_BinarizeTargetProbaScorer = _BinarizeTargetThresholdScorer
+
 # roc_auc
 binarize_auc_scorer =\
-        _BinarizeTargetProbaScorer(metrics.roc_auc_score, 1, {})
+        _BinarizeTargetThresholdScorer(metrics.roc_auc_score, 1, {})
 
 # average_precision_scorer
 binarize_average_precision_scorer =\
-        _BinarizeTargetProbaScorer(metrics.average_precision_score, 1, {})
+        _BinarizeTargetThresholdScorer(metrics.average_precision_score, 1, {})
 
 # roc_auc_scorer
 # iraps_auc_scorer = binarize_auc_scorer
