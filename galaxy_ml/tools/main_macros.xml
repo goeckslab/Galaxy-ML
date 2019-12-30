@@ -1829,43 +1829,6 @@
     </conditional>
   </xml>
 
-  <xml name="stacking_ensemble_inputs">
-    <section name="options" title="Advanced Options" expanded="false">
-        <yield/>
-        <param argument="use_features_in_secondary" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
-        <param argument="store_train_meta_features" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false"/>
-    </section>
-  </xml>
-
-  <xml name="stacking_base_estimator">
-    <conditional name="estimator_selector">
-        <param name="selected_module" type="select" label="Choose the module that contains target estimator:" >
-            <expand macro="estimator_module_options">
-                <option value="custom_estimator">Load a custom estimator</option>
-            </expand>
-        </param>
-        <expand macro="estimator_suboptions">
-            <when value="custom_estimator">
-                <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline"/>
-            </when>
-        </expand>
-    </conditional>
-  </xml>
-
-  <xml name="stacking_voting_weights">
-    <section name="options" title="Advanced Options" expanded="false">
-        <param argument="weights" type="text" value="[]" optional="true" help="Sequence of weights (float or int). Uses uniform weights if None (`[]`).">
-          <sanitizer>
-            <valid initial="default">
-              <add value="["/>
-              <add value="]"/>
-            </valid>
-          </sanitizer>
-        </param>
-        <yield/>
-    </section>
-  </xml>
-
   <xml name="preprocessors_sequence_encoders">
     <conditional name="encoder_selection">
         <param name="encoder_type" type="select" label="Choose the sequence encoder class">
