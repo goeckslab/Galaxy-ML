@@ -27,6 +27,7 @@ from galaxy_ml.keras_galaxy_models import (
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
+from galaxy_ml.model_validations import _fit_and_score
 
 from nose.tools import nottest
 
@@ -973,6 +974,9 @@ def test_keras_genomic_intervals_batch_classifier():
     cv = ShuffleSplit(1, test_size=0.2, random_state=123)
     scoring = 'balanced_accuracy'
     param_grid = {}
+
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    GridSearchCV = getattr(_search, 'GridSearchCV')
 
     grid = GridSearchCV(classifier1, param_grid, scoring=scoring,
                         cv=cv, refit=False, error_score='raise',
