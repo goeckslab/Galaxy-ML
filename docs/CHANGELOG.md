@@ -3,7 +3,10 @@
 #### Changes
 
 - Makes `validation_fraction` in keras galaxy models to replace `validation_data`. `validation_data` still can be set via fit_params. In such a case, the `validation_fraction` is ignored.
-- Makes `galaxy_ml.model_validations._fit_and_score` depreciated in tools.
+- Makes `galaxy_ml.model_validations._fit_and_score` depreciated in tools. Update: `_fit_and_score` is still needed for `KerasGBatchClassifier`.
+- Makes `verbose` in `model.fit` for keras galaxy models.
+- Adds `drop_last_proba` for stacking classifiers in stacking ensembles tools.
+- Expands secondary scoring of binarize target scorers to all scores.
 
 #### Bug Fixes
 
