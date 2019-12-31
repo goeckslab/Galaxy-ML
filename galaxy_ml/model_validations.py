@@ -355,13 +355,13 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
     ##########################################################
     # Changes on sklearn.model_selection._search
-    for param in estimator.get_params().keys():
-        # suppose work for both pipeline or single
-        # keras model
-        if param.endswith('validation_data'):
-            fit_params.update(
-                {param: (X_test, y_test)})
-            break
+    # for param in estimator.get_params().keys():
+    #    # suppose work for both pipeline or single
+    #    # keras model
+    #    if param.endswith('validation_data'):
+    #        fit_params.update(
+    #            {param: (X_test, y_test)})
+    #        break
     # Changes end
     ##########################################################
     try:

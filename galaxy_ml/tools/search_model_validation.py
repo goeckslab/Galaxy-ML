@@ -467,6 +467,13 @@ def main(inputs, infile_estimator, infile1, infile2,
     with open(infile_estimator, 'rb') as estimator_handler:
         estimator = load_model(estimator_handler)
 
+    if estimator.__class__.__name__ == 'KerasGBatchClassifier':
+        _fit_and_score = try_get_attr('galaxy_ml.model_validations',
+                                      '_fit_and_score')
+
+        setattr(_search, '_fit_and_score', _fit_and_score)
+        setattr(_validation, '_fit_and_score', _fit_and_score)
+
     optimizer = params['search_schemes']['selected_search_scheme']
     optimizer = getattr(model_selection, optimizer)
 

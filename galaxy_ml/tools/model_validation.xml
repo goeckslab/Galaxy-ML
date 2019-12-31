@@ -58,6 +58,13 @@ with open(input_json_path, 'r') as param_handler:
 with open('$infile_estimator', 'rb') as estimator_handler:
     estimator = load_model(estimator_handler)
 
+if estimator.__class__.__name__ == 'KerasGBatchClassifier':
+    _fit_and_score = try_get_attr('galaxy_ml.model_validations',
+                                  '_fit_and_score')
+
+    setattr(_search, '_fit_and_score', _fit_and_score)
+    setattr(_validation, '_fit_and_score', _fit_and_score)
+
 estimator_params = estimator.get_params()
 
 ## check estimator hyperparameters
