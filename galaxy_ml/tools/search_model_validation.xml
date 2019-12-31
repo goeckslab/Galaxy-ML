@@ -2,7 +2,7 @@
     <description>performs hyperparameter optimization using various SearchCVs</description>
     <macros>
         <import>main_macros.xml</import>
-         <macro name="search_cv_estimator">
+        <macro name="search_cv_estimator">
             <param name="infile_estimator" type="data" format="zip" label="Choose the dataset containing pipeline/estimator object"/>
             <param name="is_deep_learning" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Is the estimator a deep learning model?"/>
             <section name="search_params_builder" title="Search parameters Builder" expanded="true">

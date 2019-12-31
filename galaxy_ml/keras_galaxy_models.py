@@ -403,8 +403,9 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
-    verbose : 0 or 1
-        if 1, log device placement
+    verbose : 0, 1 or 2
+        Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
+        epoch. If > 0, log device placement
     """
     def __init__(self, config, model_type='sequential',
                  optimizer='sgd', loss='binary_crossentropy',
@@ -424,6 +425,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.seed = seed
         self.callbacks = callbacks
 
+        if validation_fraction is None:
+            validation_fraction = 0.
         if not (0.0 <= validation_fraction < 1.0):
             raise ValueError("validation_fraction must be in range [0, 1)")
         self.validation_fraction = validation_fraction
@@ -687,11 +690,13 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         callbacks = self._callbacks
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
+        verbose = self.verbose
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
                                callbacks=callbacks,
                                steps_per_epoch=steps_per_epoch,
-                               validation_steps=validation_steps))
+                               validation_steps=validation_steps,
+                               verbose=verbose))
         fit_params.update(kwargs)
 
         history = self.model_.fit(X, y, **fit_params)
@@ -1029,8 +1034,9 @@ class KerasGBatchClassifier(KerasGClassifier):
         of samples divided by batch_size.
     seed : None or int, default None
         backend random seed
-    verbose : 0 or 1
-        if 1, log device placement.
+    verbose : 0, 1 or 2
+        Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
+        epoch. If > 0, log device placement
     n_jobs : int, default=1
     prediction_steps : None or int, default is None
         prediction steps. If None, it will be number of samples
@@ -1167,6 +1173,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         callbacks = self._callbacks
         steps_per_epoch = self.steps_per_epoch
         validation_steps = self.validation_steps
+        verbose = self.verbose
 
         fit_params.update(dict(
             epochs=epochs,
@@ -1174,7 +1181,8 @@ class KerasGBatchClassifier(KerasGClassifier):
             callbacks=callbacks,
             use_multiprocessing=False,
             steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps))
+            validation_steps=validation_steps,
+            verbose=verbose))
 
         # kwargs from function `fit ` override object initiation values.
         fit_params.update(kwargs)

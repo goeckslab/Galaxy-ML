@@ -10,7 +10,7 @@ from galaxy_ml import model_persist
 from galaxy_ml import model_validations
 from galaxy_ml import preprocessors
 from galaxy_ml import utils
-from galaxy_ml import iraps_classifier
+from galaxy_ml import binarize_target
 from galaxy_ml import feature_selectors
 
 
@@ -43,16 +43,17 @@ PAGES = [
     {
         'page': 'APIs/iraps-classifier.md',
         'classes': [
-            iraps_classifier.IRAPSCore,
-            iraps_classifier.IRAPSClassifier
+            binarize_target.IRAPSCore,
+            binarize_target.IRAPSClassifier
         ]
     },
     {
         'page': 'APIs/binarize-target.md',
         'classes': [
-            iraps_classifier.BinarizeTargetClassifier,
-            iraps_classifier.BinarizeTargetRegressor,
-            iraps_classifier.BinarizeTargetTransformer
+            binarize_target.BinarizeTargetClassifier,
+            binarize_target.BinarizeTargetRegressor,
+            binarize_target.BinarizeTargetTransformer,
+            binarize_target._BinarizeTargetProbaScorer
         ]
     },
     {
