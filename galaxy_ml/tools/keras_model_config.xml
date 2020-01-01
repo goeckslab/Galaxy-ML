@@ -772,6 +772,31 @@
       </conditional>
       <output name="outfile" file="keras04.json"/>
     </test>
+    <test>
+      <conditional name="model_selection">
+        <param name="model_type" value="sequential"/>
+        <param name="input_shape" value="(17, )"/>
+        <repeat name="layers">
+          <conditional name="layer_selection">
+            <param name="layer_type" value="Dense"/>
+            <param name="units" value="100"/>
+          </conditional>
+        </repeat>
+        <repeat name="layers">
+          <conditional name="layer_selection">
+            <param name="layer_type" value="Dropout"/>
+            <param name="rate" value="0.1"/>
+          </conditional>
+        </repeat>
+        <repeat name="layers">
+          <conditional name="layer_selection">
+            <param name="layer_type" value="Dense"/>
+            <param name="units" value="1"/>
+          </conditional>
+        </repeat>
+      </conditional>
+      <output name="outfile" file="keras03.json"/>
+    </test>
   </tests>
   <help>
       <![CDATA[
