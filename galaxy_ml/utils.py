@@ -27,6 +27,7 @@ from sklearn import (
 from sklearn.pipeline import Pipeline
 # TODO remove following imports after scikit-learn v0.22
 from sklearn.experimental import enable_hist_gradient_boosting
+from .externals.selene_sdk.utils import compute_score
 
 
 # handle pickle white list file
@@ -772,7 +773,7 @@ def clean_params(estimator, n_jobs=None):
     for name, p in estimator_params.items():
         # all potential unauthorized file write
         if name == 'memory' or name.endswith('__memory') \
-                or name.endswith('_path'):
+                or name.endswith(('_path', '_dir')):
             new_p = {name: None}
             estimator.set_params(**new_p)
         elif n_jobs is not None and (name == 'n_jobs' or
@@ -787,3 +788,58 @@ def clean_params(estimator, n_jobs=None):
                         "Prohibited callback type: %s!" % cb_type)
 
     return estimator
+
+
+def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
+    """ general score computing based on input scorers
+
+    Parameters
+    ----------
+    y_true : array
+        True label or target values
+    pred_probas : array
+        Prediction values, probability for classification problem
+    scorer : dict
+        dict of `sklearn.metrics.scorer.SCORER`
+    is_multimetric : bool, default is True
+    """
+    if y_true.ndim == 1 or y_true.shape[-1] == 1:
+        pred_probas = pred_probas.ravel()
+        pred_labels = (pred_probas > 0.5).astype('int32')
+        targets = y_true.ravel().astype('int32')
+        if not is_multimetric:
+            preds = pred_labels if scorer.__class__.__name__ == \
+                '_PredictScorer' else pred_probas
+            score = scorer._score_func(targets, preds, **scorer._kwargs)
+
+            return score
+        else:
+            scores = {}
+            for name, one_scorer in scorer.items():
+                preds = pred_labels if one_scorer.__class__.__name__\
+                    == '_PredictScorer' else pred_probas
+                score = one_scorer._score_func(targets, preds,
+                                               **one_scorer._kwargs)
+                scores[name] = score
+
+    # TODO: multi-class metrics
+    # multi-label
+    else:
+        pred_labels = (pred_probas > 0.5).astype('int32')
+        targets = y_true.astype('int32')
+        if not is_multimetric:
+            preds = pred_labels if scorer.__class__.__name__ == \
+                '_PredictScorer' else pred_probas
+            score, _ = compute_score(preds, targets,
+                                     scorer._score_func)
+            return score
+        else:
+            scores = {}
+            for name, one_scorer in scorer.items():
+                preds = pred_labels if one_scorer.__class__.__name__\
+                    == '_PredictScorer' else pred_probas
+                score, _ = compute_score(preds, targets,
+                                         one_scorer._score_func)
+                scores[name] = score
+
+    return scores
