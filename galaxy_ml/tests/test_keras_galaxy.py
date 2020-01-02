@@ -12,7 +12,6 @@ from keras.layers import (Dense, Activation, Conv1D, Flatten,
 from sklearn.base import clone
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection._validation import _fit_and_score
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import ShuffleSplit

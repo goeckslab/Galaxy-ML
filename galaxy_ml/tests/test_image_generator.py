@@ -11,8 +11,7 @@ from sklearn.base import clone
 train_test_split.__test__ = False
 
 
-df = pd.read_csv('./tools/test-data/trainLabels_500.tsv', sep='\t')
-df['id'] = df['id'].apply(lambda x: str(x) + '.png')
+df = pd.read_csv('./tools/test-data/cifar-10_500.tsv', sep='\t')
 directory = './tools/test-data/cifar-10_500/'
 
 x_col = 'id'
