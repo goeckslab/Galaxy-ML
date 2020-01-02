@@ -27,7 +27,7 @@ N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 # handle  disk cache
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')
 del os
-NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
+NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path', '_dir',
                   'nthread', 'callbacks')
 
 

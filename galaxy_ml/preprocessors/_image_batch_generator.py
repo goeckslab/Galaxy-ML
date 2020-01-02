@@ -208,11 +208,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
     color_mode : one of "grayscale", "rgb", "rgba". Default: "rgb".
         Whether the images will be converted to have 1 or 3 color channels.
     classes : optional list of classes (e.g. `['dogs', 'cats']`).
-        Default: None. If not provided, the list of classes will be
-        automatically inferred from the `y_col`,
-        which will map to the label indices, will be alphanumeric).
-        The dictionary containing the mapping from class names to class
-        indices can be obtained via the attribute `class_indices`.
+        Default: None. If None, all classes in `y_col` will be used.
     class_mode : one of "binary", "categorical", "input", "multi_output",
         "raw", sparse" or None. Default: "categorical".
         Mode for yielding the targets:
@@ -442,7 +438,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         if self.class_mode == "raw":
             self._targets = self.dataframe[self.y_col].values
 
-        self.filenames = self.dataframe[self.x_col].tolist()
+        self.filenames = list(map(str, self.dataframe[self.x_col]))
         self._filepaths = [
             os.path.join(self.directory, fname) for fname in self.filenames
         ]

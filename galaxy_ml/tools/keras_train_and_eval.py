@@ -10,23 +10,21 @@ from itertools import chain
 from scipy.io import mmread
 from sklearn.pipeline import Pipeline
 from sklearn.metrics.scorer import _check_multimetric_scoring
-from sklearn import model_selection
 from sklearn.model_selection._validation import _score
-from sklearn.model_selection import _search, _validation
 from sklearn.utils import indexable, safe_indexing
 
 from galaxy_ml.externals.selene_sdk.utils import compute_score
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import _predict_generator
 from galaxy_ml.utils import (SafeEval, get_scoring, load_model,
-                             read_columns, try_get_attr, get_module,
+                             read_columns, get_module,
                              clean_params, get_main_estimator)
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')
 del os
-NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path',
+NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path', '_dir',
                   'nthread', 'callbacks')
 ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN', 'ReduceLROnPlateau',
                      'CSVLogger', 'None')
