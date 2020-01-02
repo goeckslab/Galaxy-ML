@@ -438,7 +438,7 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         if self.class_mode == "raw":
             self._targets = self.dataframe[self.y_col].values
 
-        self.filenames = self.dataframe[self.x_col].tolist()
+        self.filenames = list(map(str, self.dataframe[self.x_col]))
         self._filepaths = [
             os.path.join(self.directory, fname) for fname in self.filenames
         ]
