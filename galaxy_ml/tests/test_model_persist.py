@@ -1,16 +1,11 @@
 import json
 import os
 import pickle
+import tempfile
 import time
 import sys
 import galaxy_ml
 from galaxy_ml import model_persist
-from sklearn import (
-    cluster, decomposition, ensemble, feature_extraction,
-    feature_selection, gaussian_process, kernel_approximation,
-    kernel_ridge, linear_model, metrics, model_selection,
-    naive_bayes, neighbors, pipeline, preprocessing, svm,
-    tree, discriminant_analysis)
 
 # from nose.tools import nottest
 
@@ -20,7 +15,6 @@ result_json = './tools/test-data/gbr_model01_py3.json'
 module_folder = (os.path.dirname(galaxy_ml.__file__))
 result_h5 = os.path.join(module_folder,
                          'tools/test-data/gbr_model01_py3.h5')
-
 
 
 def test_jpickle_dumpc():
@@ -39,11 +33,53 @@ def test_jpickle_dumpc():
 
 
 def test_hpickle_dump():
+
+    print("Loading pickled test model...")
+    start_time = time.time()
     with open(test_model, 'rb') as f:
         model = pickle.load(f)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-    model_persist.dump_to_h5(model, result_h5)
+    tmp = tempfile.mktemp()
 
+    print("\nDumping model using pickle protocol-0...")
+    start_time = time.time()
+    with open(tmp, 'wb') as f:
+        pickle.dump(model, f)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(tmp)))
+
+    print("\nDumping object to dict...")
+    start_time = time.time()
+    model_dict = model_persist.dumpc(model)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+
+    # pprint.pprint(model_dict)
+
+    print("\nRe-build the model object...")
+    start_time = time.time()
+    re_model = model_persist.loadc(model_dict)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("%r" % re_model)
+
+    tmp = tempfile.mktemp()
+
+    print("\nDumping model using pickle hdf5...")
+    start_time = time.time()
+    model_persist.dump_model_to_h5(model, tmp)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(tmp)))
+
+    print("Loading hdf5 model...")
+    start_time = time.time()
+    model = model_persist.load_model_from_h5(tmp)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
 
 if __name__ == '__main__':

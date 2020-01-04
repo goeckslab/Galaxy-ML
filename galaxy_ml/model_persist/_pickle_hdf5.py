@@ -44,8 +44,12 @@ _SET = '-set-'
 _BYTES = '-bytes-'
 _UNICODE = '-unicode-'
 _NONE = '-None-'
-_PRIMITIVE = '-primitive-'
+_BOOL = '-boolean-'
+_INT = '-int-'
+_FLOAT = '-float-'
 _STRING = '-string-'
+_BYTEARRAY = '-bytearray-'
+_COMPLEX = '-complex-'
 _LIST = '-list-'
 _DICT = '-dict-'
 _MODULE_NAME = '-module_name-'
@@ -106,17 +110,20 @@ class ModelToHDF5:
                                  "and h5py.Group object!"
                                  % (str(file_path)))
 
-            file.attrs[_PY_VERSION] = PY_VERSION
+            file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
 
             np_module = sys.modules.get('numpy')
             if np_module:
-                file.attrs[_NP_VERSION] = np_module.__version__
+                file.attrs[_NP_VERSION] = \
+                    str(np_module.__version__).encode('utf8')
 
             if isinstance(obj, sklearn.base.BaseEstimator):
-                file.attrs[_SK_VERSION] = sklearn.__version__
+                file.attrs[_SK_VERSION] = \
+                    str(sklearn.__version__).encode('utf8')
 
             if isinstance(obj, Network):
-                file.attrs[_KERAS_VERSION] = keras.__version__
+                file.attrs[_KERAS_VERSION] = \
+                    str(keras.__version__).encode('utf8')
 
             self.save(obj, file)
         finally:
@@ -132,7 +139,7 @@ class ModelToHDF5:
 
         # Check type in `dispath` table
         t = type(obj)
-        f = self.dispatch.get(t, None)
+        f = self.dispatch.get(t)
         if f:
             f(self, obj, obj_group)
             return
@@ -195,35 +202,50 @@ class ModelToHDF5:
 
     dispatch[type(None)] = save_none
 
-    def save_primitive(self, obj, obj_group):
-        obj_group[_PRIMITIVE] = obj
+    def save_bool(self, obj, obj_group):
+        obj_group[_BOOL] = obj
 
-    dispatch[bool] = save_primitive
-    dispatch[int] = save_primitive
-    if six.PY2:
-        dispatch[long] = save_primitive
-    dispatch[float] = save_primitive
-    dispatch[complex] = save_primitive
+    dispatch[bool] = save_bool
+
+    def save_int(self, obj, obj_group):
+        obj_group[_INT] = obj
+
+    dispatch[int] = save_int
+
+    def save_float(self, obj, obj_group):
+        obj_group[_FLOAT] = obj
+
+    dispatch[float] = save_float
+
+    def save_complex(self, obj, obj_group):
+        obj_group[_COMPLEX] = obj
+
+    dispatch[complex] = save_complex
 
     def save_bytes(self, obj, obj_group):
-        self.memoize(obj)
         obj_group[_BYTES] = obj
+        self.memoize(obj)
 
     dispatch[bytes] = save_bytes
 
     def save_string(self, obj, obj_group):
+        obj_group[_STRING] = obj.encode('utf8')
         self.memoize(obj)
-        obj_group[_STRING] = obj
 
     dispatch[str] = save_string
 
-    def save_unicode(self, obj, obj_group):
+    # deprecate in py3
+    """def save_unicode(self, obj, obj_group):
+        obj_group[_UNICODE] = obj.encode('utf8')
         self.memoize(obj)
-        obj_group[_UNICODE] = obj
 
-    if six.PY2:
-        dispatch[unicode] = save_unicode
-    # dispatch[bytearray] = save_primitive
+    dispatch[unicode] = save_unicode"""
+
+    def save_bytearray(self, obj, obj_group):
+        obj_group[_BYTEARRAY] = obj
+        self.memoize(obj)
+
+    dispatch[bytearray] = save_bytearray
 
     def save_list(self, obj, obj_group):
         list_group = obj_group.create_group(_LIST)
@@ -247,8 +269,14 @@ class ModelToHDF5:
 
     def save_dict(self, obj, obj_group):
         dict_group = obj_group.create_group(_DICT)
-        to_list = [(k, v) for k, v in obj.items()]
-        self.save(to_list, dict_group)
+        _keys = list(obj.keys())
+        if len(_keys) == 0:
+            return
+        _keys.sort()
+        dict_group[_KEYS] = [str(k).encode('utf-8') for k in _keys]
+        for key in _keys:
+            sub_group = dict_group.create_group(key)
+            self.save(obj[key], sub_group)
 
     dispatch[dict] = save_dict
 
@@ -261,11 +289,12 @@ class ModelToHDF5:
         if module_name is None:
             raise HPicklerError("Can't get global module name for "
                                 "object %r" % obj)
-        self.memoize(obj)
 
         global_group = obj_group.create_group(_GLOBAL)
         global_group[_MODULE_NAME] = module_name
         global_group[_OBJ_NAME] = name
+
+        self.memoize(obj)
 
     dispatch[types.FunctionType] = save_global
     dispatch[types.BuiltinFunctionType] = save_global
@@ -285,13 +314,7 @@ class ModelToHDF5:
     dispatch[numpy.ndarray] = save_np_ndarray
 
     def save_np_datatype(self, obj, obj_group):
-        #self.memoize(obj)
-        np_group = obj_group.create_group(_NP_DATATYPE)
-        dt_group = np_group.create_group(_DATATYPE)
-        value_group = np_group.create_group(_VALUE)
-
-        self.save(type(obj), dt_group)
-        self.save(obj.item(), value_group)
+        obj_group[_NP_DATATYPE] = obj
 
     dispatch[numpy.bool_] = save_np_datatype
     dispatch[numpy.int_] = save_np_datatype
@@ -345,11 +368,13 @@ class HDF5ToModel:
                              "h5py.File and h5py.Group object!"
                              % (str(file_path)))
 
-        if data.attrs[_PY_VERSION] != PY_VERSION:
+        if data.attrs[_PY_VERSION].decode('utf8') != PY_VERSION:
             warnings.warn("Trying to load an object from python %s "
                           "when using python %s. This might lead to "
                           "breaking code or invalid results. Use at "
-                          "your own risk." % (data[_PY_VERSION], PY_VERSION))
+                          "your own risk."
+                          % (data[_PY_VERSION].decode('utf8'),
+                             PY_VERSION.decode('utf8')))
         return self.load_all(data[_REDUCE], data_name=_REDUCE)
 
     def load_all(self, data, data_name=None):
@@ -359,7 +384,7 @@ class HDF5ToModel:
         if data_name is None:
             data_name = data.name.split('/')[-1]
 
-        f = self.dispatch.get(data_name, None)
+        f = self.dispatch.get(data_name)
         if f:
             return f(self, data)
 
@@ -373,29 +398,39 @@ class HDF5ToModel:
 
     dispatch[_MEMO] = load_memo
 
-    def load_primitive(self, data):
-        return data[()]
-
-    dispatch[_PRIMITIVE] = load_primitive
-
     def load_none(self, data):
         return None
 
     dispatch[_NONE] = load_none
 
+    def load_int(self, data):
+        return int(data[()])
+
+    dispatch[_INT] = load_int
+
+    def load_bool(self, data):
+        return bool(data[()])
+
+    dispatch[_BOOL] = load_bool
+
+    def load_float(self, data):
+        return float(data[()])
+
+    dispatch[_FLOAT] = load_float
+
     def load_string(self, data):
-        obj = data[()]
+        obj = data[()].decode('utf8')
         self.memoize(obj)
         return obj
 
     dispatch[_STRING] = load_string
 
-    def load_unicode(self, data):
-        obj = data[()]
+    """def load_unicode(self, data):
+        obj = data[()].decode('utf8')
         self.memoize(obj)
         return obj
 
-    dispatch[_UNICODE] = load_unicode
+    dispatch[_UNICODE] = load_unicode"""
 
     def load_bytes(self, data):
         obj = data[()]
@@ -403,6 +438,16 @@ class HDF5ToModel:
         return obj
 
     dispatch[_BYTES] = load_bytes
+
+    def load_complex(self, data):
+        return complex(data[()])
+
+    dispatch[_COMPLEX] = load_complex
+
+    def load_bytearray(self, data):
+        return bytearray(data[()])
+
+    dispatch[_BYTEARRAY] = load_bytearray
 
     def load_list(self, data):
         n_elems = len(data.keys())
@@ -434,8 +479,17 @@ class HDF5ToModel:
     dispatch[_SET] = load_set
 
     def load_dict(self, data):
-        rval = self.load_all(data[_LIST], _LIST)
-        rval = dict(rval)
+        rval = {}
+        keys = data.keys()
+        if len(keys) == 0:
+            return rval
+        assert _KEYS in keys
+        _keys = data[_KEYS][()]
+        for k in _keys:
+            k = k.decode('utf8')
+            sub_key = list(data[k].keys())[0]
+            rval[k] = self.load_all(data[k][sub_key], sub_key)
+
         return rval
 
     dispatch[_DICT] = load_dict
@@ -478,7 +532,7 @@ class HDF5ToModel:
         except:
             obj = func(*args)
 
-        _state = data.get(_STATE, None)
+        _state = data.get(_STATE)
         if _state:
             assert len(_state.keys()) == 1
             sub_key = list(_state.keys())[0]
@@ -491,7 +545,7 @@ class HDF5ToModel:
                 for k, v in state.items():
                     setattr(obj, k, v)
 
-        if self.verbose > 0:
+        if self.verbose:
             print(func)
         self.memoize(obj)
         return obj
@@ -521,18 +575,7 @@ class HDF5ToModel:
     dispatch[_NP_NDARRAY] = load_np_ndarray
 
     def load_np_datatype(self, data):
-        datatype_group = data[_DATATYPE]
-        assert len(datatype_group.keys()) == 1
-        sub_key = list(datatype_group.keys())[0]
-        _datatype = self.load_all(datatype_group[sub_key], data_name=sub_key)
-
-        value_group = data[_VALUE]
-        assert len(value_group.keys()) == 1
-        sub_key = list(value_group.keys())[0]
-        _value = self.load_all(value_group[sub_key], data_name=sub_key)
-
-        obj = _datatype(_value)
-        #self.memoize(obj)
+        obj = data[()]
         return obj
 
     dispatch[_NP_DATATYPE] = load_np_datatype
