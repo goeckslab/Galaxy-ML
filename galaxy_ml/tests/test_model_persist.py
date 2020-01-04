@@ -1,7 +1,9 @@
 import json
+import os
 import pickle
 import time
 import sys
+import galaxy_ml
 from galaxy_ml import model_persist
 from sklearn import (
     cluster, decomposition, ensemble, feature_extraction,
@@ -10,24 +12,38 @@ from sklearn import (
     naive_bayes, neighbors, pipeline, preprocessing, svm,
     tree, discriminant_analysis)
 
-from nose.tools import nottest
+# from nose.tools import nottest
 
 
 test_model = './tools/test-data/gbr_model01_py3'
 result_json = './tools/test-data/gbr_model01_py3.json'
+module_folder = (os.path.dirname(galaxy_ml.__file__))
+result_h5 = os.path.join(module_folder,
+                         'tools/test-data/gbr_model01_py3.h5')
 
 
-@nottest
-def test_jpikle_dumpc():
+
+def test_jpickle_dumpc():
     with open(test_model, 'rb') as f:
         model = pickle.load(f)
 
     got = model_persist.dumpc(model)
 
+    # with open(result_json, 'w') as f:
+    #     json.dump(got, f, indent=2)
+
     with open(result_json, 'r') as f:
         expect = json.load(f)
 
     assert got == expect, got
+
+
+def test_hpickle_dump():
+    with open(test_model, 'rb') as f:
+        model = pickle.load(f)
+
+    model_persist.dump_to_h5(model, result_h5)
+
 
 
 if __name__ == '__main__':
