@@ -16,7 +16,6 @@ module_folder = (os.path.dirname(galaxy_ml.__file__))
 result_h5 = os.path.join(module_folder,
                          'tools/test-data/gbr_model01_py3.h5')
 
-
 def test_jpickle_dumpc():
     with open(test_model, 'rb') as f:
         model = pickle.load(f)
@@ -32,7 +31,7 @@ def test_jpickle_dumpc():
     assert got == expect, got
 
 
-def test_hpickle_dump():
+def test_hdf5_model_dump_and_load():
 
     print("Loading pickled test model...")
     start_time = time.time()
@@ -97,60 +96,44 @@ def test_hpickle_dump():
     print("(%s s)" % str(end_time - start_time))
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        test_model = sys.argv[1]
-    else:
-        test_model = test_model
+def test_hdf5_model_keras():
 
-    print("Loading pickled test model...")
-    start_time = time.time()
-    with open(test_model, 'rb') as f:
+    model_weights = './tools/test-data/train_test_eval_weights01.h5'
+    model_config = './tools/test-data/train_test_eval_model01'
+
+    with open(model_config, 'rb') as f:
         model = pickle.load(f)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
 
-    pickle0_file = test_model + '.pickle0'
-    print("\nDumping model using pickle protocol-0...")
+    model.load_weights(model_weights)
+
+    print(model)
+
+    tmp = tempfile.mktemp()
+
+    print("\nDumping model to hdf5...")
     start_time = time.time()
-    with open(pickle0_file, 'wb') as f:
-        pickle.dump(model, f)
+    model_persist.dump_model_to_h5(model, tmp)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(tmp)))
 
-    print("\nLoading model using pickle protocol-0...")
+    print("\nLoading hdf5 model...")
     start_time = time.time()
-    with open(pickle0_file, 'rb') as f:
-        pickle_model = pickle.load(f)
+    model = model_persist.load_model_from_h5(tmp)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 
-    print("\nDumping object to dict...")
+    tmp_skeleton = tempfile.mktemp()
+    tmp_weights = tempfile.mktemp()
+
+    print("\nComparing pickled file size before and after...")
+    print(model)
     start_time = time.time()
-    model_dict = model_persist.dumpc(model)
+    model.model_.save_weights(tmp_weights)
+    del model.model_
+    with open(tmp_skeleton, 'wb') as f:
+        pickle.dump(model, f, pickle.HIGHEST_PROTOCOL)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
-
-    # pprint.pprint(model_dict)
-
-    json_file = test_model + '.json'
-    print("\nDumping dict data to JSON file...")
-    start_time = time.time()
-    with open(json_file, 'w') as f:
-        json.dump(model_dict, f, sort_keys=True)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-
-    print("\nLoading data from JSON file...")
-    start_time = time.time()
-    with open(json_file, 'r') as f:
-        new_dict = json.load(f)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-
-    print("\nRe-build the model object...")
-    start_time = time.time()
-    re_model = model_persist.loadc(new_dict)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("%r" % re_model)
+    print("Model skeleton size: %s" % str(os.path.getsize(tmp_skeleton)))
+    print("Model weights size: %s" % str(os.path.getsize(tmp_weights)))

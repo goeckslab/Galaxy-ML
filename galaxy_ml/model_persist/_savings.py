@@ -127,7 +127,7 @@ class ModelToHDF5:
             if self.keras_models:
                 k_models_group = file.create_group(_KERAS_MODELS)
                 for idx, model in enumerate(self.keras_models):
-                    idx_group = k_models_group.create_group[str(idx)]
+                    idx_group = k_models_group.create_group(str(idx))
                     model.save(idx_group)
 
             if store_hyperparameter:
@@ -160,6 +160,9 @@ class ModelToHDF5:
             issc = 0
         if issc:
             return self.save_global(obj)
+
+        if isinstance(obj, Network):
+            return self.save_keras_model(obj)
 
         return self.save_reduce(obj)
 
@@ -257,7 +260,12 @@ class ModelToHDF5:
         _keys.sort()
         newdict[_KEYS] = _keys
         for k in _keys:
-            newdict[k] = self.save(obj[k])
+            v = obj[k]
+            """# for keras g model config. There might be a better way.
+            if k == 'config' and isinstance(v, dict):
+                newdict[k] = v
+            else:"""
+            newdict[k] = self.save(v)
 
         return newdict
 
@@ -322,11 +330,10 @@ class ModelToHDF5:
     dispatch[numpy.complex128] = save_np_datatype
 
     def save_keras_model(self, obj):
-        self.memoize[obj]
-        self.keras_models.append[obj]
-        return {_KERAS_MODEL: len(self.keras_models)}
-
-    dispatch[Network] = save_keras_model
+        self.memoize(obj)
+        new_dict = {_KERAS_MODEL: len(self.keras_models)}
+        self.keras_models.append(obj)
+        return new_dict
 
 
 class HDF5ToModel:
@@ -407,8 +414,7 @@ class HDF5ToModel:
         if f:
             return f(self, data)
 
-        raise HPicklerError("Unsupported data found: %s, key: %s"
-                            % (repr(data), str(key)))
+        raise HPicklerError("Unsupported data found: %s" % repr(data))
 
     dispatch = {}
 
@@ -460,6 +466,9 @@ class HDF5ToModel:
         _keys = data.pop(_KEYS, [])
         for k in _keys:
             v = data[str(k)]
+            """if k == 'config' and isinstance(v, dict):
+                newdict[k] = v
+            else:"""
             newdict[k] = self.load_all(v)
 
         return newdict
@@ -536,15 +545,19 @@ class HDF5ToModel:
         return obj
 
 
-def dump_model_to_h5(obj, file_path, verbose=0):
+def dump_model_to_h5(obj, file_path, verbose=0,
+                     store_hyperparameter=True):
     """
     Parameters
     ----------
     obj : python object
     file_path : str or hdf5.File or hdf5.Group object
     verbose : 0 or 1
+    store_hyperparameter : bool
+        whether to save model hyperparameters for tuning.
     """
-    return ModelToHDF5(verbose=verbose).dump(obj, file_path)
+    return ModelToHDF5(verbose=verbose).dump(
+        obj, file_path, store_hyperparameter=store_hyperparameter)
 
 
 def load_model_from_h5(file_path, verbose=0):
