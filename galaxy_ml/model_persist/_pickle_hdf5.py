@@ -87,7 +87,7 @@ class ModelToHDF5:
         assert id(obj) not in self.memo
         idx = len(self.memo)
         if self.verbose:
-            print(("Memoize: ", idx, obj))
+            print("Memoize: ", (idx, obj))
         self.memo[id(obj)] = idx, obj
 
     def dump(self, obj, file_path, mode='w'):
@@ -357,7 +357,7 @@ class HDF5ToModel:
         lenth = len(self.memo)
         self.memo[lenth] = obj
         if self.verbose:
-            print(("Memoize: ", lenth, obj))
+            print("Memoize: ", (lenth, obj))
 
     def load(self, file_path):
         if isinstance(file_path, str):

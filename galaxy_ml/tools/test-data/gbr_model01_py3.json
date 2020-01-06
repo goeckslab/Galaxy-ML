@@ -1,6 +1,6 @@
 {
   "-cpython-": "3.6.8",
-  "-numpy-": "1.17.4",
+  "-numpy-": "1.17.5",
   "-object-": {
     "-reduce-": {
       "--func-": {

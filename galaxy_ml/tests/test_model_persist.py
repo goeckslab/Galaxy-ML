@@ -7,7 +7,7 @@ import sys
 import galaxy_ml
 from galaxy_ml import model_persist
 
-# from nose.tools import nottest
+from nose.tools import nottest
 
 
 test_model = './tools/test-data/gbr_model01_py3'
@@ -23,8 +23,8 @@ def test_jpickle_dumpc():
 
     got = model_persist.dumpc(model)
 
-    # with open(result_json, 'w') as f:
-    #     json.dump(got, f, indent=2)
+    #with open(result_json, 'w') as f:
+    #    json.dump(got, f, indent=2)
 
     with open(result_json, 'r') as f:
         expect = json.load(f)
@@ -43,10 +43,10 @@ def test_hpickle_dump():
 
     tmp = tempfile.mktemp()
 
-    print("\nDumping model using pickle protocol-0...")
+    print("\nDumping model using pickle...")
     start_time = time.time()
     with open(tmp, 'wb') as f:
-        pickle.dump(model, f)
+        pickle.dump(model, f, protocol=0)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
     print("File size: %s" % str(os.path.getsize(tmp)))
@@ -57,7 +57,22 @@ def test_hpickle_dump():
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 
-    # pprint.pprint(model_dict)
+    tmp = tempfile.mktemp()
+
+    print("\nDumping dict data to JSON file...")
+    start_time = time.time()
+    with open(tmp, 'w') as f:
+        json.dump(model_dict, f, sort_keys=True)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(tmp)))
+
+    print("\nLoading data from JSON file...")
+    start_time = time.time()
+    with open(tmp, 'r') as f:
+        new_dict = json.load(f)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
     print("\nRe-build the model object...")
     start_time = time.time()
@@ -75,7 +90,7 @@ def test_hpickle_dump():
     print("(%s s)" % str(end_time - start_time))
     print("File size: %s" % str(os.path.getsize(tmp)))
 
-    print("Loading hdf5 model...")
+    print("\nLoading hdf5 model...")
     start_time = time.time()
     model = model_persist.load_model_from_h5(tmp)
     end_time = time.time()

@@ -1,32 +1,33 @@
 """
-Utility to persist sklearn objects to JSON
+Utility to persist arbitrary sklearn objects to HDF5
+A hybrid method that combines json and HDF5 methods.
 
 Author: Qiang Gu
 Email: guqiang01@gmail.com
-Date: 2018-2019
+Date: 2020-2021
 
 Classes:
 
-    ModelToDict
-    DictToModel
-
-Functions:
-
-    dumpc(object) -> dictionary
-    loadc(dictionary) -> object
+    ModelToHDF5
+    HDF5ToModel
 
 """
-
-import sys
-import six
-import warnings
-import types
+import h5py
+import json
 import numpy
+import six
+import sys
+import types
+import warnings
+from keras.engine.network import Network
+from keras.models import load_model
+from ..utils import get_search_params
+
 
 # reserved keys
 _PY_VERSION = '-cpython-'
-_OBJ = '-object-'
 _NP_VERSION = '-numpy-'
+_OBJ = '-object-'
 _REDUCE = '-reduce-'
 _GLOBAL = '-global-'
 _FUNC = '--func-'
@@ -43,19 +44,25 @@ _VALUE = '-value-'
 _TUPLE = '-tuple-'
 _SET = '-set-'
 _BYTES = '-bytes-'
-_UNICODE = '-unicode-'
+_PRIMITIVE = '-primitive-'
+_NP_NDARRAY_O = '-np_ndarray_o_type-'
+_WEIGHTS = '-model_weights-'
+_CONFIG = '-model_config-'
+_HYPERPARAMETER = '-model_hyperparameters-'
+_KERAS_MODELS = '-keras_models-'
+_KERAS_MODEL = '-keras_model-'
 
 PY_VERSION = sys.version.split(' ')[0]
 
 
-class JPicklerError(Exception):
+class HPicklerError(Exception):
     pass
 
 
-class ModelToDict:
+class ModelToHDF5:
     """
-    Follow the track of python `pickle`
-    Turn a scikit-learn model to a JSON-compatiable dictionary
+    Follow python `pickle`
+    Save a scikit-learn/keras model to HDF5 file.
     """
     def __init__(self, verbose=0):
         self.memo = {}
@@ -76,16 +83,61 @@ class ModelToDict:
             print("Memoize: ", (idx, obj))
         self.memo[id(obj)] = idx, obj
 
-    def dump(self, obj):
+    def dump(self, obj, file_path, mode='w',
+             store_hyperparameter=True):
         """
         Main access of object save
+
+        Parameters:
+        obj : python object to save
+        file_path : str or hdf5.File or hdf5.Group object
+            Target file path in HDF5 format
+        store_hyperparameter : bool.
+            Whether to save model hyperparameter.
         """
-        retv = {_PY_VERSION: PY_VERSION}
-        np_module = sys.modules.get('numpy')
-        if np_module:
-            retv[_NP_VERSION] = np_module.__version__
-        retv[_OBJ] = self.save(obj)
-        return retv
+        try:
+            if isinstance(file_path, str):
+                file = h5py.File(file_path, mode=mode)
+
+            if not isinstance(file, h5py.Group):
+                raise ValueError("The type of file_path, %s, is "
+                                 "not supported. Supported types "
+                                 "are file path (str), h5py.File "
+                                 "and h5py.Group object!"
+                                 % (str(file_path)))
+
+            file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
+
+            np_module = sys.modules.get('numpy')
+            if np_module:
+                file.attrs[_NP_VERSION] = \
+                    str(np_module.__version__).encode('utf8')
+
+            self.weights = []
+            self.keras_models = []
+
+            config = {_OBJ: self.save(obj)}
+            file[_CONFIG] = json.dumps(config).encode('utf8')
+
+            if self.weights:
+                weights_group = file.create_group(_WEIGHTS)
+                for idx, arr in enumerate(self.weights):
+                    weights_group[str(idx)] = arr
+
+            if self.keras_models:
+                k_models_group = file.create_group(_KERAS_MODELS)
+                for idx, model in enumerate(self.keras_models):
+                    idx_group = k_models_group.create_group[str(idx)]
+                    model.save(idx_group)
+
+            if store_hyperparameter:
+                h_params = get_search_params(obj)
+                file[_HYPERPARAMETER] = json.dumps(h_params).encode('utf8')
+
+        except:
+            raise
+        finally:
+            file.close()
 
     def save(self, obj):
 
@@ -121,7 +173,7 @@ class ModelToDict:
         if reduce:
             rv = reduce()
         else:
-            raise JPicklerError(
+            raise HPicklerError(
                 "Can't reduce %r object: %r" % (type(obj).__name__, obj))
         assert (type(rv) is tuple),\
             "%s must return a tuple, but got %s" % (reduce, type(rv))
@@ -133,22 +185,22 @@ class ModelToDict:
 
         save = self.save
 
-        retv = {}
+        rval = {}
 
         func = rv[0]
         assert callable(func), "func from reduce is not callable"
-        retv[_FUNC] = save(func)
+        rval[_FUNC] = save(func)
 
         args = rv[1]
         assert (type(args) is tuple)
-        retv[_ARGS] = {_TUPLE: save(list(args))}
+        rval[_ARGS] = {_TUPLE: save(list(args))}
 
         if lenth == 3:
             state = rv[2]
-            retv[_STATE] = save(state)
+            rval[_STATE] = save(state)
 
         self.memoize(obj)
-        return {_REDUCE: retv}
+        return {_REDUCE: rval}
 
     dispatch = {}
 
@@ -158,16 +210,7 @@ class ModelToDict:
     dispatch[type(None)] = save_primitive
     dispatch[bool] = save_primitive
     dispatch[int] = save_primitive
-    if six.PY2:
-        dispatch[long] = save_primitive
     dispatch[float] = save_primitive
-
-    def save_bytes(self, obj):
-        print("save_bytes: %s" % type(obj))
-        self.memoize(obj)
-        return {_BYTES: obj.decode('utf-8')}
-
-    dispatch[bytes] = save_bytes
 
     def save_string(self, obj):
         self.memoize(obj)
@@ -175,12 +218,18 @@ class ModelToDict:
 
     dispatch[str] = save_string
 
-    def save_unicode(self, obj):
+    def save_bytes(self, obj):
+        self.memoize(obj)
+        return {_BYTES: obj.decode('utf-8')}
+
+    dispatch[bytes] = save_bytes
+
+    """def save_unicode(self, obj):
         self.memoize(obj)
         return {_UNICODE: obj}
 
     if six.PY2:
-        dispatch[unicode] = save_unicode
+        dispatch[unicode] = save_unicode"""
     # dispatch[bytearray] = save_primitive
 
     def save_list(self, obj):
@@ -209,7 +258,7 @@ class ModelToDict:
         newdict[_KEYS] = _keys
         for k in _keys:
             newdict[k] = self.save(obj[k])
-        # self.memoize(obj)
+
         return newdict
 
     dispatch[dict] = save_dict
@@ -217,11 +266,11 @@ class ModelToDict:
     def save_global(self, obj):
         name = getattr(obj, '__name__', None)
         if name is None:
-            raise JPicklerError("Can't get global name for object %r"
+            raise HPicklerError("Can't get global name for object %r"
                                 % obj)
         module_name = getattr(obj, '__module__', None)
         if module_name is None:
-            raise JPicklerError("Can't get global module name for "
+            raise HPicklerError("Can't get global module name for "
                                 "object %r" % obj)
 
         newdict = {_GLOBAL: [module_name, name]}
@@ -232,11 +281,16 @@ class ModelToDict:
     dispatch[types.BuiltinFunctionType] = save_global
 
     def save_np_ndarray(self, obj):
-        newdict = {}
-        newdict[_DTYPE] = self.save(obj.dtype)
-        newdict[_VALUES] = self.save(obj.tolist())
-        # self.memoize(obj)
-        return {_NP_NDARRAY: newdict}
+        _dtype = obj.dtype
+        if _dtype.descr == [('', '|O')]:
+            newdict = {}
+            newdict[_DTYPE] = self.save(obj.dtype)
+            newdict[_VALUES] = self.save(obj.tolist())
+            return {_NP_NDARRAY_O: newdict}
+        else:
+            new_dict = {_NP_NDARRAY: len(self.weights)}
+            self.weights.append(obj)
+            return new_dict
 
     dispatch[numpy.ndarray] = save_np_ndarray
 
@@ -244,7 +298,7 @@ class ModelToDict:
         newdict = {}
         newdict[_DATATYPE] = self.save(type(obj))
         newdict[_VALUE] = self.save(obj.item())
-        # self.memoize(obj)
+
         return {_NP_DATATYPE: newdict}
 
     dispatch[numpy.bool_] = save_np_datatype
@@ -267,10 +321,17 @@ class ModelToDict:
     dispatch[numpy.complex64] = save_np_datatype
     dispatch[numpy.complex128] = save_np_datatype
 
+    def save_keras_model(self, obj):
+        self.memoize[obj]
+        self.keras_models.append[obj]
+        return {_KERAS_MODEL: len(self.keras_models)}
 
-class DictToModel:
+    dispatch[Network] = save_keras_model
+
+
+class HDF5ToModel:
     """
-    Rebuild a scikit-learn model from dict data generated by ModelToDict.save
+    Rebuild model from HDF5 generated by ModelToHDF5.save
     """
 
     def __init__(self, verbose=0):
@@ -284,20 +345,41 @@ class DictToModel:
         if self.verbose:
             print("Memoize: ", (lenth, obj))
 
-    def load(self, data):
-        if data[_PY_VERSION] != PY_VERSION:
-            warnings.warn("Trying to load an object from python %s "
-                          "when using python %s. This might lead to "
-                          "breaking code or invalid results. Use at "
-                          "your own risk." % (data[_PY_VERSION], PY_VERSION))
-        return self.load_all(data[_OBJ])
+    def load(self, file_path):
+        try:
+            if isinstance(file_path, str):
+                data = h5py.File(file_path, 'r')
+            if not isinstance(data, h5py.Group):
+                raise ValueError("The type of %s is not supported! "
+                                 "Supported types are file path (str), "
+                                 "h5py.File and h5py.Group object!"
+                                 % (str(file_path)))
+
+            if data.attrs[_PY_VERSION].decode('utf8') != PY_VERSION:
+                warnings.warn("Trying to load an object from python %s "
+                              "when using python %s. This might lead to "
+                              "breaking code or invalid results. Use at "
+                              "your own risk."
+                              % (data[_PY_VERSION].decode('utf8'),
+                                 PY_VERSION.decode('utf8')))
+            if _WEIGHTS in data:
+                self.weights = data[_WEIGHTS]
+            if _KERAS_MODELS in data:
+                self.keras_models = data[_KERAS_MODELS]
+            config = data[_CONFIG][()].decode('utf8')
+            config = json.loads(config)
+            model = self.load_all(config[_OBJ])
+        except:
+            raise
+        finally:
+            data.close()
+
+        return model
 
     def load_all(self, data):
         """
-        The main method to generate an object from dict data
+        The main method to generate an object from python dict
         """
-        dispatch = self.dispatch
-
         t = type(data)
         if t is dict:
             if _MEMO in data:
@@ -314,16 +396,19 @@ class DictToModel:
                 return self.load_set(data[_SET])
             if _NP_NDARRAY in data:
                 return self.load_np_ndarray(data[_NP_NDARRAY])
+            if _NP_NDARRAY_O in data:
+                return self.load_np_ndarray_o_type(data[_NP_NDARRAY_O])
             if _NP_DATATYPE in data:
                 return self.load_np_datatype(data[_NP_DATATYPE])
-            if _UNICODE in data:
-                return self.load_unicode2(data[_UNICODE])
+            if _KERAS_MODEL in data:
+                return self.load_keras_model(data[_KERAS_MODEL])
             return self.load_dict(data)
-        f = dispatch.get(t)
+        f = self.dispatch.get(t)
         if f:
             return f(self, data)
-        else:
-            raise JPicklerError("Unsupported data found: %s" % str(data))
+
+        raise HPicklerError("Unsupported data found: %s, key: %s"
+                            % (repr(data), str(key)))
 
     dispatch = {}
 
@@ -333,8 +418,6 @@ class DictToModel:
     dispatch[type(None)] = load_primitive
     dispatch[bool] = load_primitive
     dispatch[int] = load_primitive
-    if six.PY2:
-        dispatch[long] = load_primitive
     dispatch[float] = load_primitive
 
     def load_string(self, data):
@@ -343,53 +426,42 @@ class DictToModel:
 
     dispatch[str] = load_string
 
-    def load_unicode(self, data):
-        """
-        `json.load` loads string as unicode in python 2,
-        while some classes don't support unicode, like numpy.dtype
-        """
-        data = str(data)
-        self.memoize(data)
-        return data
+    """def load_unicode(self, data):
+        obj = data[()].decode('utf8')
+        self.memoize(obj)
+        return obj
 
-    if six.PY2:
-        dispatch[unicode] = load_unicode
+    dispatch[_UNICODE] = load_unicode"""
 
-    def load_unicode2(self, data):
-        self.memoize(data)
-        return data
+    def load_memo(self, data):
+        return self.memo[data]
 
     def load_bytes(self, data):
-        data = data.encode('utf-8')
-        self.memoize(data)
-        return data
+        obj = data.encode('utf-8')
+        self.memoize(obj)
+        return obj
 
     def load_list(self, data):
-        return [self.load_all(e) for e in data]
+        obj = [self.load_all(e) for e in data]
+        return obj
 
     dispatch[list] = load_list
 
     def load_tuple(self, data):
         obj = self.load_all(data)
-        # self.memoize(obj)
         return tuple(obj)
 
     def load_set(self, data):
         obj = self.load_all(data)
-        # self.memoize(obj)
-        return set(obj)
+        return tuple(obj)
 
     def load_dict(self, data):
         newdict = {}
         _keys = data.pop(_KEYS, [])
         for k in _keys:
-            try:
-                v = data[k]
-            # JSON dumps non-string key to string
-            except KeyError:
-                v = data[str(k)]
+            v = data[str(k)]
             newdict[k] = self.load_all(v)
-        # self.memoize( newdict )
+
         return newdict
 
     def find_class(self, module, name):
@@ -416,8 +488,8 @@ class DictToModel:
         func = self.load_all(_func)
         assert callable(func), "%r" % func
 
-        _args = data[_ARGS][_TUPLE]
-        args = tuple(self.load_all(_args))
+        _args = data[_ARGS]
+        args = self.load_all(_args)
 
         try:
             obj = args[0].__new__(args[0], * args)
@@ -436,28 +508,48 @@ class DictToModel:
                     setattr(obj, k, v)
 
         if self.verbose:
-            print(obj)
+            print(func)
         self.memoize(obj)
         return obj
 
-    def load_np_ndarray(self, data):
+    def load_np_ndarray_o_type(self, data):
         _dtype = self.load_all(data[_DTYPE])
         _values = self.load_all(data[_VALUES])
         obj = numpy.array(_values, dtype=_dtype)
-        # self.memoize(obj)
+
+        return obj
+
+    def load_np_ndarray(self, data):
+        obj = self.weights[str(data)][()]
         return obj
 
     def load_np_datatype(self, data):
         _datatype = self.load_all(data[_DATATYPE])
         _value = self.load_all(data[_VALUE])
         obj = _datatype(_value)
-        # self.memoize(obj)
+
+        return obj
+
+    def load_keras_model(self, data):
+        obj = load_model(self.keras_models[str(data)])
+        self.memoize(obj)
         return obj
 
 
-def dumpc(obj, verbose=0):
-    return ModelToDict(verbose=verbose).dump(obj)
+def dump_model_to_h5(obj, file_path, verbose=0):
+    """
+    Parameters
+    ----------
+    obj : python object
+    file_path : str or hdf5.File or hdf5.Group object
+    verbose : 0 or 1
+    """
+    return ModelToHDF5(verbose=verbose).dump(obj, file_path)
 
 
-def loadc(data, verbose=0):
-    return DictToModel(verbose=verbose).load(data)
+def load_model_from_h5(file_path, verbose=0):
+    """
+    file_path : str or hdf5.File or hdf5.Group object
+    verbose : 0 or 1
+    """
+    return HDF5ToModel(verbose=verbose).load(file_path)
