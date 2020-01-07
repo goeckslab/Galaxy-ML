@@ -1,4 +1,4 @@
-### Version 0.8.2.dev
+### Version 0.8.2
 
 #### Changes
 
