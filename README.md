@@ -94,7 +94,7 @@ python setup.py build_ext --inplace
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
 
-### Examples for using Galaxy-ML APIs
+### Examples for using Galaxy-ML custom models
 
 ```
 # handle imports
@@ -137,3 +137,47 @@ grid = GridSearchCV(clf, param_grid={}, scoring=‘roc_auc’, cv=5, n_jobs=2)
 grid.fit(X, y)
 ```
 
+### Example for using Galaxy-ML to persist a sklearn/keras model
+
+```
+from galaxy_ml.model_persist import (dump_model_to_h5,
+                                     load_model_from_h5)
+                 
+# dump model to hdf5
+dump_model_to_h5(model, `save_path`,
+                 store_hyperparameter=True)
+
+# load model from hdf5
+model = load_model_from_h5(`path_to_hdf5`)
+```
+
+#### Performance comparison
+
+Galaxy-ML's HDF5 saving utils perform faster than cPickle for large, array-rich models.
+
+```
+Loading model using pickle...
+(1.2471628189086914 s)
+
+Dumping model using pickle...
+(3.6942389011383057 s)
+File size: 930712861
+
+Dumping model to hdf5...
+(3.006715774536133 s)
+File size: 930729696
+
+Loading model from hdf5...
+(0.6420958042144775 s)
+
+Pipeline(memory=None,
+         steps=[('robustscaler',
+                 RobustScaler(copy=True, quantile_range=(25.0, 75.0),
+                              with_centering=True, with_scaling=True)),
+                ('kneighborsclassifier',
+                 KNeighborsClassifier(algorithm='auto', leaf_size=30,
+                                      metric='minkowski', metric_params=None,
+                                      n_jobs=1, n_neighbors=100, p=2,
+                                      weights='uniform'))],
+         verbose=False)
+```

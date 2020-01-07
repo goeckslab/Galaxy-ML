@@ -688,13 +688,17 @@ def test_keras_model_load_and_save_weights():
     model.load_weights('./tools/test-data/keras_model_drosophila_weights01.h5')
 
     tmp = tempfile.mktemp()
-    model.save_weights(tmp)
 
-    got = os.path.getsize(tmp)
-    expect = os.path.getsize(
-        './tools/test-data/keras_model_drosophila_weights01.h5')
+    try:
+        model.save_weights(tmp)
 
-    assert abs(got - expect) < 40, got - expect
+        got = os.path.getsize(tmp)
+        expect = os.path.getsize(
+            './tools/test-data/keras_model_drosophila_weights01.h5')
+
+        assert abs(got - expect) < 40, got - expect
+    finally:
+        os.remove(tmp)
 
 
 def test_keras_galaxy_model_callbacks():

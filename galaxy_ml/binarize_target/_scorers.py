@@ -7,7 +7,7 @@ from sklearn.metrics.scorer import _BaseScorer
 
 class _BinarizeTargetThresholdScorer(_BaseScorer):
     """
-    base class to make binarized target specific scorer
+    Base class to make binarized target specific scorer.
     """
     def __call__(self, clf, X, y, sample_weight=None):
         main_estimator = get_main_estimator(clf)
@@ -80,7 +80,7 @@ binarize_average_precision_scorer =\
 
 class _BinarizeTargetPredictScorer(_BaseScorer):
     """
-    base class to make binarized target specific scorer
+    Base class to make binarized target specific scorer.
     """
     def __call__(self, clf, X, y, sample_weight=None):
         main_estimator = get_main_estimator(clf)
