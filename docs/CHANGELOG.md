@@ -7,7 +7,8 @@
 - Makes `verbose` in `model.fit` for keras galaxy models.
 - Adds `drop_last_proba` for stacking classifiers in stacking ensembles tools.
 - Expands secondary scoring of binarize target scorers to all scores.
-- Adds `gen_compute_scores` in `utils` and clean params ending with `_dir` in `clean_params`.
+- Adds `gen_compute_scores` in `utils` and cleans params ending with `_dir` in `clean_params`.
+- Adds utils `dump_model_to_h5` and `load_model_from_h5` which support sklearn/keras arbitrary mix and hyperparameter stored.
 
 #### Bug Fixes
 
