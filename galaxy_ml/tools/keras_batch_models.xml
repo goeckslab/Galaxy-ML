@@ -1,4 +1,4 @@
-<tool id="keras_batch_models" name="Build Deep learning Batch Training Models" version="@KERAS_VERSION@">
+<tool id="keras_batch_models" name="Build Deep learning Batch Training Models" version="@VERSION@">
   <description>with online data generator for Genomic/Protein sequences and images</description>
   <macros>
     <import>main_macros.xml</import>
