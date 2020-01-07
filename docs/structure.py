@@ -53,7 +53,7 @@ PAGES = [
             binarize_target.BinarizeTargetClassifier,
             binarize_target.BinarizeTargetRegressor,
             binarize_target.BinarizeTargetTransformer,
-            binarize_target._BinarizeTargetProbaScorer
+            binarize_target._BinarizeTargetThresholdScorer
         ]
     },
     {
@@ -77,9 +77,10 @@ PAGES = [
     {
         'page': 'APIs/model-persistent.md',
         'classes': [
-            model_persist.JPicklerError,
             model_persist.ModelToDict,
-            model_persist.DictToModel
+            model_persist.DictToModel,
+            model_persist.ModelToHDF5,
+            model_persist.HDF5ToModel
         ]
     },
     {

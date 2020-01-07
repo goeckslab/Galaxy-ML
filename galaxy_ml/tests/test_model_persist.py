@@ -42,58 +42,67 @@ def test_hdf5_model_dump_and_load():
 
     tmp = tempfile.mktemp()
 
-    print("\nDumping model using pickle...")
-    start_time = time.time()
-    with open(tmp, 'wb') as f:
-        pickle.dump(model, f, protocol=0)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(tmp)))
+    try:
+        print("\nDumping model using pickle...")
+        start_time = time.time()
+        with open(tmp, 'wb') as f:
+            pickle.dump(model, f, protocol=0)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("File size: %s" % str(os.path.getsize(tmp)))
 
-    print("\nDumping object to dict...")
-    start_time = time.time()
-    model_dict = model_persist.dumpc(model)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-
-    tmp = tempfile.mktemp()
-
-    print("\nDumping dict data to JSON file...")
-    start_time = time.time()
-    with open(tmp, 'w') as f:
-        json.dump(model_dict, f, sort_keys=True)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(tmp)))
-
-    print("\nLoading data from JSON file...")
-    start_time = time.time()
-    with open(tmp, 'r') as f:
-        new_dict = json.load(f)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-
-    print("\nRe-build the model object...")
-    start_time = time.time()
-    re_model = model_persist.loadc(model_dict)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("%r" % re_model)
+        print("\nDumping object to dict...")
+        start_time = time.time()
+        model_dict = model_persist.dumpc(model)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+    finally:
+        os.remove(tmp)
 
     tmp = tempfile.mktemp()
 
-    print("\nDumping model using pickle hdf5...")
-    start_time = time.time()
-    model_persist.dump_model_to_h5(model, tmp)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(tmp)))
+    try:
+        print("\nDumping dict data to JSON file...")
+        start_time = time.time()
+        with open(tmp, 'w') as f:
+            json.dump(model_dict, f, sort_keys=True)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("File size: %s" % str(os.path.getsize(tmp)))
 
-    print("\nLoading hdf5 model...")
-    start_time = time.time()
-    model = model_persist.load_model_from_h5(tmp)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
+        print("\nLoading data from JSON file...")
+        start_time = time.time()
+        with open(tmp, 'r') as f:
+            new_dict = json.load(f)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+
+        print("\nRe-build the model object...")
+        start_time = time.time()
+        re_model = model_persist.loadc(model_dict)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("%r" % re_model)
+    finally:
+        os.remove(tmp)
+
+    tmp = tempfile.mktemp()
+
+    try:
+        print("\nDumping model using pickle hdf5...")
+        start_time = time.time()
+        model_persist.dump_model_to_h5(model, tmp)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("File size: %s" % str(os.path.getsize(tmp)))
+
+        print("\nLoading hdf5 model...")
+        start_time = time.time()
+        model = model_persist.load_model_from_h5(tmp)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+    finally:
+        os.remove(tmp)
 
 
 def test_hdf5_model_keras():
@@ -110,30 +119,38 @@ def test_hdf5_model_keras():
 
     tmp = tempfile.mktemp()
 
-    print("\nDumping model to hdf5...")
-    start_time = time.time()
-    model_persist.dump_model_to_h5(model, tmp)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(tmp)))
+    try:
+        print("\nDumping model to hdf5...")
+        start_time = time.time()
+        model_persist.dump_model_to_h5(model, tmp)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("File size: %s" % str(os.path.getsize(tmp)))
 
-    print("\nLoading hdf5 model...")
-    start_time = time.time()
-    model = model_persist.load_model_from_h5(tmp)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
+        print("\nLoading hdf5 model...")
+        start_time = time.time()
+        model = model_persist.load_model_from_h5(tmp)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+    finally:
+        os.remove(tmp)
+
 
     tmp_skeleton = tempfile.mktemp()
     tmp_weights = tempfile.mktemp()
 
-    print("\nComparing pickled file size before and after...")
-    print(model)
-    start_time = time.time()
-    model.model_.save_weights(tmp_weights)
-    del model.model_
-    with open(tmp_skeleton, 'wb') as f:
-        pickle.dump(model, f, pickle.HIGHEST_PROTOCOL)
-    end_time = time.time()
-    print("(%s s)" % str(end_time - start_time))
-    print("Model skeleton size: %s" % str(os.path.getsize(tmp_skeleton)))
-    print("Model weights size: %s" % str(os.path.getsize(tmp_weights)))
+    try:
+        print("\nComparing pickled file size before and after...")
+        print(model)
+        start_time = time.time()
+        model.model_.save_weights(tmp_weights)
+        del model.model_
+        with open(tmp_skeleton, 'wb') as f:
+            pickle.dump(model, f, pickle.HIGHEST_PROTOCOL)
+        end_time = time.time()
+        print("(%s s)" % str(end_time - start_time))
+        print("Model skeleton size: %s" % str(os.path.getsize(tmp_skeleton)))
+        print("Model weights size: %s" % str(os.path.getsize(tmp_weights)))
+    finally:
+        os.remove(tmp_skeleton)
+        os.remove(tmp_weights)
