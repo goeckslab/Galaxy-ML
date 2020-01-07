@@ -173,14 +173,14 @@
           <div role="main">
             <div class="section">
               
-                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L244">[source]</a></span></p>
+                <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L245">[source]</a></span></p>
 <h2 id="searchparam">SearchParam</h2>
 <pre><code class="python">galaxy_ml.keras_galaxy_models.SearchParam(s_param, value)
 </code></pre>
 
 <p>Sortable Wrapper class for search parameters</p>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L267">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L268">[source]</a></span></p>
 <h2 id="keraslayers">KerasLayers</h2>
 <pre><code class="python">galaxy_ml.keras_galaxy_models.KerasLayers(name='sequential_1', layers=[])
 </code></pre>
@@ -190,9 +190,9 @@
 layers: list of dict, the configuration of model
 </code></pre>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L347">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L348">[source]</a></span></p>
 <h2 id="basekerasmodel">BaseKerasModel</h2>
-<pre><code class="python">galaxy_ml.keras_galaxy_models.BaseKerasModel(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_data=None, steps_per_epoch=None, validation_steps=None, verbose=0)
+<pre><code class="python">galaxy_ml.keras_galaxy_models.BaseKerasModel(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_fraction=0.1, steps_per_epoch=None, validation_steps=None, verbose=0)
 </code></pre>
 
 <p>Base class for Galaxy Keras wrapper</p>
@@ -239,8 +239,10 @@ layers: list of dict, the configuration of model
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}</li>
-<li><strong>validation_data</strong>: None or tuple of arrays, (X_test, y_test)<br>
-        fit_param</li>
+<li><strong>validation_fraction</strong>: Float. default=0.1<br>
+        The proportion of training data to set aside as validation set.
+        Must be within [0, 1). Will be ignored if <code>validation_data</code> is
+        set via fit_params.</li>
 <li><strong>steps_per_epoch</strong>: int, default is None<br>
         fit param. The number of train batches per epoch</li>
 <li><strong>validation_steps</strong>: None or int, default is None<br>
@@ -248,27 +250,28 @@ layers: list of dict, the configuration of model
         of samples divided by batch_size.</li>
 <li><strong>seed</strong>: None or int, default None<br>
         backend random seed</li>
-<li><strong>verbose</strong>: 0 or 1<br>
-        if 1, log device placement</li>
+<li><strong>verbose</strong>: 0, 1 or 2<br>
+        Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
+        epoch. If &gt; 0, log device placement</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L822">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L869">[source]</a></span></p>
 <h2 id="kerasgclassifier">KerasGClassifier</h2>
-<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGClassifier(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_data=None, steps_per_epoch=None, validation_steps=None, verbose=0)
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGClassifier(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_fraction=0.1, steps_per_epoch=None, validation_steps=None, verbose=0)
 </code></pre>
 
 <p>Scikit-learn classifier API for Keras</p>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L903">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L950">[source]</a></span></p>
 <h2 id="kerasgregressor">KerasGRegressor</h2>
-<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGRegressor(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_data=None, steps_per_epoch=None, validation_steps=None, verbose=0)
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGRegressor(config, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, callbacks=None, validation_fraction=0.1, steps_per_epoch=None, validation_steps=None, verbose=0)
 </code></pre>
 
 <p>Scikit-learn API wrapper for Keras regressor</p>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L931">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/keras_galaxy_models.py#L978">[source]</a></span></p>
 <h2 id="kerasgbatchclassifier">KerasGBatchClassifier</h2>
-<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGBatchClassifier(config, data_batch_generator, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, n_jobs=1, callbacks=None, validation_data=None, steps_per_epoch=None, validation_steps=None, verbose=0, prediction_steps=None, class_positive_factor=1)
+<pre><code class="python">galaxy_ml.keras_galaxy_models.KerasGBatchClassifier(config, data_batch_generator, model_type='sequential', optimizer='sgd', loss='binary_crossentropy', metrics=[], lr=None, momentum=None, decay=None, nesterov=None, rho=None, amsgrad=None, beta_1=None, beta_2=None, schedule_decay=None, epochs=1, batch_size=None, seed=None, n_jobs=1, callbacks=None, validation_fraction=0.1, steps_per_epoch=None, validation_steps=None, verbose=0, prediction_steps=None, class_positive_factor=1)
 </code></pre>
 
 <p>keras classifier with batch data generator</p>
@@ -316,8 +319,10 @@ layers: list of dict, the configuration of model
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}</li>
-<li><strong>validation_data</strong>: None or tuple of arrays, (X_test, y_test)<br>
-        fit_param</li>
+<li><strong>validation_fraction</strong>: Float. default=0.1<br>
+        The proportion of training data to set aside as validation set.
+        Must be within [0, 1). Will be ignored if <code>validation_data</code> is
+        set via fit_params.</li>
 <li><strong>steps_per_epoch</strong>: int, default is None<br>
         fit param. The number of train batches per epoch</li>
 <li><strong>validation_steps</strong>: None or int, default is None<br>
@@ -325,8 +330,9 @@ layers: list of dict, the configuration of model
         of samples divided by batch_size.</li>
 <li><strong>seed</strong>: None or int, default None<br>
         backend random seed</li>
-<li><strong>verbose</strong>: 0 or 1<br>
-        if 1, log device placement.</li>
+<li><strong>verbose</strong>: 0, 1 or 2<br>
+        Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
+        epoch. If &gt; 0, log device placement</li>
 <li><strong>n_jobs</strong>: int, default=1<br></li>
 <li><strong>prediction_steps</strong>: None or int, default is None<br>
         prediction steps. If None, it will be number of samples

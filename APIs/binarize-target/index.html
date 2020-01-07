@@ -93,7 +93,7 @@
     <li class="toctree-l3"><a href="#binarizetargettransformer">BinarizeTargetTransformer</a></li>
     
 
-    <li class="toctree-l3"><a href="#_binarizetargetprobascorer">_BinarizeTargetProbaScorer</a></li>
+    <li class="toctree-l3"><a href="#_binarizetargetthresholdscorer">_BinarizeTargetThresholdScorer</a></li>
     
 
     </ul>
@@ -197,7 +197,7 @@ and apply a classification estimator.</p>
         The threshold value used to discretize True and False targets</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L107">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L119">[source]</a></span></p>
 <h2 id="binarizetargetregressor">BinarizeTargetRegressor</h2>
 <pre><code class="python">galaxy_ml.binarize_target._binarize_estimators.BinarizeTargetRegressor(regressor, z_score=-1, value=None, less_is_positive=True, verbose=0)
 </code></pre>
@@ -226,7 +226,7 @@ and apply a classification estimator.</p>
         The threshold value used to discretize True and False targets</li>
 </ul>
 <hr />
-<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L228">[source]</a></span></p>
+<p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_binarize_estimators.py#L241">[source]</a></span></p>
 <h2 id="binarizetargettransformer">BinarizeTargetTransformer</h2>
 <pre><code class="python">galaxy_ml.binarize_target._binarize_estimators.BinarizeTargetTransformer(transformer, z_score=-1, value=None, less_is_positive=True)
 </code></pre>
@@ -255,8 +255,8 @@ and apply a classification estimator.</p>
 </ul>
 <hr />
 <p><span style="float:right;"><a href="https://github.com/goeckslab/Galaxy-ML/blob/master/galaxy_ml/binarize_target/_scorers.py#L8">[source]</a></span></p>
-<h2 id="_binarizetargetprobascorer">_BinarizeTargetProbaScorer</h2>
-<pre><code class="python">sklearn.metrics.scorer._BinarizeTargetProbaScorer(score_func, sign, kwargs)
+<h2 id="_binarizetargetthresholdscorer">_BinarizeTargetThresholdScorer</h2>
+<pre><code class="python">sklearn.metrics.scorer._BinarizeTargetThresholdScorer(score_func, sign, kwargs)
 </code></pre>
 
 <p>base class to make binarized target specific scorer</p>
