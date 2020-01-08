@@ -109,7 +109,7 @@
                 <expand macro="cv_reduced" label="Select the outer cv splitter"/>
             </when>
         </conditional>
-        <param name="save" type="select" label="Save best estimator?" help="For a non-deep learning model, save will output fitted best_estimator_ (refit must be true) or a list of cv_results_ from each outer split in nested CV mode. For a deep learning model, by checking the boolean option below the model input, the outputs are two parts, model skeleton and weights. Save Deep learning model for nested CV is not supported.">
+        <param name="save" type="select" label="Save best estimator?" help="For a non-deep learning model, save will output fitted best_estimator_ or a list of cv_results_ from each outer split if in nested CV mode. For a deep learning model, by checking the boolean option below the model input, the outputs are two parts, model skeleton and weights. Save Deep learning model for nested CV is not supported.">
             <option value="nope">Nope, save is unnecessary</option>
             <option value="save_estimator" selected="true">Fitted best estimator or Detailed cv_results_ from nested CV</option>
             <option value="save_no_fit">SearchCV object without fitting</option>

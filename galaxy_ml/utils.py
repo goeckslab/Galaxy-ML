@@ -605,6 +605,14 @@ def get_scoring(scoring_json):
 
 def get_search_params(estimator):
     """Format the output of `estimator.get_params()`
+
+    Parameters
+    ----------
+    estimator : python object
+
+    Returns
+    -------
+    list of list, i.e., [`mark`, `param_name`, `param_value`].
     """
     res = estimator.get_params()
     SearchParam = try_get_attr('galaxy_ml.keras_galaxy_models',
@@ -748,9 +756,9 @@ def get_main_estimator(estimator):
         return get_main_estimator(estimator.best_estimator_)
     # support stacking ensemble estimators
     # TODO support nested pipeline/stacking estimators
-    elif est_name in ['StackingCVClassifier', 'StackingClassifier']:
+    elif est_name in ('StackingCVClassifier', 'StackingClassifier'):
         return get_main_estimator(estimator.meta_clf_)
-    elif est_name in ['StackingCVRegressor', 'StackingRegressor']:
+    elif est_name in ('StackingCVRegressor', 'StackingRegressor'):
         return get_main_estimator(estimator.meta_regr_)
     else:
         return estimator

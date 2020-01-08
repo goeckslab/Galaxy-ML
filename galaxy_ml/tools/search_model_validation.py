@@ -18,6 +18,7 @@ from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
 from sklearn.pipeline import Pipeline
 
+from galaxy_ml.binarize_target import IRAPSClassifier
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                              read_columns, try_get_attr, get_module,
                              clean_params, get_main_estimator)
@@ -408,6 +409,34 @@ def _do_train_test_split_val(searcher, X, y, params, error_score='raise',
     return searcher
 
 
+def _set_memory(estimator, memory):
+    """set memeory cache
+
+    Parameters
+    ----------
+    estimator : python object
+    memory : joblib.Memory object
+
+    Returns
+    -------
+    estimator : estimator object after setting new attributes
+    """
+    if isinstance(estimator, IRAPSClassifier):
+        estimator.set_params(memory=memory)
+        return estimator
+
+    estimator_params = estimator.get_params()
+
+    new_params = {}
+    for k in estimator_params.keys():
+        if k.endswith('irapsclassifier__memory'):
+            new_params[k] = memory
+
+    estimator.set_params(**new_params)
+
+    return estimator
+
+
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None,
          outfile_weights=None, groups=None,
@@ -544,9 +573,7 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     # cache iraps_core fits could increase search speed significantly
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
-    main_est = get_main_estimator(estimator)
-    if main_est.__class__.__name__ == 'IRAPSClassifier':
-        main_est.set_params(memory=memory)
+    estimator = _set_memory(estimator, memory)
 
     searcher = optimizer(estimator, param_grid, **options)
 
