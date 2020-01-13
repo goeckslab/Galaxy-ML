@@ -14,7 +14,8 @@ from sklearn.model_selection._validation import _score
 from sklearn.utils import indexable, safe_indexing
 
 from galaxy_ml.model_validations import train_test_split
-from galaxy_ml.keras_galaxy_models import _predict_generator
+from galaxy_ml.keras_galaxy_models import (_predict_generator,
+                                           KerasGBatchClassifier)
 from galaxy_ml.utils import (SafeEval, get_scoring, load_model,
                              read_columns, get_module,
                              clean_params, get_main_estimator,
@@ -343,25 +344,59 @@ def main(inputs, infile_estimator, infile1, infile2,
     else:
         estimator.fit(X_train, y_train)
 
-    if hasattr(estimator, 'evaluate'):
+    if isinstance(estimator, KerasGBatchClassifier):
+        scores = {}
         steps = estimator.prediction_steps
         batch_size = estimator.batch_size
         generator = estimator.data_generator_.flow(X_test, y=y_test,
                                                    batch_size=batch_size)
-        predictions, y_true = _predict_generator(estimator.model_, generator,
-                                                 steps=steps)
-        scores = gen_compute_scores(y_true, predictions, scorer,
-                                    is_multimetric=True)
+
+        generator.reset()
+        score_results = estimator.model_.evaluate_generator(generator,
+                                                            steps=steps)
+        metrics_names = estimator.model_.metrics_names
+        if not isinstance(metrics_names, list):
+            scores[metrics_names] = score_results
+        else:
+            for i, mm in enumerate(metrics_names):
+                scores[mm] = score_results[i]
+
+        # sklearn metrics
+        scoring = params['experiment_schemes']['metrics']['scoring']
+        if scoring['primary_scoring'] != 'default' or outfile_y_true:
+            generator.reset()
+            predictions, y_true = _predict_generator(estimator.model_,
+                                                     generator,
+                                                     steps=steps)
+        if scoring['primary_scoring'] != 'default':
+            sk_scores = gen_compute_scores(y_true, predictions, scorer,
+                                           is_multimetric=True)
+            scores.update(sk_scores)
 
     else:
+        scores = {}
+        if hasattr(estimator, 'model_') \
+                and hasattr(estimator.model_, 'metrics_names'):
+            batch_size = estimator.batch_size
+            score_results = estimator.model_.evaluate(X_test, y=y_test,
+                                                      batch_size=batch_size,
+                                                      verbose=0)
+            metrics_names = estimator.model_.metrics_names
+            if not isinstance(metrics_names, list):
+                scores[metrics_names] = score_results
+            else:
+                for i, mm in enumerate(metrics_names):
+                    scores[mm] = score_results[i]
+
         if hasattr(estimator, 'predict_proba'):
             predictions = estimator.predict_proba(X_test)
         else:
             predictions = estimator.predict(X_test)
 
         y_true = y_test
-        scores = _score(estimator, X_test, y_test, scorer,
-                        is_multimetric=True)
+        sk_scores = _score(estimator, X_test, y_test, scorer,
+                           is_multimetric=True)
+        scores.update(sk_scores)
     if outfile_y_true:
         try:
             pd.DataFrame(y_true).to_csv(outfile_y_true, sep='\t',
