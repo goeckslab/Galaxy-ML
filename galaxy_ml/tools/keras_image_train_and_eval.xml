@@ -18,7 +18,7 @@
             --estimator '$experiment_schemes.infile_estimator'
             --infile_images '$input_options.infile_images'
             --infile_dataframe '$input_options.infile_dataframe'
-            --outfile_result "`pwd`/tmp_outfile_result"
+            --outfile_result '$outfile_result'
             #if $save and 'save_estimator' in str($save)
             --outfile_object '$outfile_object'
             --outfile_weights '$outfile_weights'
@@ -30,8 +30,6 @@
             #if $experiment_schemes.test_split.split_algos.shuffle == 'group'
             --groups '$experiment_schemes.test_split.split_algos.groups_selector.infile_g'
             #end if
-            >'$outfile_result' && cp '$outfile_result' "`pwd`/../tool_stdout"
-            && cp tmp_outfile_result '$outfile_result';
 
         ]]>
     </command>
