@@ -98,6 +98,69 @@ def train_test_split_none(*arrays, **kwargs):
     return rval
 
 
+def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
+                                      y=None, sk_scoring=None,
+                                      steps=None, batch_size=32,
+                                      return_predictions=False):
+    """output scores for bother keras and sklearn metrics
+
+    Parameters
+    -----------
+    estimator : object
+        Fitted `galaxy_ml.keras_galaxy_models.KerasGBatchClassifier`.
+    data_generator : object
+        From `galaxy_ml.preprocessors.ImageDataFrameBatchGenerator`.
+    X : 2-D array
+        Contains indecies of images that need to be evaluated.
+    y : None
+        Target value.
+    sk_scoring : dict
+        Galaxy tool input parameters.
+    steps : integer or None
+        Evaluation/prediction steps before stop.
+    batch_size : integer
+        Number of samples in a batch
+    return_predictions : bool, default is False
+        Whether to return predictions and true labels.
+    """
+    scores = {}
+
+    generator = data_generator.flow(X, y=y, batch_size=batch_size)
+    # keras metrics evaluation
+    # handle scorer, convert to scorer dict
+    generator.reset()
+    score_results = estimator.model_.evaluate_generator(generator,
+                                                        steps=steps)
+    metrics_names = estimator.model_.metrics_names
+    if not isinstance(metrics_names, list):
+        scores[metrics_names] = score_results
+    else:
+        scores = dict(zip(metrics_names, score_results))
+
+    if sk_scoring['primary_scoring'] == 'default' and\
+            not return_predictions:
+        return scores
+
+    generator.reset()
+    predictions, y_true = _predict_generator(estimator.model_,
+                                             generator,
+                                             steps=steps)
+
+    # for sklearn metrics
+    if sk_scoring['primary_scoring'] != 'default':
+        scorer = get_scoring(sk_scoring)
+        scorer, _ = _check_multimetric_scoring(estimator,
+                                               scoring=scorer)
+        sk_scores = gen_compute_scores(y_true, predictions, scorer,
+                                       is_multimetric=True)
+        scores.update(sk_scores)
+
+    if return_predictions:
+        return scores, predictions, y_true
+    else:
+        return scores, None, None
+
+
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None,
          outfile_weights=None, outfile_y_true=None,
@@ -348,30 +411,12 @@ def main(inputs, infile_estimator, infile1, infile2,
         scores = {}
         steps = estimator.prediction_steps
         batch_size = estimator.batch_size
-        generator = estimator.data_generator_.flow(X_test, y=y_test,
-                                                   batch_size=batch_size)
+        data_generator = estimator.data_generator_
 
-        generator.reset()
-        score_results = estimator.model_.evaluate_generator(generator,
-                                                            steps=steps)
-        metrics_names = estimator.model_.metrics_names
-        if not isinstance(metrics_names, list):
-            scores[metrics_names] = score_results
-        else:
-            for i, mm in enumerate(metrics_names):
-                scores[mm] = score_results[i]
-
-        # sklearn metrics
-        scoring = params['experiment_schemes']['metrics']['scoring']
-        if scoring['primary_scoring'] != 'default' or outfile_y_true:
-            generator.reset()
-            predictions, y_true = _predict_generator(estimator.model_,
-                                                     generator,
-                                                     steps=steps)
-        if scoring['primary_scoring'] != 'default':
-            sk_scores = gen_compute_scores(y_true, predictions, scorer,
-                                           is_multimetric=True)
-            scores.update(sk_scores)
+        scores, predictions, y_true = _evaluate_keras_and_sklearn_scores(
+            estimator, data_generator, X_test, y=y_test,
+            sk_scoring=sk_scoring, steps=steps, batch_size=batch_size,
+            return_predictions=bool(outfile_y_true))
 
     else:
         scores = {}
@@ -385,8 +430,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             if not isinstance(metrics_names, list):
                 scores[metrics_names] = score_results
             else:
-                for i, mm in enumerate(metrics_names):
-                    scores[mm] = score_results[i]
+                scores = dict(zip(metrics_names, score_results))
 
         if hasattr(estimator, 'predict_proba'):
             predictions = estimator.predict_proba(X_test)
@@ -397,6 +441,8 @@ def main(inputs, infile_estimator, infile1, infile2,
         sk_scores = _score(estimator, X_test, y_test, scorer,
                            is_multimetric=True)
         scores.update(sk_scores)
+
+    # handle output
     if outfile_y_true:
         try:
             pd.DataFrame(y_true).to_csv(outfile_y_true, sep='\t',
@@ -406,7 +452,6 @@ def main(inputs, infile_estimator, infile1, infile2,
                 float_format='%g', chunksize=10000)
         except Exception as e:
             print("Error in saving predictions: %s" % e)
-
     # handle output
     for name, score in scores.items():
         scores[name] = [score]
@@ -429,6 +474,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             del main_est.model_
             del main_est.fit_params
             del main_est.model_class_
+            main_est.callbacks = []
             if getattr(main_est, 'data_generator_', None):
                 del main_est.data_generator_
 

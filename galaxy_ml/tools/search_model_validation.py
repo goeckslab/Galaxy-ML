@@ -696,6 +696,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             del main_est.model_
             del main_est.fit_params
             del main_est.model_class_
+            main_est.callbacks = []
             if getattr(main_est, 'data_generator_', None):
                 del main_est.data_generator_
 
