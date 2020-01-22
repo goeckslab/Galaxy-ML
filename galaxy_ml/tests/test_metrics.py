@@ -16,6 +16,15 @@ Olaparib_1017 = pd.read_csv('./tools/test-data/Olaparib_1017.tsv.gz',
 X, y = Olaparib_1017.iloc[:, 6:].values, Olaparib_1017.iloc[:, 5].values
 
 
+def test_spearman_correlation_score():
+    y_true = [1, 2, 3, 4, 5]
+    y_pred = [5, 6, 7, 8, 7]
+
+    spearm = spearman_correlation_score(y_true, y_pred)
+
+    assert round(spearm, 2) == 0.82, spearm
+
+
 def test_spearman_correlation_scorer():
     cv = OrderedKFold(5)
     scoring = dict(

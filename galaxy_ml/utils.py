@@ -656,9 +656,12 @@ def try_get_attr(module, name):
     -------
     class or function
     """
-    if module.split('.')[-1] not in (
-            'keras_galaxy_models', 'feature_selectors', 'preprocessors',
-            'iraps_classifier', 'model_validations', 'binarize_target'):
+    valid_modules = (
+        'keras_galaxy_models', 'feature_selectors', 'preprocessors',
+        'iraps_classifier', 'model_validations', 'binarize_target',
+        'metrics', 'model_persist')
+
+    if module.split('.')[-1] not in valid_modules:
         raise NameError("%s is not recognized as a valid custom "
                         "module in Galaxy-ML!" % module)
 
