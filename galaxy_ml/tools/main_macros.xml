@@ -1302,6 +1302,7 @@
       <when value="neg_median_absolute_error"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="r2"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="max_error"><expand macro="secondary_scoring_selection_regression"/></when>
+      <when value="spearman_correlation"><expand macro="secondary_scoring_selection_regression"/></when>
       <when value="binarize_auc_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
       <when value="binarize_average_precision_scorer"><expand macro="secondary_scoring_selection_anormaly"/></when>
     </conditional>
@@ -1335,6 +1336,7 @@
       <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
       <option value="r2">Regression -- 'r2'</option>
       <option value="max_error">Regression -- 'max_error'</option>
+      <option value="spearman_correlation">Regression -- Spearman's rank correlation coefficient</option>
       <option value="binarize_auc_scorer">anomaly detection -- binarize_auc_scorer</option>
       <option value="binarize_average_precision_scorer">anomaly detection -- binarize_average_precision_scorer</option>
   </xml>
@@ -1373,6 +1375,7 @@
       <option value="neg_median_absolute_error">Regression -- 'neg_median_absolute_error'</option>
       <option value="r2">Regression -- 'r2'</option>
       <option value="max_error">Regression -- 'max_error'</option>
+      <option value="spearman_correlation">Regression -- Spearman's rank correlation coefficient</option>
     </param>
   </xml>
 

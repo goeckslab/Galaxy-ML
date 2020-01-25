@@ -1,7 +1,7 @@
-import sklearn
 from nose.tools import raises
 from galaxy_ml.utils import try_get_attr
 from galaxy_ml.utils import SafeEval
+from galaxy_ml.utils import get_scoring
 
 
 def test_try_get_attr_1():
@@ -37,3 +37,36 @@ def test_safe_eval():
 
     for li in literals:
         assert x_safeeval(li) is not None
+
+
+def test_get_scoring():
+    inputs = {
+        "primary_scoring": "binarize_average_precision_scorer",
+        "secondary_scoring": "binarize_auc_scorer"
+    }
+
+    scoring = get_scoring(inputs)
+    assert len(scoring) == 2
+
+    inputs = {
+        "primary_scoring": "r2",
+        "secondary_scoring":
+            "spearman_correlation,max_error,explained_variance"
+    }
+
+    scoring = get_scoring(inputs)
+    assert len(scoring) == 4
+
+    inputs = {
+        "primary_scoring": "default",
+    }
+
+    scoring = get_scoring(inputs)
+    assert scoring is None
+
+    inputs = {
+        "primary_scoring": "r2",
+    }
+
+    scoring = get_scoring(inputs)
+    assert type(scoring).__name__ == '_PredictScorer', scoring

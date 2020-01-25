@@ -575,32 +575,34 @@ def get_scoring(scoring_json):
     -------
     single scorer instance or multiple scorers in dict
     """
-    if scoring_json['primary_scoring'] == 'default':
+    primary_scoring = scoring_json['primary_scoring']
+    if primary_scoring == 'default':
         return None
 
-    my_scorers = metrics.SCORERS
-    my_scorers['binarize_auc_scorer'] =\
-        try_get_attr('galaxy_ml.iraps_classifier',
+    all_scorers = metrics.SCORERS
+    all_scorers['binarize_auc_scorer'] =\
+        try_get_attr('galaxy_ml.binarize_target',
                      'binarize_auc_scorer')
-    my_scorers['binarize_average_precision_scorer'] =\
-        try_get_attr('galaxy_ml.iraps_classifier',
+    all_scorers['binarize_average_precision_scorer'] =\
+        try_get_attr('galaxy_ml.binarize_target',
                      'binarize_average_precision_scorer')
-    if 'balanced_accuracy' not in my_scorers:
-        my_scorers['balanced_accuracy'] =\
+    all_scorers['spearman_correlation'] =\
+        try_get_attr('galaxy_ml.metrics',
+                     'spearman_correlation_scorer')
+    if 'balanced_accuracy' not in all_scorers:
+        all_scorers['balanced_accuracy'] =\
             metrics.make_scorer(balanced_accuracy_score)
 
-    if scoring_json['secondary_scoring'] not in ('None', '')\
+    if scoring_json.get('secondary_scoring', None) not in (None, 'None', '')\
             and scoring_json['secondary_scoring'] !=\
             scoring_json['primary_scoring']:
-        return_scoring = {}
-        primary_scoring = scoring_json['primary_scoring']
-        return_scoring[primary_scoring] = my_scorers[primary_scoring]
-        for scorer in scoring_json['secondary_scoring'].split(','):
-            if scorer != scoring_json['primary_scoring']:
-                return_scoring[scorer] = my_scorers[scorer]
-        return return_scoring
+        scoring = set(scoring_json['secondary_scoring'].split(','))
+        scoring.add(primary_scoring)
+        # make sure all scoring keys exit in scorers
+        assert all(k in all_scorers for k in scoring)
+        return {k: all_scorers[k] for k in scoring}
 
-    return my_scorers[scoring_json['primary_scoring']]
+    return all_scorers[primary_scoring]
 
 
 def get_search_params(estimator):
