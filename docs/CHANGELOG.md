@@ -1,3 +1,14 @@
+### Version 0.8.3.dev
+
+#### Changes
+
+- Makes new metric `spearman_correlation_score` and its corresponding scorer.
+- Adds a new parameter `n_stratification_bins` to `OrderedKFold` and `RepeatedOrderedKFold`.
+
+#### Bug Fixes
+
+- 
+
 ### Version 0.8.2
 
 #### Changes
