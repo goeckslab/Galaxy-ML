@@ -277,6 +277,52 @@ def test_repeated_ordered_kfold():
     assert got2 == expect2, got2
 
 
+def test_ordered_kfold_stratification_fraction():
+    y = list(range(12))
+    got1 = []
+    cv = OrderedKFold(n_splits=4, shuffle=True, random_state=42,
+                      n_stratification_bins=2)
+    for _, test_index in cv.split(y, y):
+        got1.append(test_index.tolist())
+
+    expect1 = [[0, 4, 7],
+               [1, 3, 8],
+               [5, 9, 11],
+               [2, 6, 10]]
+
+    assert got1 == expect1, got1
+
+    got2 = []
+    cv = OrderedKFold(n_splits=4, shuffle=True, random_state=999,
+                      n_stratification_bins=3)
+    for _, test_index in cv.split(y, y):
+        got2.append(test_index.tolist())
+
+    expect2 = [[2, 6, 8],
+               [1, 7, 10],
+               [3, 4, 9],
+               [0, 5, 11]]
+
+    assert got2 == expect2, got2
+
+    got3 = []
+    cv = RepeatedOrderedKFold(n_splits=4, random_state=999, n_repeats=2,
+                              n_stratification_bins=2)
+    for _, test_index in cv.split(y, y):
+        got3.append(test_index.tolist())
+
+    expect3 = [[2, 4, 11],
+               [0, 5, 10],
+               [3, 6, 9],
+               [1, 7, 8],
+               [2, 5, 7],
+               [0, 1, 10],
+               [3, 6, 9],
+               [4, 8, 11]]
+
+    assert got3 == expect3, got3
+
+
 def test_fit_and_score():
     X = np.arange(100).reshape((10, 10))
     y = np.arange(10)
