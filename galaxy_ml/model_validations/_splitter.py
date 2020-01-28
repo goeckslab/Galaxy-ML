@@ -77,7 +77,6 @@ class OrderedKFold(_BaseKFold):
                 start, stop = current, current + step
                 rng.shuffle(sorted_index[start:stop])
                 current = stop
-            rng.shuffle(sorted_index[current:])
 
         for i in range(n_splits):
             yield sorted_index[i:n_samples:n_splits]
