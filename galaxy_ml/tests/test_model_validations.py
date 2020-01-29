@@ -277,7 +277,7 @@ def test_repeated_ordered_kfold():
     assert got2 == expect2, got2
 
 
-def test_ordered_kfold_stratification_fraction():
+def test_ordered_kfold_n_stratification_bins():
     y = list(range(12))
     got1 = []
     cv = OrderedKFold(n_splits=4, shuffle=True, random_state=42,

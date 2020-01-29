@@ -944,11 +944,13 @@
       <expand macro="cv_n_splits"/>
       <expand macro="cv_shuffle"/>
       <expand macro="random_state"/>
+      <expand macro="cv_n_stratification_bins"/>
     </when>
     <when value="RepeatedOrderedKFold">
       <expand macro="cv_n_splits"/>
       <param argument="n_repeats" type="integer" value="5"/>
       <expand macro="random_state"/>
+      <expand macro="cv_n_stratification_bins"/>
     </when>
     <yield/>
   </xml>
@@ -1000,6 +1002,10 @@
 
   <xml name="cv_shuffle">
     <param argument="shuffle" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Whether to shuffle data before splitting" />
+  </xml>
+
+  <xml name="cv_n_stratification_bins">
+    <param argument="n_stratification_bins" type="integer" value="" help="Integer. The number of stratification bins. Only relevent when shuffle is True. Valid in [2, `n_samples // n_splits`]. Default value is None, which is same as `n_samples // n_splits`. The higher the value is, the distribution of target values is more approximately the ame across all split folds."/>
   </xml>
 
   <xml name="cv_test_size" token_value="0.2">
