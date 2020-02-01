@@ -580,14 +580,16 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     split_mode = params['outer_split'].pop('split_mode')
 
+    # Nested CV
     if split_mode == 'nested_cv':
         outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
         # nested CV, outer cv using cross_validate
         if options['error_score'] == 'raise':
             rval = cross_validate(
-                searcher, X, y, scoring=options['scoring'],
-                cv=outer_cv, n_jobs=N_JOBS,
-                verbose=options['verbose'],
+                searcher, X, y, groups=groups,
+                scoring=options['scoring'], cv=outer_cv,
+                n_jobs=N_JOBS, verbose=options['verbose'],
+                fit_params={'groups': groups},
                 return_estimator=(params['save'] == 'save_estimator'),
                 error_score=options['error_score'],
                 return_train_score=True)
@@ -596,10 +598,11 @@ def main(inputs, infile_estimator, infile1, infile2,
             with warnings.catch_warnings(record=True) as w:
                 try:
                     rval = cross_validate(
-                        searcher, X, y,
+                        searcher, X, y, groups=groups,
                         scoring=options['scoring'],
                         cv=outer_cv, n_jobs=N_JOBS,
                         verbose=options['verbose'],
+                        fit_params={'groups': groups},
                         return_estimator=(params['save'] == 'save_estimator'),
                         error_score=options['error_score'],
                         return_train_score=True)
