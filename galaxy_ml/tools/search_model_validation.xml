@@ -109,7 +109,7 @@
                         </sanitizer>
                     </param>
                     <param argument="n_iter" type="integer" value="50" label="Number of parameter settings that are sampled"/>
-                    <!--param argument="n_points" type="integer" value="1" label="Number of parameter settings to sample in parallel" help="Maximum parallel equals n_points times cv jobs."/>-->
+                    <param argument="n_points" type="integer" value="1" label="Number of parameter settings to sample in parallel" help="Maximum parallel equals n_points times cv jobs."/>
                     <expand macro="random_state"/>
                 </section>
             </when>

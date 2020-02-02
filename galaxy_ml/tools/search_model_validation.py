@@ -547,6 +547,12 @@ def main(inputs, infile_estimator, infile1, infile2,
     options['cv'] = splitter
     primary_scoring = options['scoring']['primary_scoring']
     options['scoring'] = get_scoring(options['scoring'])
+    # TODO make BayesSearchCV support multiple scoring
+    if optimizer == 'skopt.BayesSearchCV' and \
+            isinstance(options['scoring'], dict):
+        options['scoring'] = options['scoring'][primary_scoring]
+        warnings.warn("BayesSearchCV doesn't support multiple "
+                      "scorings! Primary scoring is used.")
     if options['error_score']:
         options['error_score'] = 'raise'
     else:
