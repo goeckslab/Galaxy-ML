@@ -29,7 +29,9 @@
             </section>
         </macro>
     </macros>
-    <expand macro="python_requirements"/>
+    <expand macro="python_requirements">
+        <requirement type="package" version="0.7">scikit-optimize</requirement>
+    </expand>
     <expand macro="macro_stdio"/>
     <version_command>echo "@VERSION@"</version_command>
     <command>
@@ -78,6 +80,7 @@
             <param name="selected_search_scheme" type="select" label="Select a model selection search scheme">
                 <option value="GridSearchCV" selected="true">GridSearchCV - Exhaustive search over specified parameter values for an estimator </option>
                 <option value="RandomizedSearchCV">RandomizedSearchCV - Randomized search on hyper parameters for an estimator</option>
+                <option value="skopt.BayesSearchCV">BayesSearchCV - Bayesian optimization over hyper parameters</option>
             </param>
             <when value="GridSearchCV">
                 <expand macro="search_cv_estimator"/>
@@ -90,6 +93,23 @@
                 <section name="options" title="Advanced Options for SearchCV" expanded="false">
                     <expand macro="search_cv_options"/>
                     <param argument="n_iter" type="integer" value="10" label="Number of parameter settings that are sampled"/>
+                    <expand macro="random_state"/>
+                </section>
+            </when>
+            <when value="skopt.BayesSearchCV">
+                <expand macro="search_cv_estimator"/>
+                <section name="options" title="Advanced Options for SearchCV" expanded="false">
+                    <expand macro="search_cv_options"/>
+                    <param argument="optimizer_kwargs" type="text" value="" optional="true" help="dict, optional Dict of arguments passed to :class:Optimizer. For example, {'base_estimator': 'RF'} would use a Random Forest surrogate instead of the default Gaussian Process.">
+                        <sanitizer>
+                            <valid initial="default">
+                                <add value="{"/>
+                                <add value="}"/>
+                            </valid>
+                        </sanitizer>
+                    </param>
+                    <param argument="n_iter" type="integer" value="50" label="Number of parameter settings that are sampled"/>
+                    <!--param argument="n_points" type="integer" value="1" label="Number of parameter settings to sample in parallel" help="Maximum parallel equals n_points times cv jobs."/>-->
                     <expand macro="random_state"/>
                 </section>
             </when>

@@ -769,5 +769,9 @@
     "mlxtend.classifier.stacking_classification.StackingClassifier",
     "mlxtend.regressor.stacking_cv_regression.StackingCVRegressor",
     "mlxtend.regressor.stacking_regression.StackingRegressor"
+  ],
+
+  "SKOPT_NAMES":[
+    "skopt.searchcv.BayesSearchCV"
   ]
 }

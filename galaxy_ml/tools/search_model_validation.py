@@ -17,6 +17,7 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
 from sklearn.pipeline import Pipeline
+from skopt import BayesSearchCV
 
 from galaxy_ml.binarize_target import IRAPSClassifier
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
@@ -505,7 +506,10 @@ def main(inputs, infile_estimator, infile1, infile2,
         setattr(_validation, '_fit_and_score', _fit_and_score)
 
     optimizer = params['search_schemes']['selected_search_scheme']
-    optimizer = getattr(model_selection, optimizer)
+    if optimizer == 'skopt.BayesSearchCV':
+        optimizer = BayesSearchCV
+    else:
+        optimizer = getattr(model_selection, optimizer)
 
     # handle gridsearchcv options
     options = params['search_schemes']['options']
