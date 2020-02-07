@@ -8,7 +8,7 @@ asteval>=0.9.14
 pandas==0.25.3
 scikit-learn==0.21.3
 xgboost==0.80
-mlxtend==0.17.0
+mlxtend==0.17.1
 skrebate==0.6
 imbalanced-learn==0.5.0
 keras==2.3.1
