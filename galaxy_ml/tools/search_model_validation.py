@@ -19,6 +19,8 @@ from sklearn.model_selection import _search, _validation
 from sklearn.pipeline import Pipeline
 from skopt import BayesSearchCV
 
+from distutils.version import LooseVersion as Version
+from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.binarize_target import IRAPSClassifier
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                              read_columns, try_get_attr, get_module,
@@ -543,7 +545,10 @@ def main(inputs, infile_estimator, infile1, infile2,
         groups = groups.ravel()
         options['cv_selector']['groups_selector'] = groups
 
-    splitter, groups = get_cv(options.pop('cv_selector'))
+    cv_selector = options.pop('cv_selector')
+    if Version(galaxy_ml_version) < Version('0.8.3'):
+        cv_selector.pop('n_stratification_bins', None)
+    splitter, groups = get_cv(cv_selector)
     options['cv'] = splitter
     primary_scoring = options['scoring']['primary_scoring']
     options['scoring'] = get_scoring(options['scoring'])
@@ -592,7 +597,10 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     # Nested CV
     if split_mode == 'nested_cv':
-        outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
+        cv_selector = params['outer_split']['cv_selector']
+        if Version(galaxy_ml_version) < Version('0.8.3'):
+            cv_selector.pop('n_stratification_bins', None)
+        outer_cv, _ = get_cv(cv_selector)
         # nested CV, outer cv using cross_validate
         if options['error_score'] == 'raise':
             rval = cross_validate(

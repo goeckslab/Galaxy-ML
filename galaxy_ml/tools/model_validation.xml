@@ -36,6 +36,8 @@ from sklearn import (
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.model_selection import _validation
 
+from distutils.version import LooseVersion as Version
+from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                    read_columns, get_module)
 
@@ -206,7 +208,10 @@ options['cv_selector']['groups_selector'] = groups
 ## del loaded_df
 del loaded_df
 
-splitter, groups = get_cv( options.pop('cv_selector') )
+cv_selector = options.pop('cv_selector')
+if Version(galaxy_ml_version) < Version('0.8.3'):
+    cv_selector.pop('n_stratification_bins', None)
+splitter, groups = get_cv( cv_selector )
 options['cv'] = splitter
 options['groups'] = groups
 options['n_jobs'] = N_JOBS
