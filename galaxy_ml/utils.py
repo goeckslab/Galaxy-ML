@@ -8,6 +8,7 @@ import pickle
 import re
 import scipy
 import sklearn
+import skopt
 import skrebate
 import sys
 import time
@@ -79,6 +80,9 @@ class _SafePickler(pickle.Unpickler, object):
             'keras.engine.sequential.Sequential',
             'keras.engine.sequential.Model']
 
+        self.skopt_names = [
+            'skopt.searchcv.BayesSearchCV']
+
         # custom module in Galaxy-ML
         self.custom_modules = [
             'keras_galaxy_models',
@@ -126,7 +130,8 @@ class _SafePickler(pickle.Unpickler, object):
         if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
             if (fullname in good_names)\
                 or (module.startswith(('sklearn.', 'xgboost.', 'skrebate.',
-                                       'imblearn.', 'mlxtend.', 'numpy.'))
+                                       'imblearn.', 'mlxtend.', 'numpy.',
+                                       'skopt'))
                     or module == 'numpy'):
                 if fullname not in (pk_whitelist['SK_NAMES'] +
                                     pk_whitelist['SKR_NAMES'] +
@@ -134,12 +139,13 @@ class _SafePickler(pickle.Unpickler, object):
                                     pk_whitelist['NUMPY_NAMES'] +
                                     pk_whitelist['IMBLEARN_NAMES'] +
                                     pk_whitelist['MLXTEND_NAMES'] +
+                                    pk_whitelist['SKOPT_NAMES'] +
                                     keras_names +
                                     good_names):
                     # raise pickle.UnpicklingError
-                    print("Warning: global %s is not in pickler whitelist "
-                          "yet and will loss support soon. Contact tool "
-                          "author or leave a message at github.com" % fullname)
+                    pickle.UnpicklingError("global '%s' is forbidden"
+                                           % fullname)
+
                 mod = sys.modules[module]
                 return getattr(mod, name)
 

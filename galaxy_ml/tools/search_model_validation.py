@@ -17,7 +17,10 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
 from sklearn.pipeline import Pipeline
+from skopt import BayesSearchCV
 
+from distutils.version import LooseVersion as Version
+from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.binarize_target import IRAPSClassifier
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
                              read_columns, try_get_attr, get_module,
@@ -505,7 +508,10 @@ def main(inputs, infile_estimator, infile1, infile2,
         setattr(_validation, '_fit_and_score', _fit_and_score)
 
     optimizer = params['search_schemes']['selected_search_scheme']
-    optimizer = getattr(model_selection, optimizer)
+    if optimizer == 'skopt.BayesSearchCV':
+        optimizer = BayesSearchCV
+    else:
+        optimizer = getattr(model_selection, optimizer)
 
     # handle gridsearchcv options
     options = params['search_schemes']['options']
@@ -539,10 +545,19 @@ def main(inputs, infile_estimator, infile1, infile2,
         groups = groups.ravel()
         options['cv_selector']['groups_selector'] = groups
 
-    splitter, groups = get_cv(options.pop('cv_selector'))
+    cv_selector = options.pop('cv_selector')
+    if Version(galaxy_ml_version) < Version('0.8.3'):
+        cv_selector.pop('n_stratification_bins', None)
+    splitter, groups = get_cv(cv_selector)
     options['cv'] = splitter
     primary_scoring = options['scoring']['primary_scoring']
     options['scoring'] = get_scoring(options['scoring'])
+    # TODO make BayesSearchCV support multiple scoring
+    if optimizer == 'skopt.BayesSearchCV' and \
+            isinstance(options['scoring'], dict):
+        options['scoring'] = options['scoring'][primary_scoring]
+        warnings.warn("BayesSearchCV doesn't support multiple "
+                      "scorings! Primary scoring is used.")
     if options['error_score']:
         options['error_score'] = 'raise'
     else:
@@ -582,7 +597,10 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     # Nested CV
     if split_mode == 'nested_cv':
-        outer_cv, _ = get_cv(params['outer_split']['cv_selector'])
+        cv_selector = params['outer_split']['cv_selector']
+        if Version(galaxy_ml_version) < Version('0.8.3'):
+            cv_selector.pop('n_stratification_bins', None)
+        outer_cv, _ = get_cv(cv_selector)
         # nested CV, outer cv using cross_validate
         if options['error_score'] == 'raise':
             rval = cross_validate(

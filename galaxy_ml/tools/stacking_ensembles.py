@@ -10,6 +10,8 @@ import sys
 import warnings
 from sklearn import ensemble
 
+from distutils.version import LooseVersion as Version
+from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.utils import (load_model, get_cv, get_estimator,
                              get_search_params)
 
@@ -75,6 +77,8 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
 
     cv_selector = options.pop('cv_selector', None)
     if cv_selector:
+        if Version(galaxy_ml_version) < Version('0.8.3'):
+            cv_selector.pop('n_stratification_bins', None)
         splitter, groups = get_cv(cv_selector)
         options['cv'] = splitter
         # set n_jobs
