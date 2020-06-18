@@ -80,7 +80,7 @@ def train_test_split(*arrays, **options):
                            train_size=n_train,
                            random_state=random_state)
 
-    if shuffle is None:
+    if shuffle is None or shuffle == 'None':
         if labels is not None:
             warnings.warn("The `labels` is ignored for "
                           "shuffle being None!")
