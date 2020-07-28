@@ -68,7 +68,7 @@ setup(name='Galaxy-ML',
       long_description=long_description,
       long_description_content_type="text/markdown",
       url='https://github.com/goeckslab/Galaxy-ML/',
-      packages=find_packages(exclude=['tests*', 'test-data*', 'tools*']),
+      packages=find_packages(exclude=['docs', 'tests*', 'test-data*', 'tools*']),
       package_data={
           '': ['README.md',
                'requirements.txt']},
