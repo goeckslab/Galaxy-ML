@@ -24,7 +24,7 @@ def main(inputs, infile_estimator, outfile_predict,
     inputs : str
         File path to galaxy tool parameter
 
-    infile_estimator : strgit
+    infile_estimator : str
         File path to trained estimator input
 
     outfile_predict : str
