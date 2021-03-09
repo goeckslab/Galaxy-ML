@@ -93,6 +93,29 @@ python setup.py build_ext --inplace
 
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
+### Running the tests
+
+Before running the tests, run the following commands:
+
+```
+conda create --name galaxy_ml python=3.6
+conda activate galaxy_ml
+pip install -r requirements.txt
+python setup.py build_ext --inplace
+pip install nose nose-htmloutput pytest
+cd galaxy_ml
+```
+
+To run all tests and generate an HTML report:
+```
+nosetests ./tests --with-html --html-file=./report.html
+```
+
+To run tests in a specific file (e.g., test_keras_galaxy.py file) and generate an HTML report
+nosetests ./tests/test_keras_galaxy.py --with-html --html-file=./report.html
+
+To run a specific test in a specific file (e.g., test_multi_dimensional_output test in test_keras_galaxy.py file) and generate an HTML report
+nosetests ./tests/test_keras_galaxy.py:test_multi_dimensional_output --with-html --html-file=./report.html
 
 ### Examples for using Galaxy-ML custom models
 
