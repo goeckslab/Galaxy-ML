@@ -23,8 +23,8 @@ from tensorflow import set_random_seed
 
 from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
-    check_params, SearchParam, KerasLayers, MetricCallback,
-    BaseKerasModel, KerasGClassifier, KerasGRegressor,
+    check_params, KerasLayers, MetricCallback,
+    KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier, _predict_generator)
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
@@ -1083,6 +1083,7 @@ def test_predict_generator():
     assert y_true.shape == (128, 1), y_true.shape
     assert np.sum(y_true) == 9, np.sum(y_true)
 
+
 @nottest
 def test_multi_dimensional_output():
 
@@ -1090,12 +1091,13 @@ def test_multi_dimensional_output():
 
     # training data has 60,000 samples, each 784 dimensional
     # testing data has 10,000 samples, each 784 dimensional
-    X_train = X_train.reshape(60000,784)
+    X_train = X_train.reshape(60000, 784)
     y_train = y_train.reshape(60000,)
-    X_test = X_test.reshape(10000,784)
+    X_test = X_test.reshape(10000, 784)
     y_test = y_test.reshape(10000,)
 
-    # One hot encode the output. Output becomes 10 dimensional (One of the dimensions is 1, and all other are 0)
+    # One hot encode the output. Output becomes 10 dimensional
+    # One of the dimensions is 1, and all other are 0
     y_train = to_categorical(y_train)
     y_test = to_categorical(y_test)
 
@@ -1112,15 +1114,18 @@ def test_multi_dimensional_output():
     model = Sequential()
 
     # Add model layers
-    # Reshape each sample (which is 784 dimensional) to 28 by 28 by 1 (representing a 28 by 28 grayscale image)
-    model.add(Reshape((28,28,1), input_shape=(784,)))
+    # Reshape each sample (which is 784 dimensional) to
+    # 28 by 28 by 1 (representing a 28 by 28 grayscale image)
+    model.add(Reshape((28, 28, 1), input_shape=(784,)))
     model.add(Conv2D(64, kernel_size=3, activation='relu'))
-    model.add(MaxPooling2D((2,2)))
+    model.add(MaxPooling2D((2, 2)))
     model.add(Conv2D(32, kernel_size=2, activation='relu'))
-    model.add(MaxPooling2D((2,2)))
+    model.add(MaxPooling2D((2, 2)))
     model.add(Flatten())
     model.add(Dense(10, activation='softmax'))
 
     config = model.get_config()
-    classifier = KerasGClassifier(config, optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    classifier = KerasGClassifier(config, optimizer='adam',
+                                  loss='categorical_crossentropy',
+                                  metrics=['accuracy'])
     classifier.fit(X_train, y_train)
