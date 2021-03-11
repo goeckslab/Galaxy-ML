@@ -1,5 +1,6 @@
 import json
 import os
+import glob
 import pickle
 import tempfile
 import time
@@ -16,17 +17,29 @@ module_folder = (os.path.dirname(galaxy_ml.__file__))
 result_h5 = os.path.join(module_folder,
                          'tools/test-data/gbr_model01_py3.h5')
 
+
+def teardown():
+    files = glob.glob('./tests/*.hdf5', recursive=False)
+    for fl in files:
+        os.remove(fl)
+    log_file = glob.glob('./tests/log.cvs', recursive=False)
+    for fl in log_file:
+        os.remove(fl)
+
+
 def test_jpickle_dumpc():
     with open(test_model, 'rb') as f:
         model = pickle.load(f)
 
     got = model_persist.dumpc(model)
+    got.pop('-cpython-')
 
     #with open(result_json, 'w') as f:
     #    json.dump(got, f, indent=2)
 
     with open(result_json, 'r') as f:
         expect = json.load(f)
+    expect.pop('-cpython-')
 
     assert got == expect, got
 

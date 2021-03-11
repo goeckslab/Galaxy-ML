@@ -12,7 +12,7 @@ mlxtend==0.17.1
 skrebate==0.6
 imbalanced-learn==0.5.0
 keras==2.3.1
-tensorflow==1.15.2
+tensorflow>=1.15.0,<2.0
 readme-renderer==24.0
 plotly==4.3.0
 pydot>=1.4.1
@@ -21,3 +21,4 @@ requests>=2.22.0
 matplotlib>=3.1.1
 pillow>=6.0.0
 scikit-optimize>=0.7
+h5py>=2.10.0,<3.0
