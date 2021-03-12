@@ -18,15 +18,6 @@ result_h5 = os.path.join(module_folder,
                          'tools/test-data/gbr_model01_py3.h5')
 
 
-def teardown():
-    files = glob.glob('./tests/*.hdf5', recursive=False)
-    for fl in files:
-        os.remove(fl)
-    log_file = glob.glob('./tests/log.cvs', recursive=False)
-    for fl in log_file:
-        os.remove(fl)
-
-
 def test_jpickle_dumpc():
     with open(test_model, 'rb') as f:
         model = pickle.load(f)

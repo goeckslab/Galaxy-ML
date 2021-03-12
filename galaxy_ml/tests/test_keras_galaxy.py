@@ -1,3 +1,4 @@
+import glob
 import json
 import keras
 import numpy as np
@@ -140,6 +141,15 @@ d = {
                 'activity_regularizer': None,
                 'kernel_constraint': None,
                 'bias_constraint': None}}]}
+
+
+def teardown():
+    files = glob.glob('./tests/*.hdf5', recursive=False)
+    for fl in files:
+        os.remove(fl)
+    log_file = glob.glob('./tests/log.cvs', recursive=False)
+    for fl in log_file:
+        os.remove(fl)
 
 
 def test_get_params_from_dict():
