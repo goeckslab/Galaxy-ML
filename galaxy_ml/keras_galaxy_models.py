@@ -19,7 +19,7 @@ from keras.callbacks import Callback
 from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              TensorBoard, RemoteMonitor,
                              ModelCheckpoint, TerminateOnNaN,
-                             CSVLogger, ReduceLROnPlateau)
+                             CSVLogger)
 from keras.engine.training_utils import iter_sequence_infinite
 from keras.models import Sequential, Model
 from keras.optimizers import (SGD, RMSprop, Adagrad,
@@ -876,7 +876,12 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         -----------
         X : array-like, shape `(n_samples, feature_arrays)`
         """
-        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
+        multi_output = False
+        if y.ndim == 2:
+            multi_output = True
+
+        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True,
+                         multi_output=multi_output)
         check_classification_targets(y)
         check_params(kwargs, Model.fit)
 
@@ -1104,7 +1109,12 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.data_generator_.set_processing_attrs()
 
         if y is not None:
-            X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True)
+            multi_output = False
+            if y.ndim == 2:
+                multi_output = True
+
+            X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True,
+                             multi_output=multi_output))
             check_classification_targets(y)
 
             if len(y.shape) == 2 and y.shape[1] > 1:

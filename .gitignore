@@ -12,3 +12,10 @@ galaxy_ml/tests/*.pyc
 #docs
 docs/site
 docs/sources
+
+build
+galaxy_ml/externals/selene_sdk
+galaxy_ml/tests/weights*hdf5
+galaxy_ml/tools/test-data/*.fai
+galaxy_ml/tests/log.cvs
+galaxy_ml/*.html
