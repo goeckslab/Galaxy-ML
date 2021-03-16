@@ -1129,3 +1129,9 @@ def test_multi_dimensional_output():
                                   loss='categorical_crossentropy',
                                   metrics=['accuracy'])
     classifier.fit(X_train, y_train)
+    y_predict = classifier.predict(X_test)
+
+    assert len(y_predict.shape) == 1
+    assert y_predict.shape[0] == X_test.shape[0]
+    assert y_predict.max() == 9
+    assert y_predict.min() == 0

@@ -1114,7 +1114,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                 multi_output = True
 
             X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True,
-                             multi_output=multi_output))
+                             multi_output=multi_output)
             check_classification_targets(y)
 
             if len(y.shape) == 2 and y.shape[1] > 1:
