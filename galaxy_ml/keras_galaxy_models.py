@@ -876,12 +876,8 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         -----------
         X : array-like, shape `(n_samples, feature_arrays)`
         """
-        multi_output = False
-        if y.ndim == 2:
-            multi_output = True
-
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True,
-                         multi_output=multi_output)
+                         multi_output=True)
         check_classification_targets(y)
         check_params(kwargs, Model.fit)
 
@@ -1109,12 +1105,8 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.data_generator_.set_processing_attrs()
 
         if y is not None:
-            multi_output = False
-            if y.ndim == 2:
-                multi_output = True
-
             X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'], allow_nd=True,
-                             multi_output=multi_output)
+                             multi_output=True)
             check_classification_targets(y)
 
             if len(y.shape) == 2 and y.shape[1] > 1:
