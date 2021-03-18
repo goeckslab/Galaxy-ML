@@ -6,8 +6,6 @@ import time
 import galaxy_ml
 from galaxy_ml import model_persist
 
-from nose.tools import nottest
-
 
 test_model = './tools/test-data/gbr_model01_py3'
 result_json = './tools/test-data/gbr_model01_py3.json'
@@ -23,8 +21,8 @@ def test_jpickle_dumpc():
     got = model_persist.dumpc(model)
     got.pop('-cpython-')
 
-    #with open(result_json, 'w') as f:
-    #    json.dump(got, f, indent=2)
+    # with open(result_json, 'w') as f:
+    #     json.dump(got, f, indent=2)
 
     with open(result_json, 'r') as f:
         expect = json.load(f)
@@ -136,7 +134,6 @@ def test_hdf5_model_keras():
         print("(%s s)" % str(end_time - start_time))
     finally:
         os.remove(tmp)
-
 
     tmp_skeleton = tempfile.mktemp()
     tmp_weights = tempfile.mktemp()

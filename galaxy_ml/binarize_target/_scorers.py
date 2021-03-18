@@ -2,7 +2,7 @@ import numpy as np
 from ..utils import get_main_estimator
 from sklearn import metrics
 from sklearn.utils.multiclass import type_of_target
-from sklearn.metrics.scorer import _BaseScorer
+from sklearn.metrics._scorer import _BaseScorer
 
 
 class _BinarizeTargetThresholdScorer(_BaseScorer):

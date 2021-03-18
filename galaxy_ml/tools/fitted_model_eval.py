@@ -5,7 +5,7 @@ import warnings
 
 from scipy.io import mmread
 from sklearn.pipeline import Pipeline
-from sklearn.metrics.scorer import _check_multimetric_scoring
+from sklearn.metrics._scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score
 from galaxy_ml.utils import get_scoring, load_model, read_columns
 

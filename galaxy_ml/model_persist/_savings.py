@@ -2,10 +2,6 @@
 Utility to persist arbitrary sklearn objects to HDF5
 A hybrid method that combines json and HDF5 methods.
 
-Author: Qiang Gu
-Email: guqiang01@gmail.com
-Date: 2020-2021
-
 Classes:
 
     ModelToHDF5
@@ -134,7 +130,7 @@ class ModelToHDF5:
                 h_params = get_search_params(obj)
                 file[_HYPERPARAMETER] = json.dumps(h_params).encode('utf8')
 
-        except:
+        except Exception:
             raise
         finally:
             file.close()
@@ -376,7 +372,7 @@ class HDF5ToModel:
             config = data[_CONFIG][()].decode('utf8')
             config = json.loads(config)
             model = self.load_all(config[_OBJ])
-        except:
+        except Exception:
             raise
         finally:
             data.close()
@@ -502,7 +498,7 @@ class HDF5ToModel:
 
         try:
             obj = args[0].__new__(args[0], * args)
-        except:
+        except Exception:
             obj = func(*args)
 
         _state = data.get(_STATE)

@@ -2,7 +2,7 @@ import pandas as pd
 import warnings
 
 from xgboost import XGBRegressor
-from sklearn.metrics.scorer import r2_scorer
+from sklearn.metrics._scorer import r2_scorer
 from sklearn.model_selection import cross_validate
 from galaxy_ml.metrics import (spearman_correlation_score,
                                spearman_correlation_scorer)

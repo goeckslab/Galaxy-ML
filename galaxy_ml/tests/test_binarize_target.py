@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics.scorer import r2_scorer
+from sklearn.metrics._scorer import r2_scorer
 from galaxy_ml.model_validations import OrderedKFold
 from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,

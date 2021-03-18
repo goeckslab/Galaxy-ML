@@ -5,7 +5,7 @@ from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.utils import check_target_type
 from scipy import sparse
-from sklearn.utils import safe_indexing
+from sklearn.utils import _safe_indexing
 from sklearn.utils.validation import check_X_y
 
 
@@ -60,11 +60,11 @@ class Z_RandomOverSampler(BaseOverSampler):
         self.sample_indices_ = np.array(sample_indices)
 
         if self.return_indices:
-            return (safe_indexing(X, sample_indices),
-                    safe_indexing(y, sample_indices),
+            return (_safe_indexing(X, sample_indices),
+                    _safe_indexing(y, sample_indices),
                     sample_indices)
-        return (safe_indexing(X, sample_indices),
-                safe_indexing(y, sample_indices))
+        return (_safe_indexing(X, sample_indices),
+                _safe_indexing(y, sample_indices))
 
 
 def _get_quantiles(X, quantile_range):

@@ -6,8 +6,8 @@ import pickle
 import warnings
 
 from itertools import chain
-from sklearn.metrics.scorer import _check_multimetric_scoring
-from sklearn.utils import indexable, safe_indexing
+from sklearn.metrics._scorer import _check_multimetric_scoring
+from sklearn.utils import indexable, _safe_indexing
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import (_predict_generator,
                                            KerasGBatchClassifier)
@@ -81,8 +81,8 @@ def train_test_split_none(*arrays, **kwargs):
         test = index_arr[np.isin(groups, group_names)]
         train = index_arr[~np.isin(groups, group_names)]
         rval = list(chain.from_iterable(
-            (safe_indexing(a, train),
-             safe_indexing(a, test)) for a in new_arrays))
+            (_safe_indexing(a, train),
+             _safe_indexing(a, test)) for a in new_arrays))
     else:
         rval = train_test_split(*new_arrays, **kwargs)
 

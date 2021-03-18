@@ -1,10 +1,6 @@
 """
 Utility to persist arbitrary sklearn objects to HDF5
 
-Author: Qiang Gu
-Email: guqiang01@gmail.com
-Date: 2020-2021
-
 Classes:
 
     ModelToHDF5
@@ -529,7 +525,7 @@ class HDF5ToModel:
 
         try:
             obj = args[0].__new__(args[0], * args)
-        except:
+        except Exception:
             obj = func(*args)
 
         _state = data.get(_STATE)

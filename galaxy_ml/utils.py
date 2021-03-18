@@ -819,7 +819,7 @@ def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
     pred_probas : array
         Prediction values, probability for classification problem
     scorer : dict
-        dict of `sklearn.metrics.scorer.SCORER`
+        dict of `sklearn.metrics._scorer.SCORER`
     is_multimetric : bool, default is True
     """
     if y_true.ndim == 1 or y_true.shape[-1] == 1:
