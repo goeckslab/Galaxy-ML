@@ -125,7 +125,7 @@ class MetricCallback(Callback, BaseEstimator):
     Parameters
     ----------
     scorer : str
-        Key of sklearn.metrics._scorerS
+        Key of sklearn.metrics.SCORERS
     """
     def __init__(self, scorer='roc_auc'):
         self.scorer = scorer
