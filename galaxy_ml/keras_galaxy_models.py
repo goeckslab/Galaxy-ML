@@ -33,7 +33,8 @@ from sklearn.base import (BaseEstimator, ClassifierMixin,
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.utils import check_array, check_X_y
-from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.multiclass import (check_classification_targets,
+                                      type_of_target)
 from sklearn.utils.validation import check_is_fitted, check_random_state
 from .externals.selene_sdk.utils import compute_score
 
@@ -1305,11 +1306,11 @@ class KerasGBatchClassifier(KerasGClassifier):
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
 
-    def evaluate(self, X_test, y_test=None, scorer=None, is_multimetric=False,
+    def evaluate(self, X_test, y_test=None, scorers=None, error_score='raise',
                  steps=None, batch_size=None):
         """Compute the score(s) with sklearn scorers on a given test
         set. Will return a single float if is_multimetric is False and a
-        dict of floats, if is_multimetric is True
+        dict of floats, if scorers is dict.
         """
         if not steps:
             steps = self.prediction_steps
@@ -1322,47 +1323,53 @@ class KerasGBatchClassifier(KerasGClassifier):
         pred_probas, y_true = _predict_generator(self.model_, generator,
                                                  steps=steps)
 
-        # binary classification
-        if y_true.ndim == 1 or y_true.shape[-1] == 1:
+        t_type = type_of_target(y_test)
+
+        # TODO: multi-class metrics
+        if t_type not in ('binary', 'multilabel-indicator'):
+            raise ValueError("Scorer for multi-class classification is not "
+                             "yet implemented!")
+
+        # binary classification and multi-class
+        if t_type == 'binary':
             pred_probas = pred_probas.ravel()
             pred_labels = (pred_probas > 0.5).astype('int32')
             targets = y_true.ravel().astype('int32')
-            if not is_multimetric:
-                preds = pred_labels if scorer.__class__.__name__ == \
-                    '_PredictScorer' else pred_probas
-                score = scorer._score_func(targets, preds, **scorer._kwargs)
-
-                return score
-            else:
-                scores = {}
-                for name, one_scorer in scorer.items():
-                    preds = pred_labels if one_scorer.__class__.__name__\
-                        == '_PredictScorer' else pred_probas
-                    score = one_scorer._score_func(targets, preds,
-                                                   **one_scorer._kwargs)
-                    scores[name] = score
-
-        # TODO: multi-class metrics
-        # multi-label
         else:
             pred_labels = (pred_probas > 0.5).astype('int32')
             targets = y_true.astype('int32')
-            if not is_multimetric:
-                preds = pred_labels if scorer.__class__.__name__ == \
-                    '_PredictScorer' else pred_probas
-                score, _ = compute_score(preds, targets,
-                                         scorer._score_func)
-                return score
-            else:
-                scores = {}
-                for name, one_scorer in scorer.items():
-                    preds = pred_labels if one_scorer.__class__.__name__\
-                        == '_PredictScorer' else pred_probas
-                    score, _ = compute_score(preds, targets,
-                                             one_scorer._score_func)
-                    scores[name] = score
 
-        return scores
+        if not isinstance(scorers, dict):
+            try:
+                preds = pred_labels if scorers.__class__.__name__ == \
+                    '_PredictScorer' else pred_probas
+                score_func = scorers._score_func \
+                    if t_type == 'binary' \
+                    else compute_score
+                score = score_func(targets, preds, **scorers._kwargs)
+            except Exception:
+                if error_score == 'raise':
+                    raise
+                else:
+                    score = error_score
+            return score
+        else:
+            scores = {}
+            try:
+                for name, scorer in scorers.items():
+                    preds = pred_labels if scorer.__class__.__name__\
+                        == '_PredictScorer' else pred_probas
+                    score_func = scorer._score_func \
+                        if t_type == 'binary' \
+                        else compute_score
+                    score = score_func(targets, preds, **scorer._kwargs)
+                    scores[name] = score
+            except Exception:
+                if error_score == 'raise':
+                    raise
+                else:
+                    scores = {name: error_score for name in scorers}
+            return scores
 
 
 def _predict_generator(model, generator, steps=None,
