@@ -1,6 +1,7 @@
 import glob
 import json
 import keras
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
@@ -14,6 +15,7 @@ from keras.layers import (Dense, Activation, Conv1D, Conv2D, Flatten,
                           MaxPool1D, MaxPooling2D, Dropout, Reshape)
 from keras.utils import to_categorical
 from sklearn.base import clone
+from sklearn.metrics import confusion_matrix
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import StratifiedKFold, KFold
@@ -1127,9 +1129,9 @@ def test_multi_dimensional_output():
     # Reshape each sample (which is 784 dimensional) to
     # 28 by 28 by 1 (representing a 28 by 28 grayscale image)
     model.add(Reshape((28, 28, 1), input_shape=(784,)))
-    model.add(Conv2D(64, kernel_size=3, activation='relu'))
+    model.add(Conv2D(64, kernel_size=3, activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(32, kernel_size=2, activation='relu'))
+    model.add(Conv2D(32, kernel_size=3, activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Flatten())
     model.add(Dense(10, activation='softmax'))
@@ -1145,3 +1147,23 @@ def test_multi_dimensional_output():
     assert y_predict.shape[0] == X_test.shape[0]
     assert y_predict.max() == 9
     assert y_predict.min() == 0
+
+    y_test_arg_max = np.argmax(y_test, axis=1)
+    assert len(y_test_arg_max.shape) == 1
+    assert y_test_arg_max.shape[0] == X_test.shape[0]
+
+    axis_labels = list(set(y_test_arg_max))
+    c_matrix = confusion_matrix(y_test_arg_max, y_predict)
+    fig, ax = plt.subplots(figsize=(7, 7))
+    im = plt.imshow(c_matrix, cmap='Greens')
+    for i in range(len(c_matrix)):
+        for j in range(len(c_matrix)):
+            ax.text(j, i, c_matrix[i, j], ha="center", va="center", color="k")
+    ax.set_ylabel('True class labels')
+    ax.set_xlabel('Predicted class labels')
+    ax.set_title('Confusion Matrix')
+    ax.set_xticks(axis_labels)
+    ax.set_yticks(axis_labels)
+    fig.colorbar(im, ax=ax)
+    fig.tight_layout()
+    plt.savefig("ConfusionMatrix.png", dpi=125)
