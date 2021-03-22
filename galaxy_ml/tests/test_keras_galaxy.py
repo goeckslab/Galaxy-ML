@@ -1129,9 +1129,9 @@ def test_multi_dimensional_output():
     # Reshape each sample (which is 784 dimensional) to
     # 28 by 28 by 1 (representing a 28 by 28 grayscale image)
     model.add(Reshape((28, 28, 1), input_shape=(784,)))
-    model.add(Conv2D(64, kernel_size=3, activation='relu'))
+    model.add(Conv2D(64, kernel_size=3, activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(32, kernel_size=2, activation='relu'))
+    model.add(Conv2D(32, kernel_size=3, activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Flatten())
     model.add(Dense(10, activation='softmax'))
