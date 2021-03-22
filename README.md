@@ -112,10 +112,14 @@ nosetests ./tests --with-html --html-file=./report.html
 ```
 
 To run tests in a specific file (e.g., test_keras_galaxy.py file) and generate an HTML report
+```
 nosetests ./tests/test_keras_galaxy.py --with-html --html-file=./report.html
+```
 
 To run a specific test in a specific file (e.g., test_multi_dimensional_output test in test_keras_galaxy.py file) and generate an HTML report
+```
 nosetests ./tests/test_keras_galaxy.py:test_multi_dimensional_output --with-html --html-file=./report.html
+```
 
 ### Examples for using Galaxy-ML custom models
 
