@@ -1,13 +1,18 @@
-### Version 0.8.3.dev
+### Version 0.8.3
 
 #### Changes
 
+- Makes image deep learning tool.
+- Adds `BayesSearchCV` in searchcv tool.
 - Makes new metric `spearman_correlation_score` and its corresponding scorer.
 - Adds a new parameter `n_stratification_bins` to `OrderedKFold` and `RepeatedOrderedKFold`.
+- Adds multi-output classification support for `KerasGClassification` and
+`KerasGBactchClassifier`.
 
 #### Bug Fixes
 
-- 
+- Fixes dependencies issue, numpy < 1.19, h5py < 3, tensorflow-estimator==1.15.1.
+- Fixes various test issues.
 
 ### Version 0.8.2
 
