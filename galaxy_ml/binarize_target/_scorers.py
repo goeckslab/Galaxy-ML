@@ -7,9 +7,10 @@ from sklearn.metrics._scorer import _BaseScorer
 
 class _BinarizeTargetThresholdScorer(_BaseScorer):
     """
-    Base class to make binarized target specific scorer.
+    Class to make binarized target specific scorer to evaluate decision
+    function output.
     """
-    def __call__(self, clf, X, y, sample_weight=None):
+    def _score(self, method_caller, clf, X, y, sample_weight=None):
         main_estimator = get_main_estimator(clf)
         discretize_value = main_estimator.discretize_value
         less_is_positive = main_estimator.less_is_positive
@@ -24,38 +25,40 @@ class _BinarizeTargetThresholdScorer(_BaseScorer):
             raise ValueError("{0} format is not supported".format(y_type))
 
         try:
-            y_score = clf.decision_function(X)
+            y_pred = method_caller(clf, "decision_function", X)
 
             # For multi-output multi-class estimator
-            if isinstance(y_score, list):
-                y_score = np.vstack([p for p in y_score]).T
+            if isinstance(y_pred, list):
+                y_pred = np.vstack([p for p in y_pred]).T
+            elif y_type == "binary" and "pos_label" in self._kwargs:
+                    self._check_pos_label(
+                        self._kwargs["pos_label"], clf.classes_
+                    )
+                    if self._kwargs["pos_label"] == clf.classes_[0]:
+                        # The implicit positive class of the binary classifier
+                        # does not match `pos_label`: we need to invert the
+                        # predictions
+                        y_pred *= -1
 
         except (NotImplementedError, AttributeError):
-            y_score = clf.predict_proba(X)
+            y_pred = method_caller(clf, "predict_proba", X)
 
             if y_type == "binary":
-                if y_score.shape[1] == 2:
-                    y_score = y_score[:, 1]
-                else:
-                    raise ValueError('got predict_proba of shape {},'
-                                     ' but need classifier with two'
-                                     ' classes for {} scoring'.format(
-                                         y_score.shape,
-                                         self._score_func.__name__))
-            elif isinstance(y_score, list):
-                y_score = np.vstack([p[:, -1] for p in y_score]).T
+                y_pred = self._select_proba_binary(y_pred, clf.classes_)
+            elif isinstance(y_pred, list):
+                y_pred = np.vstack([p[:, -1] for p in y_pred]).T
 
         if sample_weight is not None:
-            return self._sign * self._score_func(y_trans, y_score,
+            return self._sign * self._score_func(y_trans, y_pred,
                                                  sample_weight=sample_weight,
                                                  **self._kwargs)
         else:
-            return self._sign * self._score_func(y_trans, y_score,
+            return self._sign * self._score_func(y_trans, y_pred,
                                                  **self._kwargs)
 
+    def _factory_args(self):
+        return ", needs_threshold=True"
 
-# TODO deprecate in next major version
-_BinarizeTargetProbaScorer = _BinarizeTargetThresholdScorer
 
 # roc_auc
 binarize_auc_scorer =\
@@ -80,10 +83,11 @@ binarize_average_precision_scorer =\
 
 class _BinarizeTargetPredictScorer(_BaseScorer):
     """
-    Base class to make binarized target specific scorer.
+    Class to make binarized target specific scorer to evaluate predicted
+    target values.
     """
-    def __call__(self, clf, X, y, sample_weight=None):
-        main_estimator = get_main_estimator(clf)
+    def _score(self, method_caller, estimator, X, y, sample_weight=None):
+        main_estimator = get_main_estimator(estimator)
         discretize_value = main_estimator.discretize_value
         less_is_positive = main_estimator.less_is_positive
 
@@ -92,7 +96,7 @@ class _BinarizeTargetPredictScorer(_BaseScorer):
         else:
             y_trans = y > discretize_value
 
-        y_pred = clf.predict(X)
+        y_pred = method_caller(estimator, "predict", X)
         if sample_weight is not None:
             return self._sign * self._score_func(y_trans, y_pred,
                                                  sample_weight=sample_weight,
