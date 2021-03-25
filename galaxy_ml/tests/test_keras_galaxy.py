@@ -346,18 +346,14 @@ def test_get_params_base_keras_model():
             got[key] = value
 
     expect = {
-        'amsgrad': None, 'batch_size': 32,
-        'beta_1': None, 'beta_2': None,
-        'callbacks': None, 'decay': 0,
-        'epochs': 1, 'loss': 'binary_crossentropy',
-        'lr': 0.01, 'metrics': [],
-        'model_type': 'sequential',
-        'momentum': 0, 'nesterov': False,
-        'optimizer': 'sgd', 'rho': None,
-        'schedule_decay': None, 'seed': None,
-        'steps_per_epoch': None, 'validation_fraction': 0.1,
-        'validation_steps': None,
-        'verbose': 0}
+        'amsgrad': None, 'batch_size': 32, 'beta_1': None, 'beta_2': None,
+        'callbacks': None, 'decay': None, 'epochs': 1,
+        'loss': 'binary_crossentropy', 'lr': None, 'metrics': [],
+        'model_type': 'sequential', 'momentum': None, 'nesterov': None,
+        'optimizer': 'sgd', 'rho': None, 'schedule_decay': None,
+        'seed': None, 'steps_per_epoch': None, 'validation_fraction': 0.1,
+        'validation_steps': None, 'verbose': 0
+    }
 
     assert got == expect, got
 
@@ -541,14 +537,14 @@ def test_funtional_model_get_params():
         'beta_1': None,
         'beta_2': None,
         'callbacks': None,
-        'decay': 0,
+        'decay': None,
         'epochs': 1,
         'loss': 'binary_crossentropy',
-        'lr': 0.01,
+        'lr': None,
         'metrics': [],
         'model_type': 'functional',
-        'momentum': 0,
-        'nesterov': False,
+        'momentum': None,
+        'nesterov': None,
         'optimizer': 'sgd',
         'rho': None,
         'schedule_decay': None,
@@ -760,7 +756,7 @@ def test_keras_galaxy_model_callbacks():
                           fit_params=fit_params)
 
     print(got1)
-    assert 0.65 <= round(got1[0], 2) <= 0.70, got1
+    assert 0.65 <= round(got1['test_scores'], 2) <= 0.70, got1
 
 
 def test_keras_galaxy_model_callbacks_girdisearch():
@@ -829,10 +825,10 @@ def test_keras_fasta_batch_classifier():
             './tools/test-data/regulatory_mutations.fa',
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 1000,
-        'data_batch_generator__shuffle': True, 'decay': 0,
+        'data_batch_generator__shuffle': True, 'decay': None,
         'epochs': 1, 'loss': 'binary_crossentropy',
-        'lr': 0.01, 'metrics': [], 'model_type': 'sequential',
-        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+        'lr': None, 'metrics': [], 'model_type': 'sequential',
+        'momentum': None, 'n_jobs': 1, 'nesterov': None,
         'optimizer': 'sgd', 'prediction_steps': None,
         'rho': None, 'schedule_decay': None, 'seed': None,
         'steps_per_epoch': None, 'validation_fraction': 0.1,
@@ -890,9 +886,9 @@ def test_keras_fasta_protein_batch_classifier():
         'data_batch_generator__seed': 42,
         'data_batch_generator__seq_length': 500,
         'data_batch_generator__shuffle': True,
-        'decay': 0, 'epochs': 3, 'loss': 'binary_crossentropy',
-        'lr': 0.01, 'metrics': [], 'model_type': 'functional',
-        'momentum': 0, 'n_jobs': 1, 'nesterov': False,
+        'decay': None, 'epochs': 3, 'loss': 'binary_crossentropy',
+        'lr': None, 'metrics': [], 'model_type': 'functional',
+        'momentum': None, 'n_jobs': 1, 'nesterov': None,
         'optimizer': 'sgd', 'prediction_steps': None, 'rho': None,
         'schedule_decay': None, 'seed': 0, 'steps_per_epoch': None,
         'validation_fraction': 0, 'validation_steps': None,

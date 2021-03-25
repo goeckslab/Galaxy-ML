@@ -421,6 +421,15 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = metrics
+        self.lr = lr
+        self.momentum = momentum
+        self.decay = decay
+        self.nesterov = nesterov
+        self.rho = rho
+        self.amsgrad = amsgrad
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.schedule_decay = schedule_decay
         self.epochs = epochs
         self.batch_size = batch_size or 32
         self.seed = seed
@@ -440,115 +449,68 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         check_params(fit_params, Model.fit)
 
-        if self.optimizer == 'sgd':
-            self.lr = 0.01 if lr is None else lr
-            self.momentum = 0 if momentum is None else momentum
-            self.decay = 0 if decay is None else decay
-            self.nesterov = False if nesterov is None else nesterov
-
-        elif self.optimizer == 'rmsprop':
-            self.lr = 0.001 if lr is None else lr
-            self.rho = 0.9 if rho is None else rho
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adagrad':
-            self.lr = 0.01 if lr is None else lr
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adadelta':
-            self.lr = 1.0 if lr is None else lr
-            self.rho = 0.95 if rho is None else rho
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adam':
-            self.lr = 0.001 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.decay = 0 if decay is None else decay
-            self.amsgrad = False if amsgrad is None else amsgrad
-
-        elif self.optimizer == 'adamax':
-            self.lr = 0.002 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'nadam':
-            self.lr = 0.002 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.schedule_decay = 0.004 if schedule_decay is None\
-                else schedule_decay
-
-        else:
-            raise ValueError("Unsupported optimizer type: %s" % optimizer)
-
     @property
     def _optimizer(self):
         if self.optimizer == 'sgd':
-            if not hasattr(self, 'momentum'):
-                self.momentum = 0
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            if not hasattr(self, 'nesterov'):
-                self.nesterov = False
-            return SGD(lr=self.lr, momentum=self.momentum,
-                       decay=self.decay, nesterov=self.nesterov)
+            lr = self.lr or 0.01
+            momentum = self.momentum or 0
+            decay = self.decay or 0
+            nesterov = self.nesterov or False
+
+            return SGD(lr=lr, momentum=momentum,
+                       decay=decay, nesterov=nesterov)
 
         elif self.optimizer == 'rmsprop':
-            if not hasattr(self, 'rho'):
-                self.rho = 0.9
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return RMSprop(lr=self.lr, rho=self.rho, decay=self.decay)
+            lr = self.lr or 0.001
+            rho = self.rho or 0.9
+            decay = self.decay or 0
+
+            return RMSprop(lr=lr, rho=rho, decay=decay)
 
         elif self.optimizer == 'adagrad':
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adagrad(lr=self.lr, decay=self.decay)
+            lr = self.lr or 0.01
+            decay = self.decay or 0
+
+            return Adagrad(lr=lr, decay=decay)
 
         elif self.optimizer == 'adadelta':
-            if not hasattr(self, 'rho'):
-                self.rho = 0.95
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adadelta(lr=self.lr, rho=self.rho,
-                            decay=self.decay)
+            lr = self.lr or 1.0
+            rho = self.rho or 0.95
+            decay = self.decay or 0
+
+            return Adadelta(lr=lr, rho=rho, decay=decay)
 
         elif self.optimizer == 'adam':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            if not hasattr(self, 'amsgrad'):
-                self.amsgrad = False
-            return Adam(lr=self.lr, beta_1=self.beta_1,
-                        beta_2=self.beta_2, decay=self.decay,
-                        amsgrad=self.amsgrad)
+            lr = self.lr or 0.001
+            beta_1 = self.beta_1 or 0.9
+            beta_2 = self.beta_2 or 0.999
+            decay = self.decay or 0
+            amsgrad = self.amsgrad or False
+
+            return Adam(lr=lr, beta_1=beta_1, beta_2=beta_2,
+                        decay=decay, amsgrad=amsgrad)
 
         elif self.optimizer == 'adamax':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adamax(lr=self.lr, beta_1=self.beta_1,
-                          beta_2=self.beta_2,
-                          decay=self.decay)
+            lr = self.lr or 0.002
+            beta_1 = self.beta_1 or 0.9
+            beta_2 = self.beta_2 or 0.999
+            decay = self.decay or 0
+
+            return Adamax(lr=lr, beta_1=beta_1,
+                          beta_2=beta_2, decay=decay)
 
         elif self.optimizer == 'nadam':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'schedule_decay'):
-                self.schedule_decay = 0.004
-            return Nadam(lr=self.lr, beta_1=self.beta_1,
-                         beta_2=self.beta_2,
-                         schedule_decay=self.schedule_decay)
+            lr = self.lr or 0.002
+            beta_1 = self.beta_1 or 0.9
+            beta_2 = self.beta_2 or 0.999
+            schedule_decay = self.schedule_decay or 0.004
+
+            return Nadam(lr=lr, beta_1=beta_1, beta_2=beta_2,
+                         schedule_decay=schedule_decay)
+
+        else:
+            raise ValueError("Unsupported optimizer type: %s!"
+                             % self.optimizer)
 
     @property
     def named_layers(self):
@@ -706,8 +668,6 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
-        # call self._optimizer to activate hidden attributes
-        self._optimizer
         out = super(BaseKerasModel, self).get_params(deep=deep)
 
         if not deep:

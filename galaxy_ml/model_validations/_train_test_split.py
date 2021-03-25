@@ -39,8 +39,8 @@ def train_test_split(*arrays,
         One of [None, 'simple', 'stratified', 'group']. Whether or not to
         shuffle the data before splitting. None: no shuffle; 'simple': non
         stratified shuffle; 'stratified': shuffle with class labels;
-        'group': shuffle with group lables.
-    lables : array-like or None, default=None
+        'group': shuffle with group labels.
+    labels : array-like or None, default=None
         If shuffle='simple' or shuffle=None, this must be None. If shuffle=
         'stratified', this array is used as class labels. If shuffle='group',
         this array is used as group labels
@@ -51,7 +51,8 @@ def train_test_split(*arrays,
         List containing train-test split of inputs.
 
     """
-    if shuffle and shuffle not in ['simple', 'stratified', 'group']:
+    if shuffle and shuffle not in \
+            ['simple', 'stratified', 'group', True, False]:
         raise ValueError("The argument `shuffle` only supports None, "
                          "'simple', 'stratified' and 'group', but got `%s`!"
                          % shuffle)

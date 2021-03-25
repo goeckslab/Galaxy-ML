@@ -1,6 +1,5 @@
 # test for irpas_classifier
 
-from math import gamma
 import pandas as pd
 import pickle
 import tempfile
