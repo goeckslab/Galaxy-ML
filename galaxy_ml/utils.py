@@ -2,9 +2,11 @@ import ast
 import collections
 import json
 import imblearn
+import inspect
 import numpy as np
 import pandas
 import pickle
+import pkgutil
 import re
 import scipy
 import sklearn
@@ -93,7 +95,7 @@ class _SafePickler(pickle.Unpickler, object):
     def find_class(self, module, name):
         # balack list first
         if name in self.bad_names:
-            raise pickle.UnpicklingError("global '%s.%s' is forbidden"
+            raise pickle.UnpicklingError("Global '%s.%s' is forbidden"
                                          % (module, name))
 
         # custom module in Galaxy-ML
@@ -143,13 +145,15 @@ class _SafePickler(pickle.Unpickler, object):
                                     keras_names +
                                     good_names):
                     # raise pickle.UnpicklingError
-                    pickle.UnpicklingError("global '%s' is forbidden"
-                                           % fullname)
+                    raise pickle.UnpicklingError("Global '%s' is forbidden"
+                                                 % fullname)
 
                 mod = sys.modules[module]
-                return getattr(mod, name)
+                new_global = getattr(mod, name)
+                assert new_global.__module__ == module
+                return new_global
 
-        raise pickle.UnpicklingError("global '%s' is forbidden" % fullname)
+        raise pickle.UnpicklingError("Global '%s' is forbidden" % fullname)
 
 
 def load_model(file):
@@ -862,3 +866,86 @@ def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
                 scores[name] = score
 
     return scores
+
+
+def gen_pickle_whitelist():
+    """ Generate dict and dump to `pk_whitelist.json`.
+    """
+    rval = {
+        'SK_NAMES': [],
+        'SKR_NAMES': [],
+        'XGB_NAMES': [],
+        'IMBLEARN_NAMES': [],
+        'MLXTEND_NAMES': [],
+        'SKOPT_NAMES': [],
+        'NUMPY_NAMES': []
+    }
+
+    sk_submodule_excludes = (
+        'exceptions', 'externals', 'clone', 'get_config',
+        'set_config', 'config_context', 'show_versions',
+        'datasets')
+    for submodule in sklearn.__all__ + ['_loss']:
+        if submodule in sk_submodule_excludes:
+            continue
+        rval['SK_NAMES'].extend(
+            find_members('sklearn.' + submodule))
+
+    rval['SKR_NAMES'].extend(find_members('skrebate'))
+
+    for xgb_submodules in ('callback', 'compat', 'core',
+                           'sklearn', 'training'):
+        rval['XGB_NAMES'].extend(
+            find_members('xgboost.' + xgb_submodules))
+
+    rval['IMBLEARN_NAMES'].extend(find_members('imblearn'))
+
+    for mlx_submodules in ('_base', 'classifier', 'regressor',
+                           'frequent_patterns', 'cluster',
+                           'feature_selection',
+                           'feature_extraction',
+                           'preprocessing'):
+        rval['MLXTEND_NAMES'].extend(
+            find_members('mlxtend.' + mlx_submodules))
+
+    rval['SKOPT_NAMES'].extend(find_members('skopt.searchcv'))
+    rval['NUMPY_NAMES'].extend([
+        "numpy.core.multiarray._reconstruct",
+        "numpy.core.multiarray.scalar",
+        "numpy.dtype",
+        "numpy.ma.core._mareconstruct",
+        "numpy.ma.core.MaskedArray",
+        "numpy.ndarray",
+        "numpy.random.__RandomState_ctor"])
+
+    with open(WL_FILE[:-5] + '_new.json', 'w') as fh:
+        json.dump(rval, fh, indent=4)
+
+    return rval
+
+
+def find_members(module: str, enforce_import: bool = True):
+    """ get class and function members, including those from submodules.
+    """
+    rval = []
+
+    if module not in sys.modules and enforce_import:
+        exec(f"import {module}")
+    mod = sys.modules[module]
+
+    members = inspect.getmembers(
+        mod,
+        lambda x: ((inspect.isclass(x) or inspect.isfunction(x))
+                   and x.__module__ == module)
+    )
+    for mem in members:
+        rval.append(module + '.' + mem[0])
+
+    if hasattr(mod, '__path__'):
+        for submodule in pkgutil.iter_modules(mod.__path__):
+            if submodule.name.lower() in ('tests', 'utils'):
+                continue
+            rval.extend(find_members(module + '.' + submodule.name,
+                                     enforce_import=enforce_import))
+
+    return sorted(rval)
