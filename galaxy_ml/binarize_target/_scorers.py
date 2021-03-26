@@ -31,14 +31,14 @@ class _BinarizeTargetThresholdScorer(_BaseScorer):
             if isinstance(y_pred, list):
                 y_pred = np.vstack([p for p in y_pred]).T
             elif y_type == "binary" and "pos_label" in self._kwargs:
-                    self._check_pos_label(
-                        self._kwargs["pos_label"], clf.classes_
-                    )
-                    if self._kwargs["pos_label"] == clf.classes_[0]:
-                        # The implicit positive class of the binary classifier
-                        # does not match `pos_label`: we need to invert the
-                        # predictions
-                        y_pred *= -1
+                self._check_pos_label(
+                    self._kwargs["pos_label"], clf.classes_
+                )
+                if self._kwargs["pos_label"] == clf.classes_[0]:
+                    # The implicit positive class of the binary classifier
+                    # does not match `pos_label`: we need to invert the
+                    # predictions
+                    y_pred *= -1
 
         except (NotImplementedError, AttributeError):
             y_pred = method_caller(clf, "predict_proba", X)

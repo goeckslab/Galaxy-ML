@@ -32,14 +32,14 @@ def test_spearman_correlation_scorer():
         Spearman=spearman_correlation_scorer
     )
 
-    estimator = XGBRegressor(random_state=42)
+    estimator = XGBRegressor(random_state=42, n_estimators=10)
 
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,
         verbose=0, n_jobs=2)
 
     r2_mean = result_val['test_R2'].mean()
-    assert round(r2_mean, 4) == -0.6618, r2_mean
+    assert round(r2_mean, 4) == -0.8789, r2_mean
 
     spearman_mean = result_val['test_Spearman'].mean()
-    assert round(spearman_mean, 4) == 0.1059, spearman_mean
+    assert round(spearman_mean, 4) == 0.0768, spearman_mean

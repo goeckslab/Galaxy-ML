@@ -99,9 +99,9 @@ def train_test_split_none(*arrays, **kwargs):
 
 
 def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
-                                      y=None, sk_scoring=None,
-                                      steps=None, batch_size=32,
-                                      return_predictions=False):
+                                       y=None, sk_scoring=None,
+                                       steps=None, batch_size=32,
+                                       return_predictions=False):
     """output scores for bother keras and sklearn metrics
 
     Parameters
