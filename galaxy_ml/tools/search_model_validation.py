@@ -1,5 +1,4 @@
 import argparse
-import collections
 import imblearn
 import joblib
 import json
@@ -385,23 +384,17 @@ def _do_train_test_split_val(searcher, X, y, params, error_score='raise',
                 print(repr(warning.message))
 
     scorer_ = searcher.scorer_
-    if isinstance(scorer_, collections.Mapping):
-        is_multimetric = True
-    else:
-        is_multimetric = False
 
     best_estimator_ = getattr(searcher, 'best_estimator_')
 
     # TODO Solve deep learning models in pipeline
     if best_estimator_.__class__.__name__ == 'KerasGBatchClassifier':
-        test_score = best_estimator_.evaluate(
-            X_test, scorer=scorer_, is_multimetric=is_multimetric)
+        test_score = best_estimator_.evaluate(X_test, scorer=scorer_,)
     else:
         test_score = _score(best_estimator_, X_test,
-                            y_test, scorer_,
-                            is_multimetric=is_multimetric)
+                            y_test, scorer_)
 
-    if not is_multimetric:
+    if not isinstance(scorer_, dict):
         test_score = {primary_scoring: test_score}
     for key, value in test_score.items():
         test_score[key] = [value]

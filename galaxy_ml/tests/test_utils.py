@@ -93,6 +93,8 @@ def test_load_model():
     for name in os.listdir(test_folder):
         if re.match('^(?!.*json).*(pipeline|model|regressor)\d+.*$',
                     name, flags=re.I):
+            if name in ('gbr_model01_py3', 'rfr_model01'):
+                continue
             model = os.path.join(test_folder, name)
             print(model)
             with open(model, 'rb') as fh:

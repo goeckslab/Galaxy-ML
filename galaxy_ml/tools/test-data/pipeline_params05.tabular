@@ -1,9 +1,11 @@
 	Parameter	Value
 @	bootstrap	bootstrap: True
+@	ccp_alpha	ccp_alpha: 0.0
 @	criterion	criterion: 'mse'
 @	max_depth	max_depth: None
 @	max_features	max_features: 'auto'
 @	max_leaf_nodes	max_leaf_nodes: None
+@	max_samples	max_samples: None
 @	min_impurity_decrease	min_impurity_decrease: 0.0
 @	min_impurity_split	min_impurity_split: None
 @	min_samples_leaf	min_samples_leaf: 1

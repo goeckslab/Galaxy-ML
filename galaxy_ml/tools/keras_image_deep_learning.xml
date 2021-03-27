@@ -240,7 +240,7 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="5"/>
-                    <has_text text="0.9"/>
+                    <has_text text="0.03"/>
                     <has_text text="0.1"/>
                     <has_text text="2."/>
                 </assert_contents>
@@ -335,7 +335,7 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="5"/>
-                    <has_text text="0.8"/>
+                    <has_text text="0.01"/>
                     <has_text text="0.1"/>
                     <has_text text="2."/>
                 </assert_contents>

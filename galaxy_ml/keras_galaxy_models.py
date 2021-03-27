@@ -1269,8 +1269,8 @@ class KerasGBatchClassifier(KerasGClassifier):
     def evaluate(self, X_test, y_test=None, scorers=None, error_score='raise',
                  steps=None, batch_size=None):
         """Compute the score(s) with sklearn scorers on a given test
-        set. Will return a single float if is_multimetric is False and a
-        dict of floats, if scorers is dict.
+        set. Will return a dict of floats if scorer is a dict, otherwise a
+        single float is returned.
         """
         if not steps:
             steps = self.prediction_steps

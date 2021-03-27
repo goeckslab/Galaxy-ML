@@ -126,15 +126,13 @@ def main(inputs, infile_estimator, outfile_eval,
     # handle scorer, convert to scorer dict
     scoring = params['scoring']
     scorer = get_scoring(scoring)
-    scorer, _ = _check_multimetric_scoring(estimator, scoring=scorer)
+    scorer = _check_multimetric_scoring(estimator, scoring=scorer)
 
     if hasattr(estimator, 'evaluate'):
         scores = estimator.evaluate(X_test, y_test=y_test,
-                                    scorer=scorer,
-                                    is_multimetric=True)
+                                    scorer=scorer)
     else:
-        scores = _score(estimator, X_test, y_test, scorer,
-                        is_multimetric=True)
+        scores = _score(estimator, X_test, y_test, scorer)
 
     # handle output
     for name, score in scores.items():

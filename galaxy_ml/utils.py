@@ -5,6 +5,7 @@ import imblearn
 import inspect
 import numpy as np
 import pandas
+import pathlib
 import pickle
 import pkgutil
 import re
@@ -19,7 +20,7 @@ import xgboost
 
 from asteval import Interpreter, make_symbol_table
 from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline
+from imblearn.pipeline import Pipeline as imbPipeline, make_pipeline
 from mlxtend import regressor, classifier
 from scipy.io import mmread
 from sklearn import (
@@ -813,7 +814,7 @@ def clean_params(estimator, n_jobs=None):
     return estimator
 
 
-def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
+def gen_compute_scores(y_true, pred_probas, scorers):
     """ general score computing based on input scorers
 
     Parameters
@@ -822,50 +823,45 @@ def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
         True label or target values
     pred_probas : array
         Prediction values, probability for classification problem
-    scorer : dict
+    scorers : dict or scorer object
         dict of `sklearn.metrics._scorer.SCORER`
-    is_multimetric : bool, default is True
+
+    Returns
+    -------
+    Returns a dict of floats if scorer is a dict, otherwise a
+    single float is returned.
     """
-    if y_true.ndim == 1 or y_true.shape[-1] == 1:
+    from sklearn.utils.multiclass import type_of_target
+    y_type = type_of_target(y_true)
+
+    # support binary and multi-label
+    # TODO: multi-class metrics
+    if y_type not in ('binary', 'multilabel-indicator'):
+        raise ValueError("Scorer for multi-class classification is not "
+                         "yet implemented!")
+
+    if y_type == 'binary':
         pred_probas = pred_probas.ravel()
         pred_labels = (pred_probas > 0.5).astype('int32')
         targets = y_true.ravel().astype('int32')
-        if not is_multimetric:
-            preds = pred_labels if scorer.__class__.__name__ == \
-                '_PredictScorer' else pred_probas
-            score = scorer._score_func(targets, preds, **scorer._kwargs)
-
-            return score
-        else:
-            scores = {}
-            for name, one_scorer in scorer.items():
-                preds = pred_labels if one_scorer.__class__.__name__\
-                    == '_PredictScorer' else pred_probas
-                score = one_scorer._score_func(targets, preds,
-                                               **one_scorer._kwargs)
-                scores[name] = score
-
-    # TODO: multi-class metrics
-    # multi-label
     else:
         pred_labels = (pred_probas > 0.5).astype('int32')
         targets = y_true.astype('int32')
-        if not is_multimetric:
-            preds = pred_labels if scorer.__class__.__name__ == \
-                '_PredictScorer' else pred_probas
-            score, _ = compute_score(preds, targets,
-                                     scorer._score_func)
-            return score
-        else:
-            scores = {}
-            for name, one_scorer in scorer.items():
-                preds = pred_labels if one_scorer.__class__.__name__\
-                    == '_PredictScorer' else pred_probas
-                score, _ = compute_score(preds, targets,
-                                         one_scorer._score_func)
-                scores[name] = score
 
-    return scores
+    if not isinstance(scorers, dict):
+        preds = pred_labels if scorers.__class__.__name__ == \
+            '_PredictScorer' else pred_probas
+        score = scorers._score_func(targets, preds, **scorers._kwargs)
+
+        return score
+    else:
+        scores = {}
+        for name, scorer in scorers.items():
+            preds = pred_labels if scorer.__class__.__name__\
+                == '_PredictScorer' else pred_probas
+            score = scorer._score_func(targets, preds, **scorer._kwargs)
+            scores[name] = score
+        return scores
 
 
 def gen_pickle_whitelist():
@@ -915,6 +911,7 @@ def gen_pickle_whitelist():
         "numpy.dtype",
         "numpy.ma.core._mareconstruct",
         "numpy.ma.core.MaskedArray",
+        "numpy.mean",
         "numpy.ndarray",
         "numpy.random.__RandomState_ctor"])
 
@@ -949,3 +946,30 @@ def find_members(module: str, enforce_import: bool = True):
                                      enforce_import=enforce_import))
 
     return sorted(rval)
+
+
+def gen_test_estimators():
+    """ Generate couple of estimators for tests.
+    """
+    test_folder = pathlib.Path(__file__).parent
+    test_folder = test_folder.joinpath('tools', 'test-data')
+
+    with open(test_folder.joinpath('LinearRegression01.zip'), 'wb') as f:
+        estimator = linear_model.LinearRegression()
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+
+    with open(test_folder.joinpath('RandomForestRegressor01.zip'), 'wb') as f:
+        estimator = ensemble.RandomForestRegressor(
+            n_estimators=10, random_state=10)
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+
+    with open(test_folder.joinpath('XGBRegressor01.zip'), 'wb') as f:
+        estimator = xgboost.XGBRegressor(
+            learning_rate=0.1, n_estimators=100, random_state=0)
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+
+    with open(test_folder.joinpath('pipeline10'), 'wb') as f:
+        estimator = ensemble.AdaBoostRegressor(
+            learning_rate=1.0, n_estimators=50)
+        pipe = make_pipeline(estimator)
+        pickle.dump(pipe, f, pickle.HIGHEST_PROTOCOL)

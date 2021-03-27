@@ -185,10 +185,8 @@ def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
     # for sklearn metrics
     if sk_scoring['primary_scoring'] != 'default':
         scorer = get_scoring(sk_scoring)
-        scorer, _ = _check_multimetric_scoring(estimator,
-                                               scoring=scorer)
-        sk_scores = gen_compute_scores(y_true, predictions, scorer,
-                                       is_multimetric=True)
+        scorer = _check_multimetric_scoring(estimator, scoring=scorer)
+        sk_scores = gen_compute_scores(y_true, predictions, scorer)
         scores.update(sk_scores)
 
     if return_predictions:

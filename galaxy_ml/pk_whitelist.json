@@ -1132,6 +1132,7 @@
         "numpy.dtype",
         "numpy.ma.core._mareconstruct",
         "numpy.ma.core.MaskedArray",
+        "numpy.mean",
         "numpy.ndarray",
         "numpy.random.__RandomState_ctor"
     ]
