@@ -7,27 +7,28 @@ Email: guqiang01@gmail.com
 """
 
 import collections
-import keras
+
 import numpy as np
 import random
 import tensorflow as tf
 import warnings
 import six
 from abc import ABCMeta
-from keras import backend as K
-from keras.callbacks import Callback
-from keras.callbacks import (EarlyStopping, LearningRateScheduler,
-                             TensorBoard, RemoteMonitor,
-                             ModelCheckpoint, TerminateOnNaN,
-                             CSVLogger)
-from keras.engine.training_utils import iter_sequence_infinite
-from keras.models import Sequential, Model
-from keras.optimizers import (SGD, RMSprop, Adagrad,
-                              Adadelta, Adam, Adamax, Nadam)
-from keras.utils import to_categorical, multi_gpu_model
-from keras.utils.data_utils import (Sequence, OrderedEnqueuer,
-                                    GeneratorEnqueuer)
-from keras.utils.generic_utils import has_arg, to_list
+from pathlib import Path
+from tensorflow import keras
+from tensorflow.keras.callbacks import (
+    Callback, CSVLogger, EarlyStopping, LearningRateScheduler,
+    TensorBoard, RemoteMonitor, ModelCheckpoint, TerminateOnNaN
+)
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.optimizers import (
+    Adadelta, Adagrad, Adam, Adamax, Nadam, SGD, RMSprop, Ftrl)
+from tensorflow.keras.utils import (
+    Sequence, OrderedEnqueuer, GeneratorEnqueuer, to_categorical)
+from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+from tensorflow.python.keras.utils.data_utils import iter_sequence_infinite
+from tensorflow.python.keras.utils.generic_utils import (has_arg,
+                                                         to_list)
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin, clone, is_classifier)
 from sklearn.metrics import SCORERS
@@ -50,17 +51,16 @@ class BaseOptimizer(BaseEstimator):
     """
     Base wrapper for Keras Optimizers
     """
-    def get_params(self, deep=True):
-        out = super(BaseOptimizer, self).get_params(deep=deep)
-        for k, v in six.iteritems(out):
-            try:
-                out[k] = K.eval(v)
-            except AttributeError:
-                pass
-        return out
+    def get_params(self, deep=False):
+        out = {}
 
-    def set_params(self, **params):
-        raise NotImplementedError()
+        for k, v in self._hyper.items():
+            if isinstance(v, tf.Variable):
+                out[k] = v.numpy().item()
+            else:
+                out[k] = v
+
+        return out
 
 
 class KerasSGD(SGD, BaseOptimizer):
@@ -353,32 +353,55 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     Parameters
     ----------
     config : dictionary
-        from `model.get_config()`
+        From `model.get_config()`
     model_type : str
         'sequential' or 'functional'
-    optimizer : str, default 'sgd'
-        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
-    loss : str, default 'binary_crossentropy'
-        same as Keras `loss`
+    optimizer : str, default 'rmsprop'
+        One of ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
+        'adamax', 'nadam', 'ftrl']. Used in model.compile.
+    loss : str or None
+        From Keras `loss`. Used in model.compile.
     metrics : list of strings, default []
-    lr : None or float
-        optimizer parameter, default change with `optimizer`
+        Used in model.compile.
+    loss_weights : list or dictionary
+        Used in model.compile.
+    run_eagerly : bool, default = False.
+        If True, this Model's logic will not be wrapped in a `tf.function`.
+        Recommended to leave this as None unless your Model cannot be run
+        inside a tf.function. Used in model.compile.
+    steps_per_execution : int, default = 1.
+        The number of batches to run during each tf.function call.
+        Used in model.compile.
+    learning_rate : None or float
+        Optimizer parameter, default value changes with `optimizer`.
     momentum : None or float
-        for optimizer `sgd` only, ignored otherwise
+        For optimizer `sgd` only, ignored otherwise
     nesterov : None or bool
-        for optimizer `sgd` only, ignored otherwise
-    decay : None or float
-        optimizer parameter, default change with `optimizer`
+        For optimizer `sgd` only, ignored otherwise
+    epsilon : None or float
+        Optimizer parameter, default change with `optimizer`
     rho : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`
+    centered : bool, default = False
+        For optimizer 'rmsprop' only, ignored otherwise.
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
     beta_2 : None or float
-        optimizer parameter, default change with `optimizer`
-    schedule_decay : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
+    initial_accumulator_value : float
+        Must be less or equal to zero. For `Ftrl` only.
+    beta : float
+        For `Ftrl` only.
+    learning_rate_power : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l1_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_shrinkage_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
     epochs : int
         fit_param from Keras
     batch_size : None or int, default=None
@@ -393,7 +416,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_fraction : Float. default=0.1
+    validation_split : float.
         The proportion of training data to set aside as validation set.
         Must be within [0, 1). Will be ignored if `validation_data` is
         set via fit_params.
@@ -402,111 +425,157 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     validation_steps : None or int, default is None
         fit params, validation steps. if None, it will be number
         of samples divided by batch_size.
-    seed : None or int, default None
-        backend random seed
     verbose : 0, 1 or 2
         Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
         epoch. If > 0, log device placement
+    seed : None or int, default None
+        backend random seed
     """
     def __init__(self, config, model_type='sequential',
-                 optimizer='sgd', loss='binary_crossentropy',
-                 metrics=[], lr=None, momentum=None, decay=None,
-                 nesterov=None, rho=None, amsgrad=None, beta_1=None,
-                 beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=None, callbacks=None,
-                 validation_fraction=0.1, steps_per_epoch=None,
-                 validation_steps=None, verbose=0, **fit_params):
+                 optimizer='rmsprop', loss=None, metrics=[],
+                 loss_weights=None, run_eagerly=None,
+                 steps_per_execution=None, learning_rate=None,
+                 momentum=None, nesterov=None, epsilon=None,
+                 rho=None, centered=None,  amsgrad=None,
+                 beta_1=None, beta_2=None, learning_rate_power=None,
+                 initial_accumulator_value=None, beta=None,
+                 l1_regularization_strength=None,
+                 l2_regularization_strength=None,
+                 l2_shrinkage_regularization_strength=None,
+                 epochs=1, batch_size=None, callbacks=None,
+                 validation_split=0.1, steps_per_epoch=None,
+                 validation_steps=None, verbose=1, seed=None,
+                 **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = metrics
-        self.lr = lr
+        self.loss_weights = loss_weights
+        self.run_eagerly = run_eagerly
+        self.steps_per_execution = steps_per_execution
+        # optimizer parameters
+        self.learning_rate = learning_rate
         self.momentum = momentum
-        self.decay = decay
+        self.epsilon = epsilon
+        self.centered = centered
         self.nesterov = nesterov
         self.rho = rho
         self.amsgrad = amsgrad
         self.beta_1 = beta_1
         self.beta_2 = beta_2
-        self.schedule_decay = schedule_decay
+        self.learning_rate_power = learning_rate_power
+        self.initial_accumulator_value = initial_accumulator_value
+        self.beta = beta
+        self.l1_regularization_strength = l1_regularization_strength
+        self.l2_regularization_strength = l2_regularization_strength
+        self.l2_shrinkage_regularization_strength = \
+            l2_shrinkage_regularization_strength
+        # fit parameters
         self.epochs = epochs
         self.batch_size = batch_size or 32
-        self.seed = seed
         self.callbacks = callbacks
 
-        if validation_fraction is None:
-            validation_fraction = 0.
-        if not (0.0 <= validation_fraction < 1.0):
-            raise ValueError("validation_fraction must be in range [0, 1)")
-        self.validation_fraction = validation_fraction
+        if not (0.0 <= validation_split < 1.0):
+            raise ValueError("validation_split must be in range [0, 1)")
+        self.validation_split = validation_split
 
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
         self.verbose = verbose
+        self.seed = seed
         self.fit_params = fit_params
-        # TODO support compile parameters
 
         check_params(fit_params, Model.fit)
 
     @property
     def _optimizer(self):
         if self.optimizer == 'sgd':
-            lr = self.lr or 0.01
-            momentum = self.momentum or 0
-            decay = self.decay or 0
-            nesterov = self.nesterov or False
+            options = dict(
+                learning_rate=self.learning_rate or 0.01,
+                momentum=self.momentum or 0,
+                nesterov=self.nesterov or False
+            )
 
-            return SGD(lr=lr, momentum=momentum,
-                       decay=decay, nesterov=nesterov)
+            return SGD(**options)
 
         elif self.optimizer == 'rmsprop':
-            lr = self.lr or 0.001
-            rho = self.rho or 0.9
-            decay = self.decay or 0
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                rho=self.rho or 0.9,
+                momentum=self.momentum or 0.,
+                epsilon=self.epsilon or 1e-07,
+                centered=self.centered or False
+            )
 
-            return RMSprop(lr=lr, rho=rho, decay=decay)
-
-        elif self.optimizer == 'adagrad':
-            lr = self.lr or 0.01
-            decay = self.decay or 0
-
-            return Adagrad(lr=lr, decay=decay)
-
-        elif self.optimizer == 'adadelta':
-            lr = self.lr or 1.0
-            rho = self.rho or 0.95
-            decay = self.decay or 0
-
-            return Adadelta(lr=lr, rho=rho, decay=decay)
+            return RMSprop(**options)
 
         elif self.optimizer == 'adam':
-            lr = self.lr or 0.001
-            beta_1 = self.beta_1 or 0.9
-            beta_2 = self.beta_2 or 0.999
-            decay = self.decay or 0
-            amsgrad = self.amsgrad or False
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07,
+                amsgrad=self.amsgrad or False
+            )
 
-            return Adam(lr=lr, beta_1=beta_1, beta_2=beta_2,
-                        decay=decay, amsgrad=amsgrad)
+            return Adam(**options)
+
+        elif self.optimizer == 'adadelta':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                rho=self.rho or 0.95,
+                epsilon=self.epsilon or 1e-6,
+            )
+
+            return Adadelta(**options)
+
+        elif self.optimizer == 'adagrad':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                initial_accumulator_value=(
+                    self.initial_accumulator_value or 0.1),
+                epsilon=self.epsilon or 1e-07
+            )
+
+            return Adagrad(**options)
 
         elif self.optimizer == 'adamax':
-            lr = self.lr or 0.002
-            beta_1 = self.beta_1 or 0.9
-            beta_2 = self.beta_2 or 0.999
-            decay = self.decay or 0
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07
+            )
 
-            return Adamax(lr=lr, beta_1=beta_1,
-                          beta_2=beta_2, decay=decay)
+            return Adamax(**options)
 
         elif self.optimizer == 'nadam':
-            lr = self.lr or 0.002
-            beta_1 = self.beta_1 or 0.9
-            beta_2 = self.beta_2 or 0.999
-            schedule_decay = self.schedule_decay or 0.004
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07
+            )
 
-            return Nadam(lr=lr, beta_1=beta_1, beta_2=beta_2,
-                         schedule_decay=schedule_decay)
+            return Nadam(**options)
+
+        elif self.optimizer == 'ftrl':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                learning_rate_power=self.learning_rate_power or -0.5,
+                initial_accumulator_value=(
+                    self.initial_accumulator_value or 0.1),
+                l1_regularization_strength=(
+                    self.l1_regularization_strength or 0),
+                l2_regularization_strength=(
+                    self.l2_regularization_strength or 0),
+                l2_shrinkage_regularization_strength=(
+                    self.l2_shrinkage_regularization_strength or 0),
+                beta=self.beta or 0.
+            )
+
+            return Ftrl(**options)
 
         else:
             raise ValueError("Unsupported optimizer type: %s!"
@@ -542,22 +611,19 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             params = cb['callback_selection']
             callback_type = params.pop('callback_type')
 
-            curr_dir = __import__('os').getcwd()
+            curr_dir = Path.cwd()
 
             if callback_type in ('None', ''):
                 continue
             elif callback_type == 'ModelCheckpoint':
                 if not params.get('filepath', None):
-                    params['filepath'] = \
-                        __import__('os').path.join(curr_dir, 'weights.hdf5')
+                    params['filepath'] = curr_dir.joinpath('weights.hdf5')
             elif callback_type == 'TensorBoard':
                 if not params.get('log_dir', None):
-                    params['log_dir'] = \
-                        __import__('os').path.join(curr_dir, 'logs')
+                    params['log_dir'] = curr_dir.joinpath('logs')
             elif callback_type == 'CSVLogger':
                 if not params:
-                    params['filename'] = \
-                        __import__('os').path.join(curr_dir, 'log.csv')
+                    params['filename'] = curr_dir.joinpath('log.csv')
                     params['separator'] = '\t'
                     params['append'] = True
 
@@ -569,58 +635,58 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             return None
         return callbacks
 
-    def _make_validation_split(self, X, y):
+    def _make_validation_split(self, X, y=None, sample_weight=None):
         n_samples = X.shape[0]
 
         if y is not None and is_classifier(self):
             splitter_type = StratifiedShuffleSplit
         else:
             splitter_type = ShuffleSplit
-        random_state = check_random_state(self.seed)
-        cv = splitter_type(test_size=self.validation_fraction,
+        # make split randomness fixed.
+        random_state = check_random_state(self.seed or 0)
+        cv = splitter_type(test_size=self.validation_split,
                            random_state=random_state)
         idx_train, idx_val = next(cv.split(X, y))
         if idx_train.shape[0] == 0 or idx_val.shape[0] == 0:
             raise ValueError(
                 "Splitting %d samples into a train set and a validation set "
-                "with validation_fraction=%r led to an empty set (%d and %d "
-                "samples). Please either change validation_fraction or "
+                "with validation_split=%r led to an empty set (%d and %d "
+                "samples). Please either change validation_split or "
                 "increase number of samples"
-                % (n_samples, self.validation_fraction, idx_train.shape[0],
+                % (n_samples, self.validation_split, idx_train.shape[0],
                    idx_val.shape[0]))
 
-        if y is None:
-            X_train = X[idx_train]
-            validation_data = (X[idx_val],)
-            return X_train, None, validation_data
-        else:
-            X_train, y_train = X[idx_train], y[idx_train]
-            validation_data = (X[idx_val], y[idx_val])
+        train_data, validation_data = (X[idx_train], ), (X[idx_val], )
 
-        return X_train, y_train, validation_data
+        if y is None:
+            train_data += (None, )
+            validation_data += (None, )
+        else:
+            train_data += (y[idx_train], )
+            validation_data += (y[idx_val], )
+
+        if sample_weight is None:
+            train_data += (None, )
+            validation_data += (None, )
+        else:
+            train_data += (sample_weight[idx_train], )
+            validation_data += (sample_weight[idx_val], )
+
+        return train_data, validation_data
 
     def _fit(self, X, y, **kwargs):
         # base fit
-        if K.backend() == 'tensorflow':
-            # default
-            intra_op = 0
-            inter_op = 0
-            if self.seed is not None:
-                np.random.seed(self.seed)
-                random.seed(self.seed)
-                tf.compat.v1.set_random_seed(self.seed)
-                intra_op = 1
-                inter_op = 1
+        # context._context = None
+        # context._create_context()
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            tf.random.set_seed(self.seed)
+            # tf.config.threading.set_intra_op_parallelism_threads(1)
+            # tf.config.threading.set_inter_op_parallelism_threads(1)
 
-            session_conf = tf.compat.v1.ConfigProto(
-                intra_op_parallelism_threads=intra_op,
-                inter_op_parallelism_threads=inter_op,
-                log_device_placement=bool(self.verbose))
-
-            sess = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph(),
-                config=session_conf)
-            K.set_session(sess)
+        # tf.config.set_soft_device_placement(True)
+        # tf.debugging.set_log_device_placement(self.verbose > 1)
 
         config = self.config
 
@@ -636,31 +702,36 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             config,
             custom_objects=dict(tf=tf))
 
-        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
-                            metrics=self.metrics)
+        self.model_.compile(
+            optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
+            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
+            steps_per_execution=self.steps_per_execution
+        )
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
         fit_params = self.fit_params
-
-        # make validation split
-        if self.validation_fraction and 'validation_data' not in kwargs \
-                and 'validation_data' not in fit_params:
-            X, y, validation_data = self._make_validation_split(X, y)
-            fit_params['validation_data'] = validation_data
-
-        callbacks = self._callbacks
-        steps_per_epoch = self.steps_per_epoch
-        validation_steps = self.validation_steps
-        verbose = self.verbose
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
-                               callbacks=callbacks,
-                               steps_per_epoch=steps_per_epoch,
-                               validation_steps=validation_steps,
-                               verbose=verbose))
+                               callbacks=self._callbacks,
+                               validation_split=self.validation_split,
+                               steps_per_epoch=self.steps_per_epoch,
+                               validation_steps=self.validation_steps,
+                               verbose=self.verbose))
         fit_params.update(kwargs)
+        sample_weight = fit_params.get('sample_weight', None)
+        validation_split = fit_params.get('validation_split', 0.)
+        validation_data = fit_params.get('validation_data', None)
+
+        # customize validation split
+        if validation_split and not validation_data:
+            train_data, validation_data = self._make_validation_split(
+                X, y, sample_weight)
+            X, y, sample_weight = train_data
+            fit_params['validation_data'] = validation_data
+            fit_params['sample_weight'] = sample_weight
+            fit_params['validation_split'] = 0.
 
         history = self.model_.fit(X, y, **fit_params)
 
@@ -786,10 +857,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if not hasattr(self, 'model_'):
             raise ValueError("Keras model is not fitted. No weights to save!")
 
-        self.model_.save_weights(filepath, overwrite=overwrite)
+        self.model_.save_weights(
+            filepath, overwrite=overwrite, save_format='h5')
 
     def load_weights(self, filepath, by_name=False,
-                     skip_mismatch=False, reshape=False):
+                     skip_mismatch=False, options=None):
         """Loads all layer weights from a HDF5 save file.
 
         parameters
@@ -805,8 +877,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             in the number of weights, or a mismatch in the shape of the
             weight (only valid when `by_name`=True).
 
-        reshape : Reshape weights to fit the layer when the correct number
-            of weight arrays is present but their shape does not match.
+        options : Optional tf.train.CheckpointOptions object that specifies
+            options for loading weights.
         """
         config = self.config
 
@@ -824,7 +896,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_.load_weights(filepath, by_name=by_name,
                                  skip_mismatch=skip_mismatch,
-                                 reshape=reshape)
+                                 options=options)
 
 
 class KerasGClassifier(BaseKerasModel, ClassifierMixin):
@@ -951,26 +1023,47 @@ class KerasGBatchClassifier(KerasGClassifier):
     optimizer : str, default 'sgd'
         'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
     loss : str, default 'binary_crossentropy'
-        same as Keras `loss`
+        Keras `loss`.
     metrics : list of strings, default []
-    lr : None or float
-        optimizer parameter, default change with `optimizer`
+    loss_weights : list or dictionary
+        Used in model.compile.
+    run_eagerly : bool, default = False.
+        If True, this Model's logic will not be wrapped in a `tf.function`.
+        Recommended to leave this as None unless your Model cannot be run
+        inside a tf.function. Used in model.compile.
+    steps_per_execution : int, default = 1.
+        The number of batches to run during each tf.function call.
+        Used in model.compile.
+    learning_rate : None or float
+        Optimizer parameter, default value changes with `optimizer`.
     momentum : None or float
-        for optimizer `sgd` only, ignored otherwise
+        For optimizer `sgd` only, ignored otherwise
     nesterov : None or bool
-        for optimizer `sgd` only, ignored otherwise
-    decay : None or float
-        optimizer parameter, default change with `optimizer`
+        For optimizer `sgd` only, ignored otherwise
+    epsilon : None or float
+        Optimizer parameter, default change with `optimizer`
     rho : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`
+    centered : bool, default = False
+        For optimizer 'rmsprop' only, ignored otherwise.
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
     beta_2 : None or float
-        optimizer parameter, default change with `optimizer`
-    schedule_decay : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
+    initial_accumulator_value : float
+        Must be less or equal to zero. For `Ftrl` only.
+    beta : float
+        For `Ftrl` only.
+    learning_rate_power : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l1_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_shrinkage_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
     epochs : int
         fit_param from Keras
     batch_size : None or int, default=None
@@ -985,7 +1078,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_fraction : Float. default=0.1
+    validation_split : Float. default=0.1
         The proportion of training data to set aside as validation set.
         Must be within [0, 1). Will be ignored if `validation_data` is
         set via fit_params.
@@ -994,11 +1087,11 @@ class KerasGBatchClassifier(KerasGClassifier):
     validation_steps : None or int, default is None
         fit params, validation steps. if None, it will be number
         of samples divided by batch_size.
-    seed : None or int, default None
-        backend random seed
     verbose : 0, 1 or 2
         Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
         epoch. If > 0, log device placement
+    seed : None or int, default None
+        backend random seed
     n_jobs : int, default=1
     prediction_steps : None or int, default is None
         prediction steps. If None, it will be number of samples
@@ -1010,55 +1103,52 @@ class KerasGBatchClassifier(KerasGClassifier):
         {0: 1/0.2, 1: 1}
     """
     def __init__(self, config, data_batch_generator,
-                 model_type='sequential', optimizer='sgd',
-                 loss='binary_crossentropy', metrics=[], lr=None,
-                 momentum=None, decay=None, nesterov=None, rho=None,
-                 amsgrad=None, beta_1=None, beta_2=None,
-                 schedule_decay=None, epochs=1, batch_size=None,
-                 seed=None, n_jobs=1, callbacks=None,
-                 validation_fraction=0.1, steps_per_epoch=None,
-                 validation_steps=None, verbose=0,
-                 prediction_steps=None, class_positive_factor=1,
-                 **fit_params):
+                 model_type='sequential', optimizer='rmsprop',
+                 loss='binary_crossentropy', metrics=[],
+                 loss_weights=None, run_eagerly=None,
+                 steps_per_execution=None, learning_rate=None,
+                 momentum=None, nesterov=None, epsilon=None, rho=None,
+                 centered=None, amsgrad=None, beta_1=None, beta_2=None,
+                 learning_rate_power=None, initial_accumulator_value=None,
+                 beta=None, l1_regularization_strength=None,
+                 l2_regularization_strength=None,
+                 l2_shrinkage_regularization_strength=None,
+                 epochs=1, batch_size=None, callbacks=None,
+                 validation_split=0.1, steps_per_epoch=None,
+                 validation_steps=None, verbose=1, seed=None,
+                 n_jobs=1, prediction_steps=None,
+                 class_positive_factor=1, **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
-            loss=loss, metrics=metrics, lr=lr, momentum=momentum,
-            decay=decay, nesterov=nesterov, rho=rho,
-            amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
-            schedule_decay=schedule_decay, epochs=epochs,
-            batch_size=batch_size, seed=seed, callbacks=callbacks,
-            validation_fraction=validation_fraction,
+            loss=loss, metrics=metrics, loss_weights=loss_weights,
+            run_eagerly=run_eagerly, steps_per_execution=steps_per_execution,
+            learning_rate=learning_rate, momentum=momentum,
+            nesterov=nesterov, epsilon=epsilon, rho=rho,
+            centered=centered, amsgrad=amsgrad, beta_1=beta_1,
+            beta_2=beta_2, learning_rate_power=learning_rate_power,
+            initial_accumulator_value=initial_accumulator_value,
+            beta=beta, l1_regularization_strength=l1_regularization_strength,
+            l2_regularization_strength=l2_regularization_strength,
+            l2_shrinkage_regularization_strength=(
+                l2_shrinkage_regularization_strength),
+            epochs=epochs, batch_size=batch_size, callbacks=callbacks,
+            validation_split=validation_split,
             steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps,
-            verbose=verbose,
-            **fit_params)
+            validation_steps=validation_steps, verbose=verbose,
+            seed=seed, **fit_params)
+
         self.data_batch_generator = data_batch_generator
+        self.n_jobs = n_jobs
         self.prediction_steps = prediction_steps
         self.class_positive_factor = class_positive_factor
-        self.n_jobs = n_jobs
 
     def fit(self, X, y=None, class_weight=None, sample_weight=None, **kwargs):
         """ fit the model
         """
-        if K.backend() == 'tensorflow':
-            # default
-            intra_op = 0
-            inter_op = 0
-            if self.seed is not None:
-                np.random.seed(self.seed)
-                random.seed(self.seed)
-                tf.compat.v1.set_random_seed(self.seed)
-                intra_op = 1
-                inter_op = 1
-
-            session_conf = tf.compat.v1.ConfigProto(
-                intra_op_parallelism_threads=intra_op,
-                inter_op_parallelism_threads=inter_op,
-                log_device_placement=bool(self.verbose))
-
-            sess = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph(), config=session_conf)
-            K.set_session(sess)
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            tf.random.set_seed(self.seed)
 
         check_params(kwargs, Model.fit_generator)
 
@@ -1119,42 +1209,38 @@ class KerasGBatchClassifier(KerasGClassifier):
         except Exception:
             pass
 
-        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
-                            metrics=self.metrics)
+        self.model_.compile(
+            optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
+            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
+            steps_per_execution=self.steps_per_execution
+        )
 
         fit_params = self.fit_params
-
-        # make validation split
-        if self.validation_fraction and 'validation_data' not in kwargs \
-                and 'validation_data' not in fit_params:
-            X, y, validation_data = self._make_validation_split(X, y)
-            fit_params['validation_data'] = validation_data
-
-        batch_size = self.batch_size or 32
-        epochs = self.epochs
-        n_jobs = self.n_jobs
-        callbacks = self._callbacks
-        steps_per_epoch = self.steps_per_epoch
-        validation_steps = self.validation_steps
-        verbose = self.verbose
-
-        fit_params.update(dict(
-            epochs=epochs,
-            workers=n_jobs,
-            callbacks=callbacks,
-            use_multiprocessing=False,
-            steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps,
-            verbose=verbose))
-
-        # kwargs from function `fit ` override object initiation values.
+        fit_params.update(dict(epochs=self.epochs,
+                               callbacks=self._callbacks,
+                               steps_per_epoch=self.steps_per_epoch,
+                               validation_steps=self.validation_steps,
+                               verbose=self.verbose))
         fit_params.update(kwargs)
+        sample_weight = fit_params.get('sample_weight', None)
+        validation_split = fit_params.get('validation_split', 0.)
+        validation_data = fit_params.get('validation_data', None)
+
+        # customize validation split
+        if validation_split and not validation_data:
+            train_data, validation_data = self._make_validation_split(
+                X, y, sample_weight)
+            X, y, sample_weight = train_data
+            fit_params['validation_data'] = validation_data
+            fit_params['sample_weight'] = sample_weight
+            fit_params['validation_split'] = 0.
 
         validation_data = fit_params.get('validation_data', None)
+        # make validation data generator
         if validation_data:
             val_steps = fit_params.pop('validation_steps', None)
             if val_steps:
-                val_size = val_steps * batch_size
+                val_size = val_steps * self.batch_size
             else:
                 val_size = validation_data[0].shape[0]
             fit_params['validation_data'] = \
@@ -1162,7 +1248,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                                             sample_size=val_size)
 
         history = self.model_.fit_generator(
-            self.data_generator_.flow(X, y, batch_size=batch_size,
+            self.data_generator_.flow(X, y, batch_size=self.batch_size,
                                       sample_weight=sample_weight),
             shuffle=self.seed is None,
             **fit_params)
@@ -1189,13 +1275,13 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         check_params(kwargs, Model.predict_generator)
 
-        batch_size = self.batch_size or 32
+        batch_size = kwargs.pop('batch_size', None) or self.batch_size
         n_jobs = self.n_jobs
         steps = kwargs.pop('steps', None)
         if not steps:
             steps = self.prediction_steps
 
-        # through data generator
+        # make predict data generator
         if X.ndim == 2 and X.shape[1] == 1:
             if not pred_data_generator:
                 pred_data_generator = getattr(self, 'data_generator_', None)
