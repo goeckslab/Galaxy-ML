@@ -2,16 +2,15 @@ import ast
 import collections
 import json
 import imblearn
+import importlib
 import inspect
 import numpy as np
 import pandas
-import pathlib
 import pickle
 import pkgutil
 import re
 import scipy
 import sklearn
-import skopt
 import skrebate
 import sys
 import time
@@ -19,24 +18,24 @@ import warnings
 import xgboost
 
 from asteval import Interpreter, make_symbol_table
-from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline, make_pipeline
-from mlxtend import regressor, classifier
+from pathlib import Path
 from scipy.io import mmread
 from sklearn import (
-    cluster, compose, decomposition, ensemble, feature_extraction,
-    feature_selection, gaussian_process, kernel_approximation, metrics,
-    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
-    svm, linear_model, tree, discriminant_analysis)
-from sklearn.pipeline import Pipeline
-# TODO remove following imports after scikit-learn v0.22
-from sklearn.experimental import enable_hist_gradient_boosting
+    calibration, cluster, covariance, cross_decomposition,
+    datasets, decomposition, dummy, ensemble,
+    feature_extraction, feature_selection, gaussian_process,
+    inspection, isotonic, kernel_approximation, kernel_ridge,
+    linear_model, manifold, metrics, mixture, model_selection,
+    multiclass, multioutput, naive_bayes, neighbors,
+    neural_network, pipeline, preprocessing,
+    random_projection, semi_supervised, svm, tree,
+    discriminant_analysis, impute, compose)
 from .externals.selene_sdk.utils import compute_score
 
 
 # handle pickle white list file
-WL_FILE = __import__('os').path.join(
-    __import__('os').path.dirname(__file__), 'pk_whitelist.json')
+WL_FILE = str(Path(__file__).parent.joinpath(
+    'pk_whitelist.json').absolute())
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
@@ -120,7 +119,7 @@ class _SafePickler(pickle.Unpickler, object):
         if fullname in keras_names:
             # dynamic import, suppress message:
             # "Using TensorFlow backend."
-            exec("import keras")
+            exec("from tensorflow import keras")
             mod = sys.modules[module]
             return getattr(mod, name)
 
@@ -149,7 +148,10 @@ class _SafePickler(pickle.Unpickler, object):
                     raise pickle.UnpicklingError("Global '%s' is forbidden"
                                                  % fullname)
 
-                mod = sys.modules[module]
+                mod = sys.modules.get(module, None)
+                if not mod:
+                    importlib.import_module(module)
+                    mod = sys.modules[module]
                 new_global = getattr(mod, name)
                 assert new_global.__module__ == module
                 return new_global
@@ -387,18 +389,16 @@ class SafeEval(Interpreter):
 
         if load_numpy:
             from_numpy_random = [
-                'beta', 'binomial', 'bytes', 'chisquare', 'choice',
-                'dirichlet', 'division', 'exponential', 'f', 'gamma',
-                'geometric', 'gumbel', 'hypergeometric', 'laplace',
-                'logistic', 'lognormal', 'logseries', 'mtrand',
-                'multinomial', 'multivariate_normal', 'negative_binomial',
-                'noncentral_chisquare', 'noncentral_f', 'normal', 'pareto',
-                'permutation', 'poisson', 'power', 'rand', 'randint',
-                'randn', 'random', 'random_integers', 'random_sample',
-                'ranf', 'rayleigh', 'sample', 'seed', 'set_state',
-                'shuffle', 'standard_cauchy', 'standard_exponential',
-                'standard_gamma', 'standard_normal', 'standard_t',
-                'triangular', 'uniform', 'vonmises', 'wald', 'weibull', 'zipf']
+                'beta', 'binomial', 'bytes', 'chisquare', 'choice', 'dirichlet',
+                'exponential', 'f', 'gamma', 'geometric', 'gumbel', 'hypergeometric',
+                'laplace', 'logistic', 'lognormal', 'logseries', 'multinomial',
+                'multivariate_normal', 'negative_binomial', 'noncentral_chisquare',
+                'noncentral_f', 'normal', 'pareto', 'permutation', 'poisson',
+                'power', 'rand', 'randint', 'randn', 'random', 'random_integers',
+                'random_sample', 'ranf', 'rayleigh', 'sample', 'shuffle',
+                'standard_cauchy', 'standard_exponential', 'standard_gamma',
+                'standard_normal', 'standard_t', 'triangular', 'uniform',
+                'vonmises', 'wald', 'weibull', 'zipf',]
             for f in from_numpy_random:
                 syms['np_random_' + f] = getattr(np.random, f)
 
@@ -765,7 +765,7 @@ def get_main_estimator(estimator):
     """
     est_name = estimator.__class__.__name__
     # support pipeline object
-    if isinstance(estimator, Pipeline):
+    if isinstance(estimator, pipeline.Pipeline):
         return get_main_estimator(estimator.steps[-1][-1])
     # support GridSearchCV/RandomSearchCV
     elif isinstance(estimator, model_selection._search.BaseSearchCV):
@@ -951,7 +951,7 @@ def find_members(module: str, enforce_import: bool = True):
 def gen_test_estimators():
     """ Generate couple of estimators for tests.
     """
-    test_folder = pathlib.Path(__file__).parent
+    test_folder = Path(__file__).parent
     test_folder = test_folder.joinpath('tools', 'test-data')
 
     with open(test_folder.joinpath('LinearRegression01.zip'), 'wb') as f:
@@ -971,5 +971,5 @@ def gen_test_estimators():
     with open(test_folder.joinpath('pipeline10'), 'wb') as f:
         estimator = ensemble.AdaBoostRegressor(
             learning_rate=1.0, n_estimators=50)
-        pipe = make_pipeline(estimator)
+        pipe = pipeline.make_pipeline(estimator)
         pickle.dump(pipe, f, pickle.HIGHEST_PROTOCOL)
