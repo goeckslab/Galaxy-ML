@@ -167,11 +167,11 @@ else:
             <param name="attribute_type" value="get_params"/>
             <output name="outfile" value="get_params.tabular"/>
         </test>
-        <test>
+        <!--test>
             <param name="infile_object" value="fitted_keras_g_regressor01.zip" ftype="zip"/>
             <param name="attribute_type" value="save_weights"/>
             <output name="outfile" value="keras_save_weights01.h5" compare="sim_size" delta="5"/>
-        </test>
+        </test>-->
     </tests>
     <help>
         <![CDATA[

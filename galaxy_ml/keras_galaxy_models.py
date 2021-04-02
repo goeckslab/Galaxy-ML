@@ -525,7 +525,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             options = dict(
                 learning_rate=self.learning_rate or 0.001,
                 rho=self.rho or 0.95,
-                epsilon=self.epsilon or 1e-6,
+                epsilon=self.epsilon or 1e-7,
             )
 
             return Adadelta(**options)
@@ -1078,7 +1078,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_split : Float. default=0.1
+    validation_split : Float. default=0.
         The proportion of training data to set aside as validation set.
         Must be within [0, 1). Will be ignored if `validation_data` is
         set via fit_params.
@@ -1091,7 +1091,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
         epoch. If > 0, log device placement
     seed : None or int, default None
-        backend random seed
+        Backend random seed
     n_jobs : int, default=1
     prediction_steps : None or int, default is None
         prediction steps. If None, it will be number of samples
@@ -1114,7 +1114,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  l2_regularization_strength=None,
                  l2_shrinkage_regularization_strength=None,
                  epochs=1, batch_size=None, callbacks=None,
-                 validation_split=0.1, steps_per_epoch=None,
+                 validation_split=0., steps_per_epoch=None,
                  validation_steps=None, verbose=1, seed=None,
                  n_jobs=1, prediction_steps=None,
                  class_positive_factor=1, **fit_params):

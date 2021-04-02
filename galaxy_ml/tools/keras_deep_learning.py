@@ -1,13 +1,13 @@
 import argparse
 import json
-import keras
 import pandas as pd
 import pickle
 import six
 import warnings
 
 from ast import literal_eval
-from keras.models import Sequential, Model
+from tensorflow import keras
+from tensorflow.keras.models import Sequential, Model
 from galaxy_ml.utils import try_get_attr, get_search_params, SafeEval
 
 
@@ -275,7 +275,7 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
     if json_model['class_name'] == 'Sequential':
         options['model_type'] = 'sequential'
         klass = Sequential
-    elif json_model['class_name'] == 'Model':
+    elif json_model['class_name'] == 'Functional':
         options['model_type'] = 'functional'
         klass = Model
     else:

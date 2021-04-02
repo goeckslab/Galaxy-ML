@@ -362,7 +362,7 @@ def test_get_params_base_keras_model():
 
     expect = {
         'amsgrad': None, 'batch_size': 32, 'beta': None,
-        'beta_1': None,'beta_2': None, 'callbacks': None,
+        'beta_1': None, 'beta_2': None, 'callbacks': None,
         'centered': None, 'epochs': 1, 'epsilon': None,
         'initial_accumulator_value': None,
         'l1_regularization_strength': None,
