@@ -12,7 +12,7 @@ from sklearn import ensemble
 
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
-from galaxy_ml.utils import (load_model, get_cv, get_estimator,
+from galaxy_ml.utils import (safe_load_model, get_cv, get_estimator,
                              get_search_params)
 
 
@@ -50,7 +50,7 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
     for idx, base_file in enumerate(base_paths.split(',')):
         if base_file and base_file != 'None':
             with open(base_file, 'rb') as handler:
-                model = load_model(handler)
+                model = safe_load_model(handler)
         else:
             estimator_json = (params['base_est_builder'][idx]
                               ['estimator_selector'])
@@ -67,7 +67,7 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
     if estimator_type.startswith('mlxtend'):
         if meta_path:
             with open(meta_path, 'rb') as f:
-                meta_estimator = load_model(f)
+                meta_estimator = safe_load_model(f)
         else:
             estimator_json = (params['algo_selection']
                               ['meta_estimator']['estimator_selector'])

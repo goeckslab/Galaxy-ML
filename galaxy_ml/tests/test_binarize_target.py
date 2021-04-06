@@ -18,7 +18,7 @@ from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer, BINARIZE_SCORERS)
-from galaxy_ml.utils import load_model
+from galaxy_ml.utils import safe_load_model
 
 
 warnings.simplefilter('ignore')
@@ -90,7 +90,7 @@ def test_binarize_target_classifier():
 
     # load models
     with open('./tools/test-data/binarize_svc.zip', 'rb') as f:
-        estimator = load_model(f)
+        estimator = safe_load_model(f)
 
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,

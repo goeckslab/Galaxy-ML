@@ -40,7 +40,7 @@ WL_FILE = str(Path(__file__).parent.joinpath(
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
-__all__ = ('load_model', 'read_columns', 'feature_selector', 'get_X_y',
+__all__ = ('safe_load_model', 'read_columns', 'feature_selector', 'get_X_y',
            'SafeEval', 'get_estimator', 'get_cv', 'balanced_accuracy_score',
            'get_scoring', 'get_search_params', 'check_def')
 
@@ -159,7 +159,7 @@ class _SafePickler(pickle.Unpickler, object):
         raise pickle.UnpicklingError("Global '%s' is forbidden" % fullname)
 
 
-def load_model(file):
+def safe_load_model(file):
     """Load pickled object with `_SafePicker`
     """
     return _SafePickler(file).load()
@@ -233,7 +233,7 @@ def feature_selector(inputs, X=None, y=None):
         if inputs['model_inputter']['input_mode'] == 'prefitted':
             model_file = inputs['model_inputter']['fitted_estimator']
             with open(model_file, 'rb') as model_handler:
-                fitted_estimator = load_model(model_handler)
+                fitted_estimator = safe_load_model(model_handler)
             new_selector = selector(fitted_estimator, prefit=True, **options)
         else:
             estimator_json = inputs['model_inputter']['estimator_selector']
@@ -389,16 +389,19 @@ class SafeEval(Interpreter):
 
         if load_numpy:
             from_numpy_random = [
-                'beta', 'binomial', 'bytes', 'chisquare', 'choice', 'dirichlet',
-                'exponential', 'f', 'gamma', 'geometric', 'gumbel', 'hypergeometric',
-                'laplace', 'logistic', 'lognormal', 'logseries', 'multinomial',
-                'multivariate_normal', 'negative_binomial', 'noncentral_chisquare',
-                'noncentral_f', 'normal', 'pareto', 'permutation', 'poisson',
-                'power', 'rand', 'randint', 'randn', 'random', 'random_integers',
-                'random_sample', 'ranf', 'rayleigh', 'sample', 'shuffle',
-                'standard_cauchy', 'standard_exponential', 'standard_gamma',
-                'standard_normal', 'standard_t', 'triangular', 'uniform',
-                'vonmises', 'wald', 'weibull', 'zipf',]
+                'beta', 'binomial', 'bytes', 'chisquare', 'choice',
+                'dirichlet', 'exponential', 'f', 'gamma', 'geometric',
+                'gumbel', 'hypergeometric', 'laplace', 'logistic',
+                'lognormal', 'logseries', 'multinomial',
+                'multivariate_normal', 'negative_binomial',
+                'noncentral_chisquare', 'noncentral_f', 'normal',
+                'pareto', 'permutation', 'poisson', 'power', 'rand',
+                'randint', 'randn', 'random', 'random_integers',
+                'random_sample', 'ranf', 'rayleigh', 'sample',
+                'shuffle', 'standard_cauchy', 'standard_exponential',
+                'standard_gamma', 'standard_normal', 'standard_t',
+                'triangular', 'uniform', 'vonmises', 'wald', 'weibull',
+                'zipf']
             for f in from_numpy_random:
                 syms['np_random_' + f] = getattr(np.random, f)
 
@@ -449,13 +452,13 @@ def get_estimator(estimator_json):
     if estimator_module == 'custom_estimator':
         c_estimator = estimator_json['c_estimator']
         with open(c_estimator, 'rb') as model_handler:
-            new_model = load_model(model_handler)
+            new_model = safe_load_model(model_handler)
         return new_model
 
     if estimator_module == "binarize_target":
         wrapped_estimator = estimator_json['wrapped_estimator']
         with open(wrapped_estimator, 'rb') as model_handler:
-            wrapped_estimator = load_model(model_handler)
+            wrapped_estimator = safe_load_model(model_handler)
         options = {}
         if estimator_json['z_score'] is not None:
             options['z_score'] = estimator_json['z_score']

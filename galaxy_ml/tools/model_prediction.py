@@ -7,7 +7,7 @@ import warnings
 from scipy.io import mmread
 from sklearn.pipeline import Pipeline
 
-from galaxy_ml.utils import (load_model, read_columns,
+from galaxy_ml.utils import (safe_load_model, read_columns,
                              get_module, try_get_attr)
 
 
@@ -52,7 +52,7 @@ def main(inputs, infile_estimator, outfile_predict,
 
     # load model
     with open(infile_estimator, 'rb') as est_handler:
-        estimator = load_model(est_handler)
+        estimator = safe_load_model(est_handler)
 
     main_est = estimator
     if isinstance(estimator, Pipeline):

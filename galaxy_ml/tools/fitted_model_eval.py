@@ -7,7 +7,7 @@ from scipy.io import mmread
 from sklearn.pipeline import Pipeline
 from sklearn.metrics._scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score
-from galaxy_ml.utils import get_scoring, load_model, read_columns
+from galaxy_ml.utils import get_scoring, safe_load_model, read_columns
 
 
 def _get_X_y(params, infile1, infile2):
@@ -112,7 +112,7 @@ def main(inputs, infile_estimator, outfile_eval,
 
     # load model
     with open(infile_estimator, 'rb') as est_handler:
-        estimator = load_model(est_handler)
+        estimator = safe_load_model(est_handler)
 
     main_est = estimator
     if isinstance(estimator, Pipeline):

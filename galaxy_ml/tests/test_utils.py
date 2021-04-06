@@ -4,7 +4,7 @@ import re
 from nose.tools import raises
 from sklearn import ensemble
 
-from galaxy_ml.utils import load_model
+from galaxy_ml.utils import safe_load_model
 from galaxy_ml.utils import _SafePickler
 from galaxy_ml.utils import try_get_attr
 from galaxy_ml.utils import SafeEval
@@ -80,7 +80,7 @@ def test_get_scoring():
     assert type(scoring).__name__ == '_PredictScorer', scoring
 
 
-def test_load_model():
+def test_safe_load_model():
     model = './tools/test-data/RandomForestRegressor01.zip'
     with open(model, 'rb') as fh:
         safe_unpickler = _SafePickler(fh)
@@ -98,7 +98,7 @@ def test_load_model():
             model = os.path.join(test_folder, name)
             print(model)
             with open(model, 'rb') as fh:
-                load_model(fh)
+                safe_load_model(fh)
 
 
 def test_find_members():

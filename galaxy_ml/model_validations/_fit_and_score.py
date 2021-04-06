@@ -177,8 +177,8 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         result["fit_failed"] = False
 
         fit_time = time.time() - start_time
-        test_scores = estimator.evaluate(estimator, X_test, y_test,
-                                         scorer, error_score)
+        test_scores = estimator.evaluate(X_test, y_test, scorer,
+                                         error_score)
         score_time = time.time() - start_time - fit_time
         if return_train_score:
             train_scores = estimator.evaluate(

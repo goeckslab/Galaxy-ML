@@ -7,7 +7,8 @@ Email: guqiang01@gmail.com
 """
 
 import collections
-
+import h5py
+import json
 import numpy as np
 import random
 import tensorflow as tf
@@ -16,6 +17,8 @@ import six
 from abc import ABCMeta
 from pathlib import Path
 from tensorflow import keras
+import sys
+
 from tensorflow.keras.callbacks import (
     Callback, CSVLogger, EarlyStopping, LearningRateScheduler,
     TensorBoard, RemoteMonitor, ModelCheckpoint, TerminateOnNaN
@@ -25,6 +28,7 @@ from tensorflow.keras.optimizers import (
     Adadelta, Adagrad, Adam, Adamax, Nadam, SGD, RMSprop, Ftrl)
 from tensorflow.keras.utils import (
     Sequence, OrderedEnqueuer, GeneratorEnqueuer, to_categorical)
+from tensorflow.python.keras.saving import hdf5_format
 from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
 from tensorflow.python.keras.utils.data_utils import iter_sequence_infinite
 from tensorflow.python.keras.utils.generic_utils import (has_arg,
@@ -667,10 +671,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         if sample_weight is None:
             train_data += (None, )
-            validation_data += (None, )
         else:
             train_data += (sample_weight[idx_train], )
-            validation_data += (sample_weight[idx_val], )
 
         return train_data, validation_data
 
@@ -898,6 +900,59 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                                  skip_mismatch=skip_mismatch,
                                  options=options)
 
+    def save_model(self, file_or_group, extra_attrs=None, skip_params=None):
+        """ Serialize configuration and weights to hdf5. Good for prediction.
+        Should not be used in continuing training.
+
+        Parameters
+        -----------
+        file_or_group : str, Path-like or h5py.Group objtect.
+        extra_attrs : list of strings or None.
+            Extra attributes to serialize.
+        skip_params : list of strings or None.
+            List of parameters that don't need to keep.
+        """
+        if not isinstance(file_or_group, h5py.Group):
+            if not isinstance(file_or_group, (Path, str)):
+                raise ValueError("Type of `file_or_group` must be str, Path or"
+                                 " Group, but got %s!" % type(file_or_group))
+            group = h5py.File(file_or_group, 'w')
+        else:
+            group = file_or_group
+
+        class_name = self.__class__.__name__
+        params = self.get_params(deep=False)
+        if not skip_params:
+            skip_params = []
+        if not isinstance(skip_params, (list, tuple)):
+            skip_params = [skip_params]
+        for p in skip_params:
+            params.pop(p, None)
+
+        group['class_name'] = class_name
+        group['params'] = json.dumps(params).encode('utf8')
+
+        if hasattr(self, 'model_'):
+            weights = group.create_group('weights')
+            hdf5_format.save_weights_to_hdf5_group(
+                weights, self.model_.layers)
+
+        if extra_attrs:
+            if not extra_attrs:
+                extra_attrs = []
+            if not isinstance(extra_attrs, (list, tuple)):
+                extra_attrs = [extra_attrs]
+            attrs = group.create_group('attributes')
+            for att in extra_attrs:
+                try:
+                    attrs[att] = getattr(self, att)
+                except Exception as e:
+                    warnings.warn(e)
+                    continue
+
+        if isinstance(file_or_group, (Path, str)):
+            group.close()
+
 
 class KerasGClassifier(BaseKerasModel, ClassifierMixin):
     """
@@ -979,6 +1034,11 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         raise ValueError('The model is not configured to compute accuracy. '
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
+
+    def save_model(self, file_or_group, extra_attrs=['classes_'],
+                   skip_params=None):
+        return super().save_model(file_or_group, extra_attrs=extra_attrs,
+                                  skip_params=skip_params)
 
 
 class KerasGRegressor(BaseKerasModel, RegressorMixin):
@@ -1102,7 +1162,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         If float, 0.2, corresponds to class_weight
         {0: 1/0.2, 1: 1}
     """
-    def __init__(self, config, data_batch_generator,
+    def __init__(self, config, data_batch_generator=None,
                  model_type='sequential', optimizer='rmsprop',
                  loss='binary_crossentropy', metrics=[],
                  loss_weights=None, run_eagerly=None,
@@ -1223,17 +1283,14 @@ class KerasGBatchClassifier(KerasGClassifier):
                                verbose=self.verbose))
         fit_params.update(kwargs)
         sample_weight = fit_params.get('sample_weight', None)
-        validation_split = fit_params.get('validation_split', 0.)
         validation_data = fit_params.get('validation_data', None)
 
         # customize validation split
-        if validation_split and not validation_data:
+        if self.validation_split and not validation_data:
             train_data, validation_data = self._make_validation_split(
                 X, y, sample_weight)
             X, y, sample_weight = train_data
             fit_params['validation_data'] = validation_data
-            fit_params['sample_weight'] = sample_weight
-            fit_params['validation_split'] = 0.
 
         validation_data = fit_params.get('validation_data', None)
         # make validation data generator
@@ -1417,6 +1474,11 @@ class KerasGBatchClassifier(KerasGClassifier):
                     scores = {name: error_score for name in scorers}
             return scores
 
+    def save_model(self, file_or_group, extra_attrs=['classes_'],
+                   skip_params=['data_batch_generator']):
+        return super().save_model(file_or_group, extra_attrs=extra_attrs,
+                                  skip_params=skip_params)
+
 
 def _predict_generator(model, generator, steps=None,
                        max_queue_size=10, workers=1,
@@ -1426,7 +1488,7 @@ def _predict_generator(model, generator, steps=None,
     with prediction results
     """
     # TODO: support prediction callbacks
-    model._make_predict_function()
+    model.make_predict_function()
 
     steps_done = 0
     all_preds = []
@@ -1514,3 +1576,51 @@ def _predict_generator(model, generator, steps=None,
     else:
         return ([np.concatenate(out) for out in all_preds],
                 [np.concatenate(label) for label in all_y])
+
+
+def load_model(file_or_group):
+    """ Deserialize a keras_g_model from hdf5.
+
+    Parameters
+    ----------
+    file_or_group : str, Path-like or h5py.Group objtect.
+    """
+    if not isinstance(file_or_group, h5py.Group):
+        if not isinstance(file_or_group, (Path, str)):
+            raise ValueError("Type of `file_or_group` must be str, Path or"
+                             " Group, but got %s!" % type(file_or_group))
+        group = h5py.File(file_or_group, 'r')
+    else:
+        group = file_or_group
+
+    class_name = group['class_name'][()]
+    params = group['params'][()].decode('utf8')
+    params = json.loads(params)
+
+    klass = getattr(sys.modules[__name__], class_name)
+    obj = klass(**params)
+
+    weights = group.get('weights')
+    if weights is not None:
+        config = obj.config
+
+        if obj.model_type not in ['sequential', 'functional']:
+            raise ValueError("Unsupported model type %s" % obj.model_type)
+
+        if obj.model_type == 'sequential':
+            obj.model_class_ = Sequential
+        else:
+            obj.model_class_ = Model
+
+        obj.model_ = obj.model_class_.from_config(
+            config,
+            custom_objects=dict(tf=tf))
+
+        hdf5_format.load_weights_from_hdf5_group(weights, obj.model_.layers)
+
+    attributes = group.get('attributes')
+    if attributes:
+        for k, v in attributes.items():
+            setattr(obj, k, v[()])
+
+    return obj

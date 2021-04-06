@@ -16,7 +16,7 @@ from sklearn.utils import indexable, _safe_indexing
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import (_predict_generator,
                                            KerasGBatchClassifier)
-from galaxy_ml.utils import (SafeEval, get_scoring, load_model,
+from galaxy_ml.utils import (SafeEval, get_scoring, safe_load_model,
                              read_columns, get_module,
                              clean_params, get_main_estimator,
                              gen_compute_scores)
@@ -217,7 +217,7 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     #  load estimator
     with open(infile_estimator, 'rb') as estimator_handler:
-        estimator = load_model(estimator_handler)
+        estimator = safe_load_model(estimator_handler)
 
     estimator = clean_params(estimator)
 

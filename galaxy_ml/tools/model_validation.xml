@@ -38,7 +38,7 @@ from sklearn.model_selection import _validation
 
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
-from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, load_model,
+from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, safe_load_model,
                    read_columns, get_module)
 
 
@@ -58,7 +58,7 @@ with open(input_json_path, 'r') as param_handler:
 
 ## load estimator
 with open('$infile_estimator', 'rb') as estimator_handler:
-    estimator = load_model(estimator_handler)
+    estimator = safe_load_model(estimator_handler)
 
 if estimator.__class__.__name__ == 'KerasGBatchClassifier':
     _fit_and_score = try_get_attr('galaxy_ml.model_validations',

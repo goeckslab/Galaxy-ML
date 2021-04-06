@@ -1,4 +1,5 @@
 import glob
+import h5py
 import json
 import numpy as np
 import os
@@ -25,7 +26,7 @@ from sklearn.model_selection import _search
 
 from galaxy_ml.keras_galaxy_models import (
     _get_params_from_dict, _param_to_dict, _update_dict,
-    check_params, KerasLayers, MetricCallback,
+    check_params, load_model, KerasLayers, MetricCallback,
     KerasGClassifier, KerasGRegressor,
     KerasGBatchClassifier, _predict_generator)
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
@@ -643,7 +644,8 @@ def test_funtional_model_get_params():
             'class_name': 'GlorotUniform',
             'config': {
                 'seed': None}},
-        'layers_1_Conv2D__config__kernel_initializer__class_name': 'GlorotUniform',
+        'layers_1_Conv2D__config__kernel_initializer__class_name':
+            'GlorotUniform',
         'layers_1_Conv2D__config__kernel_initializer__config': {
             'seed': None},
         'layers_1_Conv2D__config__kernel_initializer__config__seed': None,
@@ -708,7 +710,7 @@ def test_keras_model_to_json():
 
     if model_json['class_name'] == 'Sequential':
         model_type = 'sequential'
-    elif model_json['class_name'] == 'Model':
+    elif model_json['class_name'] == 'Functional':
         model_type = 'functional'
 
     config = model_json.get('config')
@@ -717,7 +719,7 @@ def test_keras_model_to_json():
 
     got = model.to_json()  # json_string
 
-    assert len(got) > 4850, len(got)
+    assert 4500 < len(got) < 5000, len(got)
     assert got.startswith('{"class_name": "Functional",'), got
 
 
@@ -734,7 +736,7 @@ def test_keras_model_load_and_save_weights():
 
     model.load_weights('./tools/test-data/keras_model_drosophila_weights01.h5')
 
-    tmp = tempfile.mktemp()
+    _, tmp = tempfile.mkstemp()
 
     try:
         model.save_weights(tmp)
@@ -983,11 +985,11 @@ def test_keras_fasta_protein_batch_classifier():
 @nottest
 def test_keras_genomic_intervals_batch_classifier():
     # selene case1 genome file, file not uploaded
-    ref_genome_path = '/projects/selene/manuscript/case1/data/'\
+    ref_genome_path = '~/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
     intervals_path = './tools/test-data/hg38_TF_intervals_2000.txt'
     # selene case1 target bed file, file not uploaded
-    target_path = '/projects/selene/manuscript/case1/data/'\
+    target_path = '~/projects/selene/manuscript/case1/data/'\
         'GATA1_proery_bm.bed.gz'
     seed = 42
     random_state = 0
@@ -1024,10 +1026,11 @@ def test_keras_genomic_intervals_batch_classifier():
 
     classifier = KerasGBatchClassifier(
         config, clone(generator), optimizer='adam',
-        momentum=0.9, decay=1e-6, nesterov=True,
+        momentum=0.9, nesterov=True,
         batch_size=64, n_jobs=1, epochs=10,
         steps_per_epoch=20,
         prediction_steps=100,
+        validation_split=0.1,
         class_positive_factor=3,
         metrics=['acc'])
 
@@ -1073,12 +1076,12 @@ def test_meric_callback():
 
 @nottest
 def test_predict_generator():
-    ref_genome_path = 'projects/selene/manuscript/case1/data/'\
+    ref_genome_path = '~/projects/selene/manuscript/case1/data/'\
         'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = 'projects/selene/manuscript/case1/data/'\
+    intervals_path = '~/projects/selene/manuscript/case1/data/'\
         'hg38_TF_intervals.txt'
     # selene case1 target bed file, file not uploaded
-    target_path = 'projects/selene/manuscript/case1/data/'\
+    target_path = '~/projects/selene/manuscript/case1/data/'\
         'GATA1_proery_bm.bed.gz'
     seed = 42
     random_state = 0
@@ -1108,20 +1111,19 @@ def test_predict_generator():
     model.add(Dropout(0.5))
     model.add(Reshape((50880,)))
     model.add(Dense(1))
-    model.add(Activation('relu'))
-    model.add(Dense(1))
     model.add(Activation('sigmoid'))
 
     config = model.get_config()
 
     classifier = KerasGBatchClassifier(
         config, clone(generator), optimizer='sgd',
-        momentum=0.9, decay=1e-6, nesterov=True,
-        batch_size=64, n_jobs=4, epochs=2,
-        steps_per_epoch=3,
+        momentum=0.9, nesterov=True,
+        batch_size=64, n_jobs=4, epochs=3,
+        steps_per_epoch=10,
         prediction_steps=10,
         class_positive_factor=3,
         validation_steps=10,
+        validation_split=0.1,
         metrics=['acc', 'sparse_categorical_accuracy'])
 
     clf = clone(classifier)
@@ -1137,15 +1139,36 @@ def test_predict_generator():
 
     clf.fit(X_train)
 
-    pred_data_generator = generator.flow(X_test, batch_size=64)
+    pred_data_generator = clone(generator).flow(X_test, batch_size=64)
 
     preds, y_true = _predict_generator(clf.model_, pred_data_generator,
                                        steps=2)
 
     assert preds.shape == (128, 1), y_true.shape
-    assert 0.47 < preds[0][0] < 0.50, preds[0][0]
+    assert 0.30 < preds[0][0] < 0.40, preds[0][0]
     assert y_true.shape == (128, 1), y_true.shape
     assert np.sum(y_true) == 9, np.sum(y_true)
+
+    # save_model and load_model
+    _, tmp = tempfile.mkstemp()
+
+    clf.save_model(tmp)
+
+    with h5py.File(tmp, 'r') as h:
+        assert len(h.keys()) == 4
+        assert h['class_name'][()] == 'KerasGBatchClassifier'
+        params = json.loads(h['params'][()].decode('utf8'))
+        assert params.get('data_batch_generator', None) is None
+
+    r_model = load_model(tmp)
+
+    os.remove(tmp)
+
+    pred_data_generator = clone(generator).flow(X_test, batch_size=64)
+    preds_2, y_true_2 = _predict_generator(
+        r_model.model_, pred_data_generator, steps=2)
+    assert np.array_equal(preds, preds_2)
+    assert np.array_equal(y_true, y_true_2)
 
 
 @nottest
@@ -1199,3 +1222,41 @@ def test_multi_dimensional_output():
     assert y_predict.shape[0] == X_test.shape[0]
     assert y_predict.max() == 9
     assert y_predict.min() == 0
+
+
+def test_model_save_and_load():
+    df = pd.read_csv(
+        './tools/test-data/pima-indians-diabetes.csv', sep=',')
+
+    X = df.iloc[:, 0:8].values.astype(float)
+    y = df.iloc[:, 8].values
+
+    train_model = Sequential()
+    train_model.add(Dense(12, input_dim=8, activation='relu'))
+    train_model.add(Dense(1, activation='sigmoid'))
+
+    config = train_model.get_config()
+
+    clf = KerasGClassifier(config, loss='binary_crossentropy',
+                           seed=42, batch_size=32)
+    clf.fit(X, y, )
+
+    _, tmp = tempfile.mkstemp()
+
+    try:
+        clf.save_model(tmp)
+
+        with h5py.File(tmp, 'r') as h:
+            assert set(h.keys()) == {'class_name', 'params',
+                                     'weights', 'attributes'}, h.keys()
+            assert h['class_name'][()] == 'KerasGClassifier'
+            params = json.loads(h['params'][()].decode('utf8'))
+            assert params['loss'] == 'binary_crossentropy'
+            assert params['seed'] == 42
+
+            model = load_model(h)
+        assert hasattr(model, 'model_')
+    finally:
+        os.remove(tmp)
+
+    np.array_equal(clf.predict(X), model.predict(X))

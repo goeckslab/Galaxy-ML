@@ -31,7 +31,8 @@ from sklearn import (
 from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
 from galaxy_ml.utils import (SafeEval, feature_selector, get_estimator,
-                             try_get_attr, get_search_params, load_model)
+                             try_get_attr, get_search_params,
+                             safe_load_model)
 
 ## TODO remove following imports after scikit-learn v0.22
 from sklearn.experimental import enable_hist_gradient_boosting
@@ -183,9 +184,9 @@ elif estimator_json['selected_module'] == 'sklearn.compose':
     transformer_path = '$final_estimator.estimator_selector.transformer'
     #end if
     with open(regressor_path, 'rb') as f:
-        regressor = load_model(f)
+        regressor = safe_load_model(f)
     with open(transformer_path, 'rb') as f:
-        transformer = load_model(f)
+        transformer = safe_load_model(f)
     estimator = compose.TransformedTargetRegressor(regressor=regressor, transformer=transformer)
     pipeline_steps.append( estimator )
 else:
