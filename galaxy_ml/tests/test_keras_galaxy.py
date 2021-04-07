@@ -883,7 +883,7 @@ def test_keras_fasta_batch_classifier():
         'optimizer': 'rmsprop', 'prediction_steps': None,
         'rho': None, 'run_eagerly': None, 'seed': None,
         'steps_per_epoch': None, 'steps_per_execution': None,
-        'validation_split': 0.1, 'validation_steps': None,
+        'validation_split': 0., 'validation_steps': None,
         'verbose': 0
     }
 

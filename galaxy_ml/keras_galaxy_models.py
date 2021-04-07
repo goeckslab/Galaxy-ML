@@ -1426,7 +1426,7 @@ class KerasGBatchClassifier(KerasGClassifier):
         pred_probas, y_true = _predict_generator(self.model_, generator,
                                                  steps=steps)
 
-        t_type = type_of_target(y_test)
+        t_type = type_of_target(y_true)
 
         # TODO: multi-class metrics
         if t_type not in ('binary', 'multilabel-indicator'):
