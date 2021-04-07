@@ -1,155 +1,215 @@
 import json
 import os
+import numpy as np
+import pandas as pd
 import pickle
-import tempfile
 import time
+
 import galaxy_ml
+
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import StratifiedShuffleSplit
+from xgboost import XGBClassifier
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
 from galaxy_ml import model_persist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
 
-test_model = './tools/test-data/gbr_model01_py3'
-result_json = './tools/test-data/gbr_model01_py3.json'
+df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
+X = df.iloc[:, 0:8].values.astype(float)
+y = df.iloc[:, 8].values
+
+splitter = StratifiedShuffleSplit(n_splits=1, random_state=0)
+train, test = next(splitter.split(X, y))
+
+X_train, X_test = X[train], X[test]
+y_train, y_test = y[train], y[test]
+
+gbc = GradientBoostingClassifier(n_estimators=101, random_state=42)
+xgbc = XGBClassifier(n_estimators=101, random_state=42)
+
+train_model = Sequential()
+train_model.add(Dense(12, input_dim=8, activation='relu'))
+train_model.add(Dense(1, activation='softmax'))
+config = train_model.get_config()
+
+kgc = KerasGClassifier(config, loss='binary_crossentropy', metrics=['acc'])
+
+gbc.fit(X_train, y_train)
+xgbc.fit(X_train, y_train)
+kgc.fit(X_train, y_train)
+
 module_folder = (os.path.dirname(galaxy_ml.__file__))
-result_h5 = os.path.join(module_folder,
-                         'tools/test-data/gbr_model01_py3.h5')
+gbc_pickle = os.path.join(module_folder,
+                          './tools/test-data/gbc_model01.zip')
+gbc_json = os.path.join(module_folder,
+                        './tools/test-data/gbc_model01.json')
+gbc_h5 = os.path.join(module_folder,
+                      'tools/test-data/gbc_model01.h5')
+
+xgbc_json = os.path.join(module_folder,
+                         'tools/test-data/xgbc_model01.json')
+xgbc_h5 = os.path.join(module_folder,
+                       'tools/test-data/xgbc_model01.h5')
+
+kgc_h5 = os.path.join(module_folder,
+                      'tools/test-data/kgc_model01.h5')
 
 
 def test_jpickle_dumpc():
-    with open(test_model, 'rb') as f:
-        model = pickle.load(f)
+    # GradientBoostingClassifier
+    got = model_persist.dumpc(gbc)
+    r_model = model_persist.loadc(got)
 
-    got = model_persist.dumpc(model)
+    assert np.array_equal(
+        gbc.predict(X_test),
+        r_model.predict(X_test)
+    )
+
     got.pop('-cpython-')
 
-    # with open(result_json, 'w') as f:
-    #     json.dump(got, f, indent=2)
+    with open(gbc_json, 'w') as f:
+        json.dump(got, f, indent=2)
 
-    with open(result_json, 'r') as f:
+    with open(gbc_json, 'r') as f:
         expect = json.load(f)
-    expect.pop('-cpython-')
+    expect.pop('-cpython-', None)
 
     assert got == expect, got
+
+    # XGBClassifier
+    got = model_persist.dumpc(xgbc)
+    r_model = model_persist.loadc(got)
+
+    assert np.array_equal(
+        xgbc.predict(X_test),
+        r_model.predict(X_test)
+    )
 
 
 def test_hdf5_model_dump_and_load():
 
-    print("Loading pickled test model...")
+    print("\nDumping GradientBoostingClassifier model using pickle...")
     start_time = time.time()
-    with open(test_model, 'rb') as f:
-        model = pickle.load(f)
+    with open(gbc_pickle, 'wb') as f:
+        pickle.dump(gbc, f, protocol=0)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(gbc_pickle)))
+
+    print("\nDumping object to dict...")
+    start_time = time.time()
+    model_dict = model_persist.dumpc(gbc)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 
-    tmp = tempfile.mktemp()
+    print("\nDumping dict data to JSON file...")
+    start_time = time.time()
+    with open(gbc_json, 'w') as f:
+        json.dump(model_dict, f, sort_keys=True)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(gbc_json)))
 
-    try:
-        print("\nDumping model using pickle...")
-        start_time = time.time()
-        with open(tmp, 'wb') as f:
-            pickle.dump(model, f, protocol=0)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("File size: %s" % str(os.path.getsize(tmp)))
+    print("\nLoading data from JSON file...")
+    start_time = time.time()
+    with open(gbc_json, 'r') as f:
+        json.load(f)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-        print("\nDumping object to dict...")
-        start_time = time.time()
-        model_dict = model_persist.dumpc(model)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-    finally:
-        os.remove(tmp)
+    print("\nRe-build the model object...")
+    start_time = time.time()
+    re_model = model_persist.loadc(model_dict)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("%r" % re_model)
 
-    tmp = tempfile.mktemp()
+    print("\nDumping object to HDF5...")
+    start_time = time.time()
+    model_dict = model_persist.dump_model_to_h5(gbc, gbc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(gbc_h5)))
 
-    try:
-        print("\nDumping dict data to JSON file...")
-        start_time = time.time()
-        with open(tmp, 'w') as f:
-            json.dump(model_dict, f, sort_keys=True)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("File size: %s" % str(os.path.getsize(tmp)))
+    print("\nLoading hdf5 model...")
+    start_time = time.time()
+    model = model_persist.load_model_from_h5(gbc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-        print("\nLoading data from JSON file...")
-        start_time = time.time()
-        with open(tmp, 'r') as f:
-            new_dict = json.load(f)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-
-        print("\nRe-build the model object...")
-        start_time = time.time()
-        re_model = model_persist.loadc(model_dict)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("%r" % re_model)
-    finally:
-        os.remove(tmp)
-
-    tmp = tempfile.mktemp()
-
-    try:
-        print("\nDumping model using pickle hdf5...")
-        start_time = time.time()
-        model_persist.dump_model_to_h5(model, tmp)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("File size: %s" % str(os.path.getsize(tmp)))
-
-        print("\nLoading hdf5 model...")
-        start_time = time.time()
-        model = model_persist.load_model_from_h5(tmp)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-    finally:
-        os.remove(tmp)
+    assert np.array_equal(
+        gbc.predict(X_test),
+        model.predict(X_test)
+    )
 
 
-def test_hdf5_model_keras():
+# xgbc
+def test_xgb_dump_and_load():
+    print("\nDumping XGBC to dict...")
+    start_time = time.time()
+    model_dict = model_persist.dumpc(xgbc)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-    model_weights = './tools/test-data/train_test_eval_weights01.h5'
-    model_config = './tools/test-data/train_test_eval_model01'
+    print("\nDumping dict data to JSON file...")
+    start_time = time.time()
+    with open(xgbc_json, 'w') as f:
+        json.dump(model_dict, f, sort_keys=True)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(xgbc_json)))
 
-    with open(model_config, 'rb') as f:
-        model = pickle.load(f)
+    print("\nLoading data from JSON file...")
+    start_time = time.time()
+    with open(xgbc_json, 'r') as f:
+        json.load(f)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-    model.load_weights(model_weights)
+    print("\nRe-build the model object...")
+    start_time = time.time()
+    re_model = model_persist.loadc(model_dict)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("%r" % re_model)
 
-    print(model)
+    print("\nDumping object to HDF5...")
+    start_time = time.time()
+    model_dict = model_persist.dump_model_to_h5(xgbc, xgbc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(xgbc_h5)))
 
-    tmp = tempfile.mktemp()
+    print("\nLoading hdf5 model...")
+    start_time = time.time()
+    model = model_persist.load_model_from_h5(xgbc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
 
-    try:
-        print("\nDumping model to hdf5...")
-        start_time = time.time()
-        model_persist.dump_model_to_h5(model, tmp)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("File size: %s" % str(os.path.getsize(tmp)))
+    assert np.array_equal(
+        xgbc.predict(X_test),
+        model.predict(X_test)
+    )
 
-        print("\nLoading hdf5 model...")
-        start_time = time.time()
-        model = model_persist.load_model_from_h5(tmp)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-    finally:
-        os.remove(tmp)
 
-    tmp_skeleton = tempfile.mktemp()
-    tmp_weights = tempfile.mktemp()
+# KerasGClassifier
+def test_keras_dump_and_load():
+    print("\nDumping KerasGClassifer to HDF5...")
+    start_time = time.time()
+    model_persist.dump_model_to_h5(kgc, kgc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(kgc_h5)))
 
-    try:
-        print("\nComparing pickled file size before and after...")
-        print(model)
-        start_time = time.time()
-        model.model_.save_weights(tmp_weights)
-        del model.model_
-        with open(tmp_skeleton, 'wb') as f:
-            pickle.dump(model, f, pickle.HIGHEST_PROTOCOL)
-        end_time = time.time()
-        print("(%s s)" % str(end_time - start_time))
-        print("Model skeleton size: %s" % str(os.path.getsize(tmp_skeleton)))
-        print("Model weights size: %s" % str(os.path.getsize(tmp_weights)))
-    finally:
-        os.remove(tmp_skeleton)
-        os.remove(tmp_weights)
+    print("\nLoading hdf5 model...")
+    start_time = time.time()
+    model = model_persist.load_model_from_h5(kgc_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+
+    assert np.array_equal(
+        kgc.predict(X_test),
+        model.predict(X_test)
+    )

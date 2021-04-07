@@ -13,10 +13,14 @@ import json
 import numpy
 import six
 import sys
+import tempfile
 import types
 import warnings
-from keras.engine.network import Network
-from keras.models import load_model
+
+from pathlib import Path
+from xgboost import XGBModel, sklearn
+
+from ..keras_galaxy_models import BaseKerasModel, load_model
 from ..utils import get_search_params
 
 
@@ -47,6 +51,8 @@ _CONFIG = '-model_config-'
 _HYPERPARAMETER = '-model_hyperparameters-'
 _KERAS_MODELS = '-keras_models-'
 _KERAS_MODEL = '-keras_model-'
+_XGBOOST_MODELS = '-xgboost_models-'
+_XGBOOST_MODEL = '-xgboost_model-'
 
 PY_VERSION = sys.version.split(' ')[0]
 
@@ -94,6 +100,8 @@ class ModelToHDF5:
         try:
             if isinstance(file_path, str):
                 file = h5py.File(file_path, mode=mode)
+            else:
+                file = file_path
 
             if not isinstance(file, h5py.Group):
                 raise ValueError("The type of file_path, %s, is "
@@ -111,6 +119,7 @@ class ModelToHDF5:
 
             self.weights = []
             self.keras_models = []
+            self.xgboost_models = []
 
             config = {_OBJ: self.save(obj)}
             file[_CONFIG] = json.dumps(config).encode('utf8')
@@ -124,7 +133,17 @@ class ModelToHDF5:
                 k_models_group = file.create_group(_KERAS_MODELS)
                 for idx, model in enumerate(self.keras_models):
                     idx_group = k_models_group.create_group(str(idx))
-                    model.save(idx_group)
+                    model.save_model(idx_group)
+
+            if self.xgboost_models:
+                xgb_group = file.create_group(_XGBOOST_MODELS)
+                for idx, model in enumerate(self.xgboost_models):
+                    with tempfile.TemporaryDirectory() as tmp:
+                        path = Path(tmp).joinpath('model.json')
+                        model.save_model(path)
+                        with open(path, 'r') as f:
+                            model_json = f.read()
+                    xgb_group[str(idx)] = model_json.encode('utf8')
 
             if store_hyperparameter:
                 h_params = get_search_params(obj)
@@ -157,8 +176,11 @@ class ModelToHDF5:
         if issc:
             return self.save_global(obj)
 
-        if isinstance(obj, Network):
+        if isinstance(obj, BaseKerasModel):
             return self.save_keras_model(obj)
+
+        if isinstance(obj, XGBModel):
+            return self.save_xgboost_model(obj)
 
         return self.save_reduce(obj)
 
@@ -286,9 +308,9 @@ class ModelToHDF5:
 
     def save_np_ndarray(self, obj):
         _dtype = obj.dtype
-        if _dtype.descr == [('', '|O')]:
+        if _dtype.kind in ('O', 'U', 'M'):
             newdict = {}
-            newdict[_DTYPE] = self.save(obj.dtype)
+            newdict[_DTYPE] = self.save(_dtype)
             newdict[_VALUES] = self.save(obj.tolist())
             return {_NP_NDARRAY_O: newdict}
         else:
@@ -331,6 +353,12 @@ class ModelToHDF5:
         self.keras_models.append(obj)
         return new_dict
 
+    def save_xgboost_model(self, obj):
+        self.memoize(obj)
+        new_dict = {_XGBOOST_MODEL: len(self.xgboost_models)}
+        self.xgboost_models.append(obj)
+        return new_dict
+
 
 class HDF5ToModel:
     """
@@ -352,6 +380,8 @@ class HDF5ToModel:
         try:
             if isinstance(file_path, str):
                 data = h5py.File(file_path, 'r')
+            else:
+                data = file_path
             if not isinstance(data, h5py.Group):
                 raise ValueError("The type of %s is not supported! "
                                  "Supported types are file path (str), "
@@ -369,6 +399,8 @@ class HDF5ToModel:
                 self.weights = data[_WEIGHTS]
             if _KERAS_MODELS in data:
                 self.keras_models = data[_KERAS_MODELS]
+            if _XGBOOST_MODELS in data:
+                self.xgboost_models = data[_XGBOOST_MODELS]
             config = data[_CONFIG][()].decode('utf8')
             config = json.loads(config)
             model = self.load_all(config[_OBJ])
@@ -405,6 +437,8 @@ class HDF5ToModel:
                 return self.load_np_datatype(data[_NP_DATATYPE])
             if _KERAS_MODEL in data:
                 return self.load_keras_model(data[_KERAS_MODEL])
+            if _XGBOOST_MODEL in data:
+                return self.load_xgboost_model(data[_XGBOOST_MODEL])
             return self.load_dict(data)
         f = self.dispatch.get(t)
         if f:
@@ -538,6 +572,15 @@ class HDF5ToModel:
     def load_keras_model(self, data):
         obj = load_model(self.keras_models[str(data)])
         self.memoize(obj)
+        return obj
+
+    def load_xgboost_model(self, data):
+        model_byte = self.xgboost_models[str(data)][()]
+        model_json = json.loads(model_byte.decode('utf-8'))
+        params = model_json['learner']['attributes']['scikit_learn']
+        class_name = json.loads(params)['type']
+        obj = getattr(sklearn, class_name)()
+        obj.load_model(bytearray(model_byte))
         return obj
 
 
