@@ -1,8 +1,9 @@
 import json
-import os
 import numpy as np
+import os
 import pandas as pd
 import pickle
+import tempfile
 import time
 
 import galaxy_ml
@@ -34,7 +35,8 @@ train_model.add(Dense(12, input_dim=8, activation='relu'))
 train_model.add(Dense(1, activation='softmax'))
 config = train_model.get_config()
 
-kgc = KerasGClassifier(config, loss='binary_crossentropy', metrics=['acc'])
+kgc = KerasGClassifier(config, loss='binary_crossentropy', metrics=['acc'],
+                       seed=42)
 
 gbc.fit(X_train, y_train)
 xgbc.fit(X_train, y_train)
@@ -43,18 +45,30 @@ kgc.fit(X_train, y_train)
 module_folder = (os.path.dirname(galaxy_ml.__file__))
 gbc_pickle = os.path.join(module_folder,
                           './tools/test-data/gbc_model01.zip')
+_, tmp_gbc_pickle = tempfile.mkstemp(suffix='.zip')
+
 gbc_json = os.path.join(module_folder,
                         './tools/test-data/gbc_model01.json')
 gbc_h5 = os.path.join(module_folder,
                       'tools/test-data/gbc_model01.h5')
+_, tmp_gbc_h5 = tempfile.mkstemp(suffix='.h5')
 
 xgbc_json = os.path.join(module_folder,
                          'tools/test-data/xgbc_model01.json')
 xgbc_h5 = os.path.join(module_folder,
                        'tools/test-data/xgbc_model01.h5')
+_, tmp_xgbc_h5 = tempfile.mkstemp(suffix='.h5')
 
 kgc_h5 = os.path.join(module_folder,
                       'tools/test-data/kgc_model01.h5')
+_, tmp_kgc_h5 = tempfile.mkstemp(suffix='.h5')
+
+
+def teardown():
+    os.remove(tmp_gbc_pickle)
+    os.remove(tmp_gbc_h5)
+    os.remove(tmp_xgbc_h5)
+    os.remove(tmp_kgc_h5)
 
 
 def test_jpickle_dumpc():
@@ -88,15 +102,17 @@ def test_jpickle_dumpc():
     )
 
 
-def test_hdf5_model_dump_and_load():
+def test_gbc_dump_and_load():
 
     print("\nDumping GradientBoostingClassifier model using pickle...")
     start_time = time.time()
-    with open(gbc_pickle, 'wb') as f:
+    with open(tmp_gbc_pickle, 'wb') as f:
         pickle.dump(gbc, f, protocol=0)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(gbc_pickle)))
+    print("File size: %s" % str(os.path.getsize(tmp_gbc_pickle)))
+    diff = os.path.getsize(tmp_gbc_pickle) - os.path.getsize(gbc_pickle)
+    assert abs(diff) < 50
 
     print("\nDumping object to dict...")
     start_time = time.time()
@@ -128,14 +144,17 @@ def test_hdf5_model_dump_and_load():
 
     print("\nDumping object to HDF5...")
     start_time = time.time()
-    model_dict = model_persist.dump_model_to_h5(gbc, gbc_h5)
+    model_dict = model_persist.dump_model_to_h5(gbc, tmp_gbc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(gbc_h5)))
+    print("File size: %s" % str(os.path.getsize(tmp_gbc_h5)))
+    diff = os.path.getsize(tmp_gbc_h5) - os.path.getsize(gbc_h5)
+    assert abs(diff) < 20, os.path.getsize(gbc_h5)
+
 
     print("\nLoading hdf5 model...")
     start_time = time.time()
-    model = model_persist.load_model_from_h5(gbc_h5)
+    model = model_persist.load_model_from_h5(tmp_gbc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 
@@ -177,14 +196,16 @@ def test_xgb_dump_and_load():
 
     print("\nDumping object to HDF5...")
     start_time = time.time()
-    model_dict = model_persist.dump_model_to_h5(xgbc, xgbc_h5)
+    model_dict = model_persist.dump_model_to_h5(xgbc, tmp_xgbc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(xgbc_h5)))
+    print("File size: %s" % str(os.path.getsize(tmp_xgbc_h5)))
+    diff = os.path.getsize(tmp_xgbc_h5) - os.path.getsize(xgbc_h5)
+    assert abs(diff) < 20, os.path.getsize(xgbc_h5)
 
     print("\nLoading hdf5 model...")
     start_time = time.time()
-    model = model_persist.load_model_from_h5(xgbc_h5)
+    model = model_persist.load_model_from_h5(tmp_xgbc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 
@@ -198,14 +219,16 @@ def test_xgb_dump_and_load():
 def test_keras_dump_and_load():
     print("\nDumping KerasGClassifer to HDF5...")
     start_time = time.time()
-    model_persist.dump_model_to_h5(kgc, kgc_h5)
+    model_persist.dump_model_to_h5(kgc, tmp_kgc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
-    print("File size: %s" % str(os.path.getsize(kgc_h5)))
+    print("File size: %s" % str(os.path.getsize(tmp_kgc_h5)))
+    diff = os.path.getsize(tmp_kgc_h5) - os.path.getsize(kgc_h5)
+    assert abs(diff) < 20, os.path.getsize(kgc_h5)
 
     print("\nLoading hdf5 model...")
     start_time = time.time()
-    model = model_persist.load_model_from_h5(kgc_h5)
+    model = model_persist.load_model_from_h5(tmp_kgc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
 

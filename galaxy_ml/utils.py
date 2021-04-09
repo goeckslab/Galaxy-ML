@@ -2,13 +2,12 @@ import ast
 import collections
 import json
 import imblearn
-import importlib
 import inspect
 import numpy as np
 import pandas
 import pickle
+import _compat_pickle
 import pkgutil
-import re
 import scipy
 import sklearn
 import skrebate
@@ -30,7 +29,6 @@ from sklearn import (
     neural_network, pipeline, preprocessing,
     random_projection, semi_supervised, svm, tree,
     discriminant_analysis, impute, compose)
-from .externals.selene_sdk.utils import compute_score
 
 
 # handle pickle white list file
@@ -72,19 +70,6 @@ class _SafePickler(pickle.Unpickler, object):
             'im_class', 'im_func', 'im_self', 'gi_code', 'gi_frame',
             '__asteval__', 'f_locals', '__mro__')
 
-        # unclassified good globals
-        self.good_names = [
-            'copy_reg._reconstructor', '__builtin__.object',
-            '__builtin__.bytearray', 'builtins.object',
-            'builtins.bytearray']
-
-        self.keras_names = [
-            'keras.engine.sequential.Sequential',
-            'keras.engine.sequential.Model']
-
-        self.skopt_names = [
-            'skopt.searchcv.BayesSearchCV']
-
         # custom module in Galaxy-ML
         self.custom_modules = [
             'keras_galaxy_models',
@@ -113,50 +98,34 @@ class _SafePickler(pickle.Unpickler, object):
                 module = splits[0] + '.' + splits[1]
             return try_get_attr(module, name)
 
+        if (module, name) in _compat_pickle.NAME_MAPPING:
+            module, name = _compat_pickle.NAME_MAPPING[(module, name)]
+        elif module in _compat_pickle.IMPORT_MAPPING:
+            module = _compat_pickle.IMPORT_MAPPING[module]
+
         fullname = module + '.' + name
-        # keras names
-        keras_names = self.keras_names
-        if fullname in keras_names:
-            # dynamic import, suppress message:
-            # "Using TensorFlow backend."
-            exec("from tensorflow import keras")
-            mod = sys.modules[module]
-            return getattr(mod, name)
-
-        # For objects from outside libraries, it's necessary to verify
-        # both module and name. Currently only a blacklist checker
-        # is working.
-        # TODO: replace with a whitelist checker.
-        good_names = self.good_names
         pk_whitelist = self.pk_whitelist
-        if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-            if (fullname in good_names)\
-                or (module.startswith(('sklearn.', 'xgboost.', 'skrebate.',
-                                       'imblearn.', 'mlxtend.', 'numpy.',
-                                       'skopt'))
-                    or module == 'numpy'):
-                if fullname not in (pk_whitelist['SK_NAMES'] +
-                                    pk_whitelist['SKR_NAMES'] +
-                                    pk_whitelist['XGB_NAMES'] +
-                                    pk_whitelist['NUMPY_NAMES'] +
-                                    pk_whitelist['IMBLEARN_NAMES'] +
-                                    pk_whitelist['MLXTEND_NAMES'] +
-                                    pk_whitelist['SKOPT_NAMES'] +
-                                    keras_names +
-                                    good_names):
-                    # raise pickle.UnpicklingError
-                    raise pickle.UnpicklingError("Global '%s' is forbidden"
-                                                 % fullname)
 
-                mod = sys.modules.get(module, None)
-                if not mod:
-                    importlib.import_module(module)
-                    mod = sys.modules[module]
-                new_global = getattr(mod, name)
-                assert new_global.__module__ == module
-                return new_global
+        whitelist = pk_whitelist['SK_NAMES'] + \
+            pk_whitelist['SKR_NAMES'] + \
+            pk_whitelist['XGB_NAMES'] + \
+            pk_whitelist['NUMPY_NAMES'] + \
+            pk_whitelist['IMBLEARN_NAMES'] + \
+            pk_whitelist['MLXTEND_NAMES'] + \
+            pk_whitelist['SKOPT_NAMES'] + \
+            pk_whitelist['KERAS_NAMES'] + \
+            pk_whitelist['GENERAL_NAMES']
 
-        raise pickle.UnpicklingError("Global '%s' is forbidden" % fullname)
+        if fullname not in whitelist:
+            # raise pickle.UnpicklingError
+            raise pickle.UnpicklingError("Global '%s' is forbidden"
+                                         % fullname)
+
+        __import__(module, level=0)
+        new_global = getattr(sys.modules[module], name)
+
+        assert new_global.__module__ == module
+        return new_global
 
 
 def safe_load_model(file):

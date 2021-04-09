@@ -1134,6 +1134,18 @@
         "numpy.ma.core.MaskedArray",
         "numpy.mean",
         "numpy.ndarray",
-        "numpy.random.__RandomState_ctor"
+        "numpy.random.__RandomState_ctor",
+        "numpy.random._pickle.__randomstate_ctor"
+    ],
+    "KERAS_NAMES": [
+        "keras.engine.sequential.Sequential",
+        "keras.engine.sequential.Functional",
+        "keras.engine.sequential.Model"
+    ],
+    "GENERAL_NAMES": [
+        "_codecs.encode",
+        "builtins.object",
+        "builtins.bytearray",
+        "copyreg._reconstructor"
     ]
 }
