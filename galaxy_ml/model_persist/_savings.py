@@ -99,7 +99,7 @@ class ModelToHDF5:
             Whether to save model hyperparameter.
         """
         try:
-            if isinstance(file_path, str):
+            if isinstance(file_path, (str, Path)):
                 file = h5py.File(file_path, mode=mode)
             else:
                 file = file_path
@@ -381,7 +381,7 @@ class HDF5ToModel:
 
     def load(self, file_path):
         try:
-            if isinstance(file_path, str):
+            if isinstance(file_path, (str, Path)):
                 data = h5py.File(file_path, 'r')
             else:
                 data = file_path

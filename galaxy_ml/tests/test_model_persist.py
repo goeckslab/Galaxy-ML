@@ -243,3 +243,38 @@ def test_keras_dump_and_load():
         kgc.predict(X_test),
         model.predict(X_test)
     )
+
+
+if __name__ == '__main__':
+    """ Generate couple of estimators for tests.
+    """
+    import xgboost
+    from pathlib import Path
+    from sklearn import linear_model, ensemble, pipeline
+
+    test_folder = Path(__file__).parent.parent
+    test_folder = test_folder.joinpath('tools', 'test-data')
+
+    estimator = linear_model.LinearRegression()
+    model_persist.dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('LinearRegression01.h5'))
+
+    estimator = ensemble.RandomForestRegressor(
+        n_estimators=10, random_state=10)
+    model_persist.dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('RandomForestRegressor01.h5'))
+
+    estimator = xgboost.XGBRegressor(
+        learning_rate=0.1, n_estimators=100, random_state=0)
+    model_persist.dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('XGBRegressor01.h5'))
+
+    estimator = ensemble.AdaBoostRegressor(
+        learning_rate=1.0, n_estimators=50)
+    pipe = pipeline.make_pipeline(estimator)
+    model_persist.dump_model_to_h5(
+        pipe,
+        test_folder.joinpath('pipeline10'))
