@@ -16,7 +16,10 @@ from asteval import Interpreter, make_symbol_table
 from pathlib import Path
 from scipy.io import mmread
 from sklearn import (
-    ensemble, linear_model, metrics, model_selection, pipeline)
+    cluster, compose, decomposition, ensemble, feature_extraction,
+    feature_selection, gaussian_process, kernel_approximation, metrics,
+    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
+    svm, linear_model, tree, discriminant_analysis)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))

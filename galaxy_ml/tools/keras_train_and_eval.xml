@@ -86,10 +86,7 @@
     </inputs>
     <outputs>
         <data format="tabular" name="outfile_result"/>
-        <data format="zip" name="outfile_object" label="Fitted estimator or estimator skeleton on ${on_string}">
-            <filter>str(save) and 'save_estimator' in str(save)</filter>
-        </data>
-        <data format="h5" name="outfile_weights" label="Weights trained on ${on_string}">
+        <data format="h5" name="outfile" label="Fitted estimator or estimator skeleton on ${on_string}">
             <filter>str(save) and 'save_estimator' in str(save)</filter>
         </data>
         <data format="tabular" name="outfile_y_true" label="True labels/target values on ${on_string}">
@@ -105,7 +102,6 @@
                 <param name="selected_exp_scheme" value="train_val_test"/>
                 <param name="infile_estimator" value="keras_model04" ftype="zip"/>
                 <section name="hyperparams_swapping">
-                    <param name="infile_params" value="keras_params04.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_value" value="999"/>
                         <param name="sp_name" value="layers_0_Dense__config__kernel_initializer__config__seed"/>
@@ -158,15 +154,13 @@
                     <has_text text="5.299"/>
                 </assert_contents>
             </output>
-            <output name="outfile_object" file="train_test_eval_model01" compare="sim_size" delta="5"/>
-            <output name="outfile_weights" file="train_test_eval_weights01.h5" compare="sim_size" delta="5"/>
+            <output name="outfile" file="train_test_eval_model01" compare="sim_size" delta="5"/>
         </test>
         <test>
             <conditional name="experiment_schemes">
                 <param name="selected_exp_scheme" value="train_val_test"/>
                 <param name="infile_estimator" value="keras_model04" ftype="zip"/>
                 <section name="hyperparams_swapping">
-                    <param name="infile_params" value="keras_params04.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_value" value="999"/>
                         <param name="sp_name" value="layers_0_Dense__config__kernel_initializer__config__seed"/>
@@ -225,7 +219,7 @@
                     <has_text text="5.226"/>
                 </assert_contents>
             </output>
-            <output name="outfile_weights" file="train_test_eval_weights02.h5" compare="sim_size" delta="5"/>
+            <output name="outfile" file="train_test_eval_model02" compare="sim_size" delta="5"/>
             <output name="outfile_y_true" file="keras_train_eval_y_true02.tabular" ftype="tabular"/>
         </test>
         <test>
@@ -233,7 +227,6 @@
                 <param name="selected_exp_scheme" value="train_val"/>
                 <param name="infile_estimator" value="pipeline10" ftype="zip"/>
                 <section name="hyperparams_swapping">
-                    <param name="infile_params" value="get_params10.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_value" value="10"/>
                         <param name="sp_name" value="adaboostregressor__random_state"/>

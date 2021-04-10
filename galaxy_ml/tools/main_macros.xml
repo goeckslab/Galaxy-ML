@@ -1132,7 +1132,7 @@
           <expand macro="estimator_selector_fs"/>
         </when>
         <when value="prefitted">
-          <param name="fitted_estimator" type="data" format='zip' label="Load a prefitted estimator" />
+          <param name="fitted_estimator" type="data" format='h5' label="Load a prefitted estimator" />
         </when>
       </conditional>
       <expand macro="feature_selection_SelectFromModel_options"/>
@@ -1396,9 +1396,8 @@
   </xml>
 
   <xml name="estimator_and_hyperparameter">
-    <param name="infile_estimator" type="data" format="zip" label="Choose the dataset containing pipeline/estimator object"/>
+    <param name="infile_estimator" type="data" format="h5" label="Choose the dataset containing pipeline/estimator object"/>
     <section name="hyperparams_swapping" title="Hyperparameter Swapping" expanded="false">
-      <param name="infile_params" type="data" format="tabular" optional="true" label="Choose the dataset containing hyperparameters for the pipeline/estimator above" help="This dataset could be the output of `get_params` in the `Estimator Attributes` tool."/>
       <repeat name="param_set" min="1" max="30" title="New hyperparameter setting">
           <param name="sp_name" type="select" optional="true" label="Choose a parameter name (with current value)">
             <options from_dataset="infile_params" startswith="@">
@@ -1570,7 +1569,7 @@
       </param>
       <expand macro="estimator_suboptions">
         <when value="custom_estimator">
-            <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline:"/>
+            <param name="c_estimator" type="data" format="h5" label="Choose the dataset containing the custom estimator or pipeline:"/>
         </when>
       </expand>
     </conditional>
@@ -1865,7 +1864,7 @@
       <data format="tabular" name="outfile_predict">
           <filter>selected_tasks['selected_task'] == 'load'</filter>
       </data>
-      <data format="zip" name="outfile_fit" label="${tool.name}.${selected_tasks.selected_algorithms.selected_algorithm}">
+      <data format="h5" name="outfile_fit" label="${tool.name}.${selected_tasks.selected_algorithms.selected_algorithm}">
           <filter>selected_tasks['selected_task'] == 'train'</filter>
       </data>
     </outputs>

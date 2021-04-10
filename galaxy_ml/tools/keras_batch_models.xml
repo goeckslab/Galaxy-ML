@@ -14,9 +14,6 @@
            --model_json '$mode_selection.infile_json'
            --tool_id 'keras_batch_models'
            --outfile '$outfile'
-           #if $get_params
-           --outfile_params '$outfile_params'
-           #end if
     ]]>
   </command>
   <configfiles>
@@ -61,13 +58,9 @@
         <param name="random_seed" type="integer" value="" optional="true" label="Random Seed" help="Integer or blank for None. Warning: when random seed is set to an integer, training will be running in single thread mode, which may cause slowness."/>
       </when>
     </conditional>
-    <param name="get_params" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Output parameters for searchCV?" help="Optional. Tunable parameters could be obtained through `estimator_attributes` tool."/>
   </inputs>
   <outputs>
-    <data format="zip" name="outfile" label="Keras Batch Classifier  on ${on_string}"/>
-    <data format="tabular" name="outfile_params" label="get_params for Keras Batch Classifier on ${on_string}">
-      <filter>get_params</filter>
-    </data>
+    <data format="h5" name="outfile" label="Keras Batch Classifier  on ${on_string}"/>
   </outputs>
   <tests>
     <test>
@@ -97,9 +90,7 @@
           </repeat>
         </section>
       </conditional>
-      <param name="get_params" value="true" />
       <output name="outfile" file="keras_batch_model05" compare="sim_size" delta="5"/>
-      <output name="outfile_params" file="keras_batch_params05.tabular" />
     </test>
     <test>
       <conditional name="mode_selection">
@@ -117,9 +108,7 @@
           </repeat>
         </section>
       </conditional>
-      <param name="get_params" value="true" />
-      <output name="outfile" file="keras_batch_model04" compare="sim_size" delta="5"/>
-      <output name="outfile_params" file="keras_batch_params04.tabular" />
+      <output name="outfile" file="keras_batch_model04" compare="sim_size" delta="20"/>
     </test>
     <test>
       <conditional name="mode_selection">
@@ -133,7 +122,7 @@
           <param name="epochs" value="100"/>
         </section>
       </conditional>
-      <output name="outfile" file="keras_batch_model03" compare="sim_size" delta="5"/>
+      <output name="outfile" file="keras_batch_model03" compare="sim_size" delta="20"/>
     </test>
     <test>
       <conditional name="mode_selection">
@@ -153,7 +142,7 @@
           </repeat>
         </section>
       </conditional>
-      <output name="outfile" file="keras_batch_model02" compare="sim_size" delta="5"/>
+      <output name="outfile" file="keras_batch_model02" compare="sim_size" delta="20"/>
     </test>
     <test>
       <conditional name="mode_selection">
@@ -172,9 +161,7 @@
           </repeat>
         </section>
       </conditional>
-      <param name="get_params" value="true" />
       <output name="outfile" file="keras_batch_model01" compare="sim_size" delta="5"/>
-      <output name="outfile_params" file="keras_batch_params01.tabular" />
     </test>
   </tests>
   <help>

@@ -6,7 +6,7 @@
             <param name="infile_estimator" type="data" format="zip" label="Choose the dataset containing pipeline/estimator object"/>
             <param name="is_deep_learning" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Is the estimator a deep learning model?"/>
             <section name="search_params_builder" title="Search parameters Builder" expanded="true">
-            <param name="infile_params" type="data" format="tabular" optional="true" label="Choose the dataset containing parameter names" help="This dataset could be the output of `get_params` in the `Estimator Attributes` tool."/>
+            <param name="infile_params" type="data" format="tabular" optional="true" label="Choose the dataset containing parameter names"/>
             <repeat name="param_set" min="1" max="30" title="Parameter settings for search:">
                 <param name="sp_name" type="select" optional="true" label="Choose a parameter name (with current value)">
                     <options from_dataset="infile_params" startswith="@">
@@ -153,7 +153,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]"/>
                 <param name="sp_name" value="svr__C"/>
@@ -180,7 +179,6 @@
         <test expect_failure="true">
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]"/>
                 <param name="sp_name" value="svr__C"/>
@@ -200,7 +198,6 @@
         <test>
             <param name="selected_search_scheme" value="RandomizedSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]"/>
                 <param name="sp_name" value="svr__C"/>
@@ -233,7 +230,6 @@
         <test>
             <param name="selected_search_scheme" value="RandomizedSearchCV"/>
             <param name="infile_estimator" value="pipeline03" ftype="zip"/>
-            <param name="infile_params" value="get_params03.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="np_arange(50, 1001, 50)"/>
                 <param name="sp_name" value="xgbclassifier__n_estimators"/>
@@ -266,7 +262,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline04" ftype="zip"/>
-            <param name="infile_params" value="get_params04.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="list(range(100, 1001, 100))"/>
                 <param name="sp_name" value="linearsvc__random_state"/>
@@ -291,7 +286,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]"/>
                 <param name="sp_name" value="svr__C"/>
@@ -308,7 +302,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline06" ftype="zip"/>
-            <param name="infile_params" value="get_params06.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 200, 1000]"/>
                 <param name="sp_name" value="adaboostregressor__n_estimators"/>
@@ -333,7 +326,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline07" ftype="zip"/>
-            <param name="infile_params" value="get_params07.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 200]"/>
                 <param name="sp_name" value="adaboostclassifier__n_estimators"/>
@@ -364,7 +356,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline08" ftype="zip"/>
-            <param name="infile_params" value="get_params08.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 200]"/>
                 <param name="sp_name" value="adaboostclassifier__n_estimators"/>
@@ -392,7 +383,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]"/>
                 <param name="sp_name" value="svr__C"/>
@@ -413,7 +403,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline03" ftype="zip"/>
-            <param name="infile_params" value="get_params03.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 200, 1000]"/>
                 <param name="sp_name" value="xgbclassifier__n_estimators"/>
@@ -443,7 +432,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline02" ftype="zip"/>
-            <param name="infile_params" value="get_params02.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[0.01, 0.001]"/>
                 <param name="sp_name" value="lassocv__eps"/>
@@ -464,7 +452,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline05" ftype="zip"/>
-            <param name="infile_params" value="get_params05.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 300]"/>
                 <param name="sp_name" value="n_estimators"/>
@@ -485,7 +472,6 @@
         <test expect_failure="true">
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline01" ftype="zip"/>
-            <param name="infile_params" value="get_params01.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="open('~/.ssh/authorized_keys', 'r').read()"/>
                 <param name="sp_name" value="svr__C"/>
@@ -500,7 +486,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline10" ftype="zip"/>
-            <param name="infile_params" value="get_params10.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value=": [sklearn_tree.DecisionTreeRegressor(random_state=0), sklearn_tree.ExtraTreeRegressor(random_state=0)]"/>
                 <param name="sp_name" value="adaboostregressor__base_estimator"/>
@@ -525,7 +510,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline09" ftype="zip"/>
-            <param name="infile_params" value="get_params09.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value=": [sklearn_feature_selection.SelectKBest(),
                         sklearn_feature_selection.VarianceThreshold(), skrebate_ReliefF(), sklearn_preprocessing.RobustScaler()]"/>
@@ -551,7 +535,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline09" ftype="zip"/>
-            <param name="infile_params" value="get_params09.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value=": [None,'sk_prep_all', 7, 13, skrebate_ReliefF(n_features_to_select=12)]"/>
                 <param name="sp_name" value="relieff"/>
@@ -576,7 +559,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline11" ftype="zip"/>
-            <param name="infile_params" value="get_params11.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[3,4,5]"/>
                 <param name="sp_name" value="editednearestneighbours__n_neighbors"/>
@@ -614,7 +596,6 @@
         <test>
             <param name="selected_search_scheme" value="GridSearchCV"/>
             <param name="infile_estimator" value="pipeline12" ftype="zip"/>
-            <param name="infile_params" value="get_params12.tabular" ftype="tabular"/>
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 100, 200]"/>
                 <param name="sp_name" value="estimator__n_estimators"/>
@@ -642,7 +623,6 @@
                 <param name="selected_search_scheme" value="GridSearchCV"/>
                 <param name="infile_estimator" value="pipeline05" ftype="zip"/>
                 <section name="search_params_builder">
-                    <param name="infile_params" value="get_params05.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_list" value="[10, 50, 100, 300]"/>
                         <param name="sp_name" value="n_estimators"/>

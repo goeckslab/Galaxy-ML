@@ -15,7 +15,8 @@ from sklearn.feature_selection.base import SelectorMixin
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.pipeline import Pipeline
-from galaxy_ml.utils import safe_load_model, read_columns, SafeEval
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import read_columns, SafeEval
 
 
 safe_eval = SafeEval()
@@ -322,8 +323,7 @@ def main(inputs, infile_estimator=None, infile1=None,
     plot_format = params['plotting_selection']['plot_format']
 
     if plot_type == 'feature_importances':
-        with open(infile_estimator, 'rb') as estimator_handler:
-            estimator = safe_load_model(estimator_handler)
+        estimator = load_model_from_h5(infile_estimator)
 
         column_option = (params['plotting_selection']
                                ['column_selector_options']

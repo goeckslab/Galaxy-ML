@@ -64,9 +64,6 @@
             --meta '${algo_selection.meta_estimator.estimator_selector.c_estimator}'
             #end if
             #end if
-            #if $get_params
-            --outfile_params '$outfile_params'
-            #end if
         ]]>
     </command>
     <configfiles>
@@ -139,15 +136,9 @@
             <expand macro="stacking_base_estimator"/>
             <!--param name="base_estimator" type="data" format="zip,json" label="Select the dataset containing base estimator" help="One estimator at a time."/-->
         </repeat>
-        <!--param name="meta_estimator" type="data" format="zip,json" label="Select the dataset containing the Meta estimator"/-->
-        <param name="get_params" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Output parameters for searchCV?"
-                help="Optional. Tunable parameters could be obtained through `estimator_attributes` tool."/>
     </inputs>
     <outputs>
-        <data format="zip" name="outfile" label="${algo_selection.estimator_type} on ${on_string}"/>
-        <data format="tabular" name="outfile_params" label="get_params for ${algo_selection.estimator_type}">
-            <filter>get_params</filter>
-        </data>
+        <data format="h5" name="outfile" label="${algo_selection.estimator_type} on ${on_string}"/>
     </outputs>
     <tests>
         <test>
@@ -169,8 +160,7 @@
                     <param name="selected_estimator" value="XGBClassifier"/>
                 </conditional>
             </repeat>
-            <param name="get_params" value="false"/>
-            <output name="outfile" file="StackingVoting03.zip" compare="sim_size" delta="5"/>
+            <output name="outfile" file="StackingVoting03.h5" compare="sim_size" delta="5"/>
         </test>
         <test>
             <conditional name="algo_selection">
@@ -178,24 +168,23 @@
                 <section name="meta_estimator">
                     <conditional name="estimator_selector">
                         <param name="selected_module" value="custom_estimator"/>
-                        <param name="c_estimator" value="LinearRegression01.zip" ftype="zip"/>
+                        <param name="c_estimator" value="LinearRegression01.h5" ftype="h5"/>
                     </conditional>
                 </section>
             </conditional>
             <repeat name="base_est_builder">
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="custom_estimator"/>
-                    <param name="c_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+                    <param name="c_estimator" value="RandomForestRegressor01.h5" ftype="h5"/>
                 </conditional>
             </repeat>
             <repeat name="base_est_builder">
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="custom_estimator"/>
-                    <param name="c_estimator" value="XGBRegressor01.zip" ftype="zip"/>
+                    <param name="c_estimator" value="XGBRegressor01.h5" ftype="h5"/>
                 </conditional>
             </repeat>
-            <param name="get_params" value="false"/>
-            <output name="outfile" file="StackingCVRegressor01.zip" compare="sim_size" delta="5"/>
+            <output name="outfile" file="StackingCVRegressor01.h5" compare="sim_size" delta="5"/>
         </test>
         <test>
             <conditional name="algo_selection">
@@ -210,7 +199,7 @@
             <repeat name="base_est_builder">
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="custom_estimator"/>
-                    <param name="c_estimator" value="RandomForestRegressor01.zip" ftype="zip"/>
+                    <param name="c_estimator" value="RandomForestRegressor01.h5" ftype="h5"/>
                 </conditional>
             </repeat>
             <repeat name="base_est_builder">
@@ -219,8 +208,7 @@
                     <param name="selected_estimator" value="XGBRegressor"/>
                 </conditional>
             </repeat>
-            <param name="get_params" value="false"/>
-            <output name="outfile" file="StackingRegressor02.zip" compare="sim_size" delta="5"/>
+            <output name="outfile" file="StackingRegressor02.h5" compare="sim_size" delta="5"/>
         </test>
     </tests>
     <help>

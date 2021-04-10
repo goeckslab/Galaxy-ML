@@ -14,12 +14,6 @@
                 --tool_id 'keras_model_builder'
                 --outfile '$outfile'
                 --model_json '$mode_selection.infile_json'
-                #if $mode_selection.mode_type == 'prefitted'
-                --infile_weights '$mode_selection.infile_weights'
-                    #end if
-                #if $mode_selection.mode_type == 'train_model' and $mode_selection.get_params
-                --outfile_params '$outfile_params'
-                #end if
         ]]>
     </command>
     <configfiles>
@@ -42,7 +36,6 @@
                     <param name="validation_split" type="float" value="0.1" optional="true" label="The proportion of training data to set aside as validation set." help="Will be ignored if `validation_data` is set explicitly, such as in `Deep learning training and evaluation` tool."/>
                 </expand>
                 <param name="random_seed" type="integer" value="" optional="true" label="Random Seed" help="Integer or blank for None. Warning: when random seed is set to an integer, training will be running in single thread mode, which may cause slowness."/>
-                <param name="get_params" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Output parameters for searchCV?" help="Optional. Tunable parameters could be obtained through `estimator_attributes` tool."/>
             </when>
             <!--when value="prefitted">
                 <param name="infile_json" type="data" format="json" label="Select the dataset containing model configurations (JSON)"/>
@@ -51,10 +44,7 @@
         </conditional>
     </inputs>
     <outputs>
-        <data format="zip" name="outfile" label="Keras Model Builder on ${on_string}"/>
-        <data format="tabular" name="outfile_params" label="get_params for Keras Model Builder on ${on_string}">
-            <filter>mode_selection['mode_type'] == 'train_model' and mode_selection['get_params']</filter>
-        </data>
+        <data format="h5" name="outfile" label="Keras Model Builder on ${on_string}"/>
     </outputs>
     <tests>
         <test>
@@ -65,7 +55,7 @@
                     <param name="epochs" value="100"/>
                 </section>
             </conditional>
-            <output name="outfile" file="keras_model01" compare="sim_size" delta="5"/>
+            <output name="outfile" file="keras_model01" compare="sim_size" delta="20"/>
         </test>
         <test>
             <conditional name="mode_selection">
@@ -79,7 +69,7 @@
                     <param name="epochs" value="100"/>
                 </section>
             </conditional>
-            <output name="outfile" file="keras_model02" compare="sim_size" delta="5"/>
+            <output name="outfile" file="keras_model02" compare="sim_size" delta="20"/>
         </test>
         <!--test>
             <conditional name="mode_selection">
@@ -104,10 +94,8 @@
                     <param name="epochs" value="100"/>
                 </section>
                 <param name="random_seed" value="42"/>
-                <param name="get_params" value="true"/>
             </conditional>
-            <output name="outfile" file="keras_model04" compare="sim_size" delta="1"/>
-            <output name="outfile_params" file="keras_params04.tabular"/>
+            <output name="outfile" file="keras_model04" compare="sim_size" delta="20"/>
         </test>
     </tests>
     <help>

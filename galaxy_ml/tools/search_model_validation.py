@@ -21,7 +21,8 @@ from skopt import BayesSearchCV
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.binarize_target import IRAPSClassifier
-from galaxy_ml.utils import (SafeEval, get_cv, get_scoring, safe_load_model,
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import (SafeEval, get_cv, get_scoring,
                              read_columns, try_get_attr, get_module,
                              clean_params, get_main_estimator)
 
@@ -490,8 +491,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         if (params['save'] != 'nope' or
             params['outer_split']['split_mode'] == 'nested_cv') else False
 
-    with open(infile_estimator, 'rb') as estimator_handler:
-        estimator = safe_load_model(estimator_handler)
+    estimator = load_model_from_h5(infile_estimator)
 
     if estimator.__class__.__name__ == 'KerasGBatchClassifier':
         _fit_and_score = try_get_attr('galaxy_ml.model_validations',

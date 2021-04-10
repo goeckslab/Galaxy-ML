@@ -3,17 +3,13 @@ import ast
 import json
 import mlxtend.regressor
 import mlxtend.classifier
-import pandas as pd
-import pickle
-import sklearn
 import sys
 import warnings
-from sklearn import ensemble
 
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
-from galaxy_ml.utils import (safe_load_model, get_cv, get_estimator,
-                             get_search_params)
+from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
+from galaxy_ml.utils import get_cv, get_estimator
 
 
 warnings.filterwarnings('ignore')
@@ -49,8 +45,7 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
     base_estimators = []
     for idx, base_file in enumerate(base_paths.split(',')):
         if base_file and base_file != 'None':
-            with open(base_file, 'rb') as handler:
-                model = safe_load_model(handler)
+            model = load_model_from_h5(base_file)
         else:
             estimator_json = (params['base_est_builder'][idx]
                               ['estimator_selector'])
@@ -66,8 +61,7 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
     # get meta estimator, if applicable
     if estimator_type.startswith('mlxtend'):
         if meta_path:
-            with open(meta_path, 'rb') as f:
-                meta_estimator = safe_load_model(f)
+            meta_estimator = load_model_from_h5(meta_path)
         else:
             estimator_json = (params['algo_selection']
                               ['meta_estimator']['estimator_selector'])
@@ -114,13 +108,7 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
     for base_est in base_estimators:
         print(base_est)
 
-    with open(output_obj, 'wb') as out_handler:
-        pickle.dump(ensemble_estimator, out_handler, pickle.HIGHEST_PROTOCOL)
-
-    if params['get_params'] and outfile_params:
-        results = get_search_params(ensemble_estimator)
-        df = pd.DataFrame(results, columns=['', 'Parameter', 'Value'])
-        df.to_csv(outfile_params, sep='\t', index=False)
+    dump_model_to_h5(ensemble_estimator, output_obj)
 
 
 if __name__ == '__main__':
@@ -129,8 +117,7 @@ if __name__ == '__main__':
     aparser.add_argument("-m", "--meta", dest="meta")
     aparser.add_argument("-i", "--inputs", dest="inputs")
     aparser.add_argument("-o", "--outfile", dest="outfile")
-    aparser.add_argument("-p", "--outfile_params", dest="outfile_params")
     args = aparser.parse_args()
 
     main(args.inputs, args.outfile, base_paths=args.bases,
-         meta_path=args.meta, outfile_params=args.outfile_params)
+         meta_path=args.meta)

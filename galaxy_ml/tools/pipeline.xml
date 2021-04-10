@@ -30,12 +30,9 @@ from sklearn import (
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.pipeline import make_pipeline
 from imblearn.pipeline import make_pipeline as imb_make_pipeline
+from galaxy_ml.model_persist import dump_model_to_h5, load_model_from_h5
 from galaxy_ml.utils import (SafeEval, feature_selector, get_estimator,
-                             try_get_attr, get_search_params,
-                             safe_load_model)
-
-## TODO remove following imports after scikit-learn v0.22
-from sklearn.experimental import enable_hist_gradient_boosting
+                             try_get_attr, get_search_params)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -183,10 +180,8 @@ elif estimator_json['selected_module'] == 'sklearn.compose':
     regressor_path = '$final_estimator.estimator_selector.regressor'
     transformer_path = '$final_estimator.estimator_selector.transformer'
     #end if
-    with open(regressor_path, 'rb') as f:
-        regressor = safe_load_model(f)
-    with open(transformer_path, 'rb') as f:
-        transformer = safe_load_model(f)
+    regressor = load_model_from_h5(regressor_path)
+    transformer = load_model_from_h5(transformer_path)
     estimator = compose.TransformedTargetRegressor(regressor=regressor, transformer=transformer)
     pipeline_steps.append( estimator )
 else:
@@ -203,14 +198,8 @@ else:
         out_obj = make_pipeline(*pipeline_steps)
     pprint.pprint(out_obj.named_steps)
 
-with open('$outfile', 'wb') as out_handler:
-    pickle.dump(out_obj, out_handler, pickle.HIGHEST_PROTOCOL)
+dump_model_to_h5(out_obj, '$outfile', verbose=1)
 
-#if $get_params
-results = get_search_params(out_obj)
-df = pd.DataFrame(results, columns=['', 'Parameter', 'Value'])
-df.to_csv('$outfile_params', sep='\t', index=False)
-#end if
             ]]>
         </configfile>
     </configfiles>
@@ -283,21 +272,21 @@ df.to_csv('$outfile_params', sep='\t', index=False)
                         <param name="selected_estimator" type="select" label="Choose estimator class:">
                             <option value="TransformedTargetRegressor" selected="true">TransformedTargetRegressor</option>
                         </param>
-                        <param name="regressor" type="data" format="zip" label="Choose the dataset containing the wrapped regressor"/>
-                        <param name="transformer" type="data" format="zip" label="Choose the dataset containing transformer"/>
+                        <param name="regressor" type="data" format="h5" label="Choose the dataset containing the wrapped regressor"/>
+                        <param name="transformer" type="data" format="h5" label="Choose the dataset containing transformer"/>
                     </when>
                     <when value="binarize_target">
                         <param name="clf_or_regr" type="select" label="Classifier or Regressor:">
                             <option value="BinarizeTargetClassifier">BinarizeTargetClassifier</option>
                             <option value="BinarizeTargetRegressor">BinarizeTargetRegressor</option>
                         </param>
-                        <param name="wrapped_estimator" type="data" format="zip" label="Choose the dataset containing the wrapped estimator or pipeline"/>
+                        <param name="wrapped_estimator" type="data" format="h5" label="Choose the dataset containing the wrapped estimator or pipeline"/>
                         <param name='z_score' type="float" value="-1" optional="false" label="Discrize target values using z_score"/>
                         <param name='value' type="float" value="" optional="true" label="Discretize target values using a fixed value instead" help="Optional. default: None."/>
                         <param name="less_is_positive" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="true" label="Are the detecting values smaller than others?"/>
                     </when>
                     <when value="custom_estimator">
-                        <param name="c_estimator" type="data" format="zip" label="Choose the dataset containing the custom estimator or pipeline"/>
+                        <param name="c_estimator" type="data" format="h5" label="Choose the dataset containing the custom estimator or pipeline"/>
                     </when>
                     <when value="none"/>
                 </expand>
@@ -307,14 +296,9 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <option value="Pipeline_Builder" selected="true">Pipeline</option>
             <option value="Final_Estimator_Builder">Final Estimator</option>
         </param>-->
-        <param name="get_params" type="boolean" truevalue="booltrue" falsevalue="boolfalse" checked="false" label="Output parameters for searchCV?"
-                help="Optional. Tunable parameters could be obtained through `estimator_attributes` tool."/>
     </inputs>
     <outputs>
-        <data format="zip" name="outfile" label="New Pipleline/Estimator"/>
-        <data format="tabular" name="outfile_params" label="get_params for Pipleline/Estimator">
-            <filter>get_params</filter>
-        </data>
+        <data format="h5" name="outfile" label="New Pipleline/Estimator"/>
     </outputs>
     <tests>
         <test>
@@ -344,12 +328,11 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <section name="final_estimator">
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="sklearn.compose"/>
-                    <param name="regressor" value="RandomForestRegressor01.zip" ftype="zip"/>
-                    <param name="transformer" value="pipeline17" ftype="zip"/>
+                    <param name="regressor" value="RandomForestRegressor01.h5" ftype="h5"/>
+                    <param name="transformer" value="pipeline17" ftype="h5"/>
                 </conditional>
             </section>
-            <param name="get_params" value="true"/>
-            <output name="outfile_params" file="pipeline_params18" ftype="tabular"/>
+            <output name="outfile" file="pipeline18" compare="sim_size" delta="5"/>
         </test>
         <test>
             <repeat name="pipeline_component">
@@ -422,9 +405,7 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <param name="selected_module" value="ensemble"/>
             <param name="selected_estimator" value="RandomForestRegressor"/>
             <param name="text_params" value="n_estimators=100, random_state=42"/>
-            <param name="get_params" value="true"/>
             <output name="outfile" file="pipeline05" compare="sim_size" delta="5"/>
-            <output name="outfile_params" file="pipeline_params05.tabular" ftype="tabular"/>
         </test>
         <test>
             <conditional name="component_selector">
@@ -517,7 +498,7 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             </conditional>
             <param name="selected_module" value="ensemble"/>
             <param name="selected_estimator" value="RandomForestClassifier"/>
-            <output name="outfile" file="RandomForestClassifier.zip" compare="sim_size" delta="5"/>
+            <output name="outfile" file="RandomForestClassifier.h5" compare="sim_size" delta="5"/>
         </test>
         <test>
             <conditional name="component_selector">
@@ -538,7 +519,7 @@ df.to_csv('$outfile_params', sep='\t', index=False)
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="binarize_target"/>
                     <param name="clf_or_regr" value="BinarizeTargetClassifier"/>
-                    <param name="wrapped_estimator" value="RandomForestClassifier.zip" ftype="zip"/>
+                    <param name="wrapped_estimator" value="RandomForestClassifier.h5" ftype="h5"/>
                 </conditional>
             </section>
             <output name="outfile" file="pipeline15" compare="sim_size" delta="5"/>
@@ -555,7 +536,7 @@ df.to_csv('$outfile_params', sep='\t', index=False)
             <section name="final_estimator">
                 <conditional name="estimator_selector">
                     <param name="selected_module" value="custom_estimator"/>
-                    <param name="c_estimator" value="keras_model02" ftype="zip"/>
+                    <param name="c_estimator" value="keras_model02" ftype="h5"/>
                 </conditional>
             </section>
             <output name="outfile" file="pipeline16" compare="sim_size" delta="5"/>

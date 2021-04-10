@@ -261,7 +261,6 @@
                 <param name="selected_exp_scheme" value="train_val"/>
                 <param name="infile_estimator" value="keras_batch_model05" ftype="zip"/>
                 <section name="hyperparams_swapping">
-                    <param name="infile_params" value="keras_batch_params05.tabular" ftype="tabular"/>
                     <repeat name="param_set">
                         <param name="sp_value" value="50"/>
                         <param name="sp_name" value="epochs"/>

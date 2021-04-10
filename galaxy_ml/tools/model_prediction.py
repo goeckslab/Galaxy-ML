@@ -7,8 +7,8 @@ import warnings
 from scipy.io import mmread
 from sklearn.pipeline import Pipeline
 
-from galaxy_ml.utils import (safe_load_model, read_columns,
-                             get_module, try_get_attr)
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import read_columns, get_module, try_get_attr
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -51,8 +51,7 @@ def main(inputs, infile_estimator, outfile_predict,
         params = json.load(param_handler)
 
     # load model
-    with open(infile_estimator, 'rb') as est_handler:
-        estimator = safe_load_model(est_handler)
+    estimator = load_model_from_h5(infile_estimator)
 
     main_est = estimator
     if isinstance(estimator, Pipeline):

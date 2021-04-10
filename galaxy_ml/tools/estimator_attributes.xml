@@ -30,15 +30,15 @@ from sklearn import (
 from imblearn.pipeline import Pipeline as imbPipeline
 from sklearn.pipeline import Pipeline
 
-from galaxy_ml.utils import safe_load_model, get_search_params
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import get_search_params
 
 warnings.simplefilter('ignore')
 
 infile_object = '$infile_object'
 attribute = '$attribute_type'
 
-with open(infile_object, 'rb') as f:
-    est_obj = safe_load_model(f)
+est_obj = load_model_from_h5(infile_object)
 
 if attribute == 'get_params':
     ## get_params()

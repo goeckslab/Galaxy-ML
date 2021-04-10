@@ -12,9 +12,10 @@ from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import (_predict_generator,
                                            KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageDataFrameBatchGenerator
-from galaxy_ml.utils import (SafeEval, get_scoring, safe_load_model,
-                             read_columns, clean_params,
-                             get_main_estimator, gen_compute_scores)
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
+                             get_main_estimator, get_scoring,
+                             read_columns)
 
 
 WORKING_DIR = __import__('os').getcwd()
@@ -242,8 +243,7 @@ def main(inputs, infile_estimator, infile_images, infile_dataframe,
         params = json.load(param_handler)
 
     #  load estimator
-    with open(infile_estimator, 'rb') as estimator_handler:
-        estimator = safe_load_model(estimator_handler)
+    estimator = load_model_from_h5(infile_estimator)
 
     estimator = clean_params(estimator)
 
