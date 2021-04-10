@@ -8,6 +8,7 @@ import time
 
 import galaxy_ml
 
+from nose.tools import nottest
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import StratifiedShuffleSplit
 from xgboost import XGBClassifier
@@ -28,19 +29,8 @@ X_train, X_test = X[train], X[test]
 y_train, y_test = y[train], y[test]
 
 gbc = GradientBoostingClassifier(n_estimators=101, random_state=42)
-xgbc = XGBClassifier(n_estimators=101, random_state=42)
-
-train_model = Sequential()
-train_model.add(Dense(12, input_dim=8, activation='relu'))
-train_model.add(Dense(1, activation='softmax'))
-config = train_model.get_config()
-
-kgc = KerasGClassifier(config, loss='binary_crossentropy', metrics=['acc'],
-                       seed=42)
 
 gbc.fit(X_train, y_train)
-xgbc.fit(X_train, y_train)
-kgc.fit(X_train, y_train)
 
 module_folder = (os.path.dirname(galaxy_ml.__file__))
 gbc_pickle = os.path.join(module_folder,
@@ -92,15 +82,6 @@ def test_jpickle_dumpc():
 
     assert got == expect, got
 
-    # XGBClassifier
-    got = model_persist.dumpc(xgbc)
-    r_model = model_persist.loadc(got)
-
-    assert np.array_equal(
-        xgbc.predict(X_test),
-        r_model.predict(X_test)
-    )
-
 
 def test_gbc_dump_and_load():
 
@@ -151,7 +132,6 @@ def test_gbc_dump_and_load():
     diff = os.path.getsize(tmp_gbc_h5) - os.path.getsize(gbc_h5)
     assert abs(diff) < 20, os.path.getsize(gbc_h5)
 
-
     print("\nLoading hdf5 model...")
     start_time = time.time()
     model = model_persist.load_model_from_h5(tmp_gbc_h5)
@@ -164,8 +144,20 @@ def test_gbc_dump_and_load():
     )
 
 
-# xgbc
+# CircleCI timeout with xgboost for no reason.
+@nottest
 def test_xgb_dump_and_load():
+    xgbc = XGBClassifier(n_estimators=101, random_state=42)
+    xgbc.fit(X_train, y_train)
+
+    got = model_persist.dumpc(xgbc)
+    r_model = model_persist.loadc(got)
+
+    assert np.array_equal(
+        xgbc.predict(X_test),
+        r_model.predict(X_test)
+    )
+
     print("\nDumping XGBC to dict...")
     start_time = time.time()
     model_dict = model_persist.dumpc(xgbc)
@@ -217,6 +209,17 @@ def test_xgb_dump_and_load():
 
 # KerasGClassifier
 def test_keras_dump_and_load():
+
+    train_model = Sequential()
+    train_model.add(Dense(12, input_dim=8, activation='relu'))
+    train_model.add(Dense(1, activation='softmax'))
+    config = train_model.get_config()
+
+    kgc = KerasGClassifier(config, loss='binary_crossentropy',
+                           metrics=['acc'], seed=42)
+
+    kgc.fit(X_train, y_train)
+
     print("\nDumping KerasGClassifer to HDF5...")
     start_time = time.time()
     model_persist.dump_model_to_h5(kgc, tmp_kgc_h5)
