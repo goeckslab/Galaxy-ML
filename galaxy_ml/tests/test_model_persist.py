@@ -227,7 +227,7 @@ def test_keras_dump_and_load():
     print("(%s s)" % str(end_time - start_time))
     print("File size: %s" % str(os.path.getsize(tmp_kgc_h5)))
     diff = os.path.getsize(tmp_kgc_h5) - os.path.getsize(kgc_h5)
-    assert abs(diff) < 20, os.path.getsize(kgc_h5)
+    assert abs(diff) < 40, os.path.getsize(kgc_h5)
 
     print("\nLoading hdf5 model...")
     start_time = time.time()
