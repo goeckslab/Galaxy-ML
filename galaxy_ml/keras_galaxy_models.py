@@ -42,6 +42,7 @@ from sklearn.utils.multiclass import (check_classification_targets,
                                       type_of_target)
 from sklearn.utils.validation import check_is_fitted, check_random_state
 from .externals.selene_sdk.utils import compute_score
+from . import utils
 
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
@@ -247,25 +248,10 @@ def check_params(params, fn):
                 "{} is not a legal parameter".format(p))
 
 
-class SearchParam(object):
+class SearchParam(utils.SearchParam):
     """
     Sortable Wrapper class for search parameters
     """
-    def __init__(self, s_param, value):
-        self.s_param = s_param
-        self.value = value
-
-    @property
-    def depth(self):
-        return len(self.s_param.split('__'))
-
-    @property
-    def sort_depth(self):
-        if self.depth > 2:
-            return 2
-        else:
-            return self.depth
-
     def to_dict(self):
         return _param_to_dict(self.s_param, self.value)
 

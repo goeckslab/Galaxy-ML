@@ -18,7 +18,7 @@ from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer, BINARIZE_SCORERS)
-from galaxy_ml.utils import safe_load_model
+from galaxy_ml.model_persist import load_model_from_h5
 
 
 warnings.simplefilter('ignore')
@@ -89,8 +89,7 @@ def test_binarize_target_classifier():
         pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
 
     # load models
-    with open('./tools/test-data/binarize_svc.zip', 'rb') as f:
-        estimator = safe_load_model(f)
+    estimator = load_model_from_h5('./tools/test-data/binarize_svc.zip')
 
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,

@@ -22,7 +22,8 @@ from pathlib import Path
 from xgboost import XGBModel, sklearn
 
 from ..keras_galaxy_models import BaseKerasModel, load_model
-from ..utils import get_search_params, _SafePickler
+from ..utils import get_search_params
+from ._safe_pickler import _SafePickler
 
 
 # reserved keys
@@ -608,9 +609,10 @@ def dump_model_to_h5(obj, file_path, verbose=0,
         obj, file_path, store_hyperparameter=store_hyperparameter)
 
 
-def load_model_from_h5(file_path, verbose=0):
+def load_model_from_h5(file_path, verbose=0, sanitize=True):
     """
     file_path : str or hdf5.File or hdf5.Group object
     verbose : 0 or 1
     """
-    return HDF5ToModel(verbose=verbose).load(file_path)
+    return HDF5ToModel(verbose=verbose, sanitize=sanitize)\
+        .load(file_path)

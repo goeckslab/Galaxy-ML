@@ -3,13 +3,17 @@ import numpy as np
 import os
 import pandas as pd
 import pickle
+import re
 import tempfile
 import time
 
 import galaxy_ml
 
 from nose.tools import nottest
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier
+)
 from sklearn.model_selection import StratifiedShuffleSplit
 from xgboost import XGBClassifier
 from galaxy_ml.keras_galaxy_models import KerasGClassifier
@@ -245,36 +249,91 @@ def test_keras_dump_and_load():
     )
 
 
-if __name__ == '__main__':
-    """ Generate couple of estimators for tests.
-    """
-    import xgboost
-    from pathlib import Path
-    from sklearn import linear_model, ensemble, pipeline
+def test_safe_load_model():
+    model = './tools/test-data/RandomForestRegressor01.zip'
+    with open(model, 'rb') as fh:
+        safe_unpickler = model_persist._SafePickler(fh)
 
-    test_folder = Path(__file__).parent.parent
-    test_folder = test_folder.joinpath('tools', 'test-data')
+    assert RandomForestClassifier == \
+        safe_unpickler.find_class('sklearn.ensemble._forest',
+                                  'RandomForestClassifier')
 
-    estimator = linear_model.LinearRegression()
-    model_persist.dump_model_to_h5(
-        estimator,
-        test_folder.joinpath('LinearRegression01.h5'))
+    test_folder = './tools/test-data'
+    for name in os.listdir(test_folder):
+        if re.match('^(?!.*(json|\.h5)).*(pipeline|model|regressor)\d+.*$',
+                    name, flags=re.I):
+            if name in ('gbr_model01_py3', 'rfr_model01'):
+                continue
+            model_path = os.path.join(test_folder, name)
+            print(model_path)
+            if model_path.endswith('.zip'):
+                with open(model_path, 'rb') as fh:
+                    model_persist.safe_load_model(fh)
+            else:
+                model_persist.load_model_from_h5(model_path)
 
-    estimator = ensemble.RandomForestRegressor(
-        n_estimators=10, random_state=10)
-    model_persist.dump_model_to_h5(
-        estimator,
-        test_folder.joinpath('RandomForestRegressor01.h5'))
 
-    estimator = xgboost.XGBRegressor(
-        learning_rate=0.1, n_estimators=100, random_state=0)
-    model_persist.dump_model_to_h5(
-        estimator,
-        test_folder.joinpath('XGBRegressor01.h5'))
+def test_find_members():
+    got = model_persist.find_members('galaxy_ml.metrics')
+    expect = [
+        'galaxy_ml.metrics._regression.spearman_correlation_score'
+    ]
+    assert got == expect, got
 
-    estimator = ensemble.AdaBoostRegressor(
-        learning_rate=1.0, n_estimators=50)
-    pipe = pipeline.make_pipeline(estimator)
-    model_persist.dump_model_to_h5(
-        pipe,
-        test_folder.joinpath('pipeline10'))
+    got = model_persist.find_members('imblearn')
+    expect = [
+        "imblearn.LazyLoader",
+        "imblearn.base.BaseSampler",
+        "imblearn.base.FunctionSampler",
+        "imblearn.base.SamplerMixin",
+        "imblearn.base._identity",
+        "imblearn.combine._smote_enn.SMOTEENN",
+        "imblearn.combine._smote_tomek.SMOTETomek",
+        "imblearn.datasets._imbalance.make_imbalance",
+        "imblearn.datasets._zenodo.fetch_datasets",
+        "imblearn.ensemble._bagging.BalancedBaggingClassifier",
+        "imblearn.ensemble._easy_ensemble.EasyEnsembleClassifier",
+        "imblearn.ensemble._forest.BalancedRandomForestClassifier",
+        "imblearn.ensemble._forest._local_parallel_build_trees",
+        "imblearn.ensemble._weight_boosting.RUSBoostClassifier",
+        "imblearn.exceptions.raise_isinstance_error",
+        "imblearn.keras._generator.BalancedBatchGenerator",
+        "imblearn.keras._generator.balanced_batch_generator",
+        "imblearn.keras._generator.import_keras",
+        "imblearn.metrics._classification.classification_report_imbalanced",
+        "imblearn.metrics._classification.geometric_mean_score",
+        "imblearn.metrics._classification.macro_averaged_mean_absolute_error",
+        "imblearn.metrics._classification.make_index_balanced_accuracy",
+        "imblearn.metrics._classification.sensitivity_score",
+        "imblearn.metrics._classification.sensitivity_specificity_support",
+        "imblearn.metrics._classification.specificity_score",
+        "imblearn.metrics.pairwise.ValueDifferenceMetric",
+        "imblearn.over_sampling._adasyn.ADASYN",
+        "imblearn.over_sampling._random_over_sampler.RandomOverSampler",
+        "imblearn.over_sampling._smote.base.BaseSMOTE",
+        "imblearn.over_sampling._smote.base.SMOTE",
+        "imblearn.over_sampling._smote.base.SMOTEN",
+        "imblearn.over_sampling._smote.base.SMOTENC",
+        "imblearn.over_sampling._smote.cluster.KMeansSMOTE",
+        "imblearn.over_sampling._smote.filter.BorderlineSMOTE",
+        "imblearn.over_sampling._smote.filter.SVMSMOTE",
+        "imblearn.over_sampling.base.BaseOverSampler",
+        "imblearn.pipeline.Pipeline",
+        "imblearn.pipeline._fit_resample_one",
+        "imblearn.pipeline.make_pipeline",
+        "imblearn.tensorflow._generator.balanced_batch_generator",
+        "imblearn.under_sampling._prototype_generation._cluster_centroids.ClusterCentroids",
+        "imblearn.under_sampling._prototype_selection._condensed_nearest_neighbour.CondensedNearestNeighbour",
+        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.AllKNN",
+        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.EditedNearestNeighbours",
+        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.RepeatedEditedNearestNeighbours",
+        "imblearn.under_sampling._prototype_selection._instance_hardness_threshold.InstanceHardnessThreshold",
+        "imblearn.under_sampling._prototype_selection._nearmiss.NearMiss",
+        "imblearn.under_sampling._prototype_selection._neighbourhood_cleaning_rule.NeighbourhoodCleaningRule",
+        "imblearn.under_sampling._prototype_selection._one_sided_selection.OneSidedSelection",
+        "imblearn.under_sampling._prototype_selection._random_under_sampler.RandomUnderSampler",
+        "imblearn.under_sampling._prototype_selection._tomek_links.TomekLinks",
+        "imblearn.under_sampling.base.BaseCleaningSampler",
+        "imblearn.under_sampling.base.BaseUnderSampler"
+    ]
+    assert got == expect, got
