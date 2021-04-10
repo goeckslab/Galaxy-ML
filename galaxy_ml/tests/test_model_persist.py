@@ -147,7 +147,11 @@ def test_gbc_dump_and_load():
 # CircleCI timeout with xgboost for no reason.
 @nottest
 def test_xgb_dump_and_load():
-    xgbc = XGBClassifier(n_estimators=101, random_state=42)
+    xgbc = XGBClassifier(n_estimators=101, random_state=42, n_jobs=1)
+
+    model_persist.dump_model_to_h5(xgbc, tmp_xgbc_h5)
+    model_persist.load_model_from_h5(tmp_xgbc_h5)
+
     xgbc.fit(X_train, y_train)
 
     got = model_persist.dumpc(xgbc)
@@ -188,7 +192,7 @@ def test_xgb_dump_and_load():
 
     print("\nDumping object to HDF5...")
     start_time = time.time()
-    model_dict = model_persist.dump_model_to_h5(xgbc, tmp_xgbc_h5)
+    model_persist.dump_model_to_h5(xgbc, tmp_xgbc_h5)
     end_time = time.time()
     print("(%s s)" % str(end_time - start_time))
     print("File size: %s" % str(os.path.getsize(tmp_xgbc_h5)))

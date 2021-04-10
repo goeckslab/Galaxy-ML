@@ -180,7 +180,8 @@ class ModelToHDF5:
         if isinstance(obj, BaseKerasModel):
             return self.save_keras_model(obj)
 
-        if isinstance(obj, XGBModel):
+        # fitted xgboost estimators
+        if isinstance(obj, XGBModel) and hasattr(self, '_Booster'):
             return self.save_xgboost_model(obj)
 
         return self.save_reduce(obj)
