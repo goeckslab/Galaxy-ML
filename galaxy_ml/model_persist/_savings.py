@@ -27,6 +27,8 @@ from ._safe_pickler import _SafePickler
 
 
 # reserved keys
+_URL = '-URL-'
+_REPR = '-repr-'
 _PY_VERSION = '-cpython-'
 _NP_VERSION = '-numpy-'
 _OBJ = '-object-'
@@ -46,7 +48,6 @@ _VALUE = '-value-'
 _TUPLE = '-tuple-'
 _SET = '-set-'
 _BYTES = '-bytes-'
-_PRIMITIVE = '-primitive-'
 _NP_NDARRAY_O = '-np_ndarray_o_type-'
 _WEIGHTS = '-model_weights-'
 _CONFIG = '-model_config-'
@@ -111,6 +112,11 @@ class ModelToHDF5:
                                  "are file path (str), h5py.File "
                                  "and h5py.Group object!"
                                  % (str(file_path)))
+
+            file.attrs[_URL] = \
+                str('https://github.com/goeckslab/Galaxy-ML').encode('utf-8')
+            
+            file.attrs[_REPR] = repr(obj).encode('utf-8')
 
             file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
 
