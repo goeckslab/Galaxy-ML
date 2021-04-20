@@ -602,6 +602,8 @@ def get_scoring(scoring_json):
     if scoring_json.get('secondary_scoring', None) not in (None, 'None', '')\
             and scoring_json['secondary_scoring'] !=\
             scoring_json['primary_scoring']:
+        if type(scoring_json['secondary_scoring']) is list:
+            scoring_json['secondary_scoring'] = ",".join(scoring_json['secondary_scoring'])
         scoring = set(scoring_json['secondary_scoring'].split(','))
         scoring.add(primary_scoring)
         # make sure all scoring keys exit in scorers
