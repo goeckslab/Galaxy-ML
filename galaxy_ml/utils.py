@@ -608,7 +608,10 @@ def get_scoring(scoring_json):
         if type(scoring_json['secondary_scoring']) is list:
             scoring_json['secondary_scoring'] =\
                 ",".join(scoring_json['secondary_scoring'])
-        scoring = set(scoring_json['secondary_scoring'].split(','))
+        scoring = scoring_json['secondary_scoring']
+        if not isinstance(scoring, list):
+            scoring = scoring.split(',')
+        scoring = set(scoring)
         scoring.add(primary_scoring)
         # make sure all scoring keys exit in scorers
         assert all(k in all_scorers for k in scoring)
