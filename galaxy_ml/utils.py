@@ -605,7 +605,6 @@ def get_scoring(scoring_json):
         # secondary_scoring used to be a comma separated string.
         # At some point it turned into a list. Adding logic here
         # to support both list and string (for backward compatability)
-        if type(scoring_json['secondary_scoring']) is list:
             scoring_json['secondary_scoring'] =\
                 ",".join(scoring_json['secondary_scoring'])
         scoring = scoring_json['secondary_scoring']
