@@ -17,3 +17,4 @@ build
 galaxy_ml/externals/selene_sdk
 galaxy_ml/tools/test-data/*.fai
 galaxy_ml/*.html
+galaxy_ml/*.png

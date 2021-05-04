@@ -56,3 +56,36 @@ def test_get_scoring():
 
     scoring = get_scoring(inputs)
     assert type(scoring).__name__ == '_PredictScorer', scoring
+
+
+def test_get_scoring_list():
+    inputs = {
+        "primary_scoring": "binarize_average_precision_scorer",
+        "secondary_scoring": ['binarize_auc_scorer']
+    }
+
+    scoring = get_scoring(inputs)
+    assert len(scoring) == 2
+
+    inputs = {
+        "primary_scoring": "r2",
+        "secondary_scoring":
+            ['spearman_correlation', 'max_error', 'explained_variance']
+    }
+
+    scoring = get_scoring(inputs)
+    assert len(scoring) == 4
+
+    inputs = {
+        "primary_scoring": "default",
+    }
+
+    scoring = get_scoring(inputs)
+    assert scoring is None
+
+    inputs = {
+        "primary_scoring": "r2",
+    }
+
+    scoring = get_scoring(inputs)
+    assert type(scoring).__name__ == '_PredictScorer', scoring
