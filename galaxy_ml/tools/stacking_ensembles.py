@@ -17,8 +17,7 @@ warnings.filterwarnings('ignore')
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
-def main(inputs_path, output_obj, base_paths=None, meta_path=None,
-         outfile_params=None):
+def main(inputs_path, output_obj, base_paths=None, meta_path=None):
     """
     Parameter
     ---------
@@ -33,9 +32,6 @@ def main(inputs_path, output_obj, base_paths=None, meta_path=None,
 
     meta_path : str
         File path
-
-    outfile_params : str
-        File path for params output
     """
     with open(inputs_path, 'r') as param_handler:
         params = json.load(param_handler)

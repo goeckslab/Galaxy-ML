@@ -9,9 +9,9 @@ import plotly
 import plotly.graph_objs as go
 import warnings
 
-from keras.models import model_from_json
-from keras.utils import plot_model
-from sklearn.feature_selection.base import SelectorMixin
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.utils import plot_model
+from sklearn.feature_selection._base import SelectorMixin
 from sklearn.metrics import precision_recall_curve, average_precision_score
 from sklearn.metrics import roc_curve, auc
 from sklearn.pipeline import Pipeline

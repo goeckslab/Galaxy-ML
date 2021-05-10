@@ -1130,6 +1130,8 @@
         "numpy.core.multiarray._reconstruct",
         "numpy.core.multiarray.scalar",
         "numpy.dtype",
+        "numpy.float64",
+        "numpy.int64",
         "numpy.ma.core._mareconstruct",
         "numpy.ma.core.MaskedArray",
         "numpy.mean",
@@ -1146,6 +1148,7 @@
         "_codecs.encode",
         "builtins.object",
         "builtins.bytearray",
+        "collections.OrderedDict",
         "copyreg._reconstructor"
     ]
 }

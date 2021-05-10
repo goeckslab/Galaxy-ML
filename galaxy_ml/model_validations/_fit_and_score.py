@@ -182,7 +182,7 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         score_time = time.time() - start_time - fit_time
         if return_train_score:
             train_scores = estimator.evaluate(
-                estimator, X_train, y_train, scorer, error_score
+                X_train, y_train, scorer, error_score
             )
 
     if verbose > 1:

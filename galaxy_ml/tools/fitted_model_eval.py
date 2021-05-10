@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics._scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score
 from galaxy_ml.model_persist import load_model_from_h5
-from galaxy_ml.utils import get_scoring, read_columns
+from galaxy_ml.utils import (clean_params, get_scoring, read_columns)
 
 
 def _get_X_y(params, infile1, infile2):
@@ -81,8 +81,7 @@ def _get_X_y(params, infile1, infile2):
 
 
 def main(inputs, infile_estimator, outfile_eval,
-         infile_weights=None, infile1=None,
-         infile2=None):
+         infile1=None, infile2=None):
     """
     Parameter
     ---------
@@ -94,9 +93,6 @@ def main(inputs, infile_estimator, outfile_eval,
 
     outfile_eval : str
         File path to save the evalulation results, tabular
-
-    infile_weights : str
-        File path to weights input
 
     infile1 : str
         File path to dataset containing features
@@ -113,19 +109,13 @@ def main(inputs, infile_estimator, outfile_eval,
 
     # load model
     estimator = load_model_from_h5(infile_estimator)
-
-    main_est = estimator
-    if isinstance(estimator, Pipeline):
-        main_est = estimator.steps[-1][-1]
-    if hasattr(main_est, 'config') and hasattr(main_est, 'load_weights'):
-        if not infile_weights or infile_weights == 'None':
-            raise ValueError("The selected model skeleton asks for weights, "
-                             "but no dataset for weights was provided!")
-        main_est.load_weights(infile_weights)
+    estimator = clean_params(estimator)
 
     # handle scorer, convert to scorer dict
     scoring = params['scoring']
     scorer = get_scoring(scoring)
+    if not isinstance(scorer, (dict, list)):
+        scorer = [scoring['primary_scoring']]
     scorer = _check_multimetric_scoring(estimator, scoring=scorer)
 
     if hasattr(estimator, 'evaluate'):
@@ -147,12 +137,15 @@ if __name__ == '__main__':
     aparser = argparse.ArgumentParser()
     aparser.add_argument("-i", "--inputs", dest="inputs", required=True)
     aparser.add_argument("-e", "--infile_estimator", dest="infile_estimator")
-    aparser.add_argument("-w", "--infile_weights", dest="infile_weights")
     aparser.add_argument("-X", "--infile1", dest="infile1")
     aparser.add_argument("-y", "--infile2", dest="infile2")
     aparser.add_argument("-O", "--outfile_eval", dest="outfile_eval")
     args = aparser.parse_args()
 
-    main(args.inputs, args.infile_estimator, args.outfile_eval,
-         infile_weights=args.infile_weights, infile1=args.infile1,
-         infile2=args.infile2)
+    main(
+        args.inputs,
+        args.infile_estimator,
+        args.outfile_eval,
+        infile1=args.infile1,
+        infile2=args.infile2
+    )

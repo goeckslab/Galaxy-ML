@@ -8,16 +8,22 @@ from scipy.io import mmread
 from sklearn.pipeline import Pipeline
 
 from galaxy_ml.model_persist import load_model_from_h5
-from galaxy_ml.utils import read_columns, get_module, try_get_attr
+from galaxy_ml.utils import (clean_params, read_columns, get_module,
+                             try_get_attr)
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
-def main(inputs, infile_estimator, outfile_predict,
-         infile_weights=None, infile1=None,
-         fasta_path=None, ref_seq=None,
-         vcf_path=None):
+def main(
+    inputs,
+    infile_estimator,
+    outfile_predict,
+    infile1=None,
+    fasta_path=None,
+    ref_seq=None,
+    vcf_path=None
+):
     """
     Parameter
     ---------
@@ -29,9 +35,6 @@ def main(inputs, infile_estimator, outfile_predict,
 
     outfile_predict : str
         File path to save the prediction results, tabular
-
-    infile_weights : str
-        File path to weights input
 
     infile1 : str
         File path to dataset containing features
@@ -52,15 +55,7 @@ def main(inputs, infile_estimator, outfile_predict,
 
     # load model
     estimator = load_model_from_h5(infile_estimator)
-
-    main_est = estimator
-    if isinstance(estimator, Pipeline):
-        main_est = estimator.steps[-1][-1]
-    if hasattr(main_est, 'config') and hasattr(main_est, 'load_weights'):
-        if not infile_weights or infile_weights == 'None':
-            raise ValueError("The selected model skeleton asks for weights, "
-                             "but dataset for weights wan not selected!")
-        main_est.load_weights(infile_weights)
+    estimator = clean_params(estimator)
 
     # handle data input
     input_type = params['input_options']['selected_input']
@@ -210,7 +205,6 @@ if __name__ == '__main__':
     aparser = argparse.ArgumentParser()
     aparser.add_argument("-i", "--inputs", dest="inputs", required=True)
     aparser.add_argument("-e", "--infile_estimator", dest="infile_estimator")
-    aparser.add_argument("-w", "--infile_weights", dest="infile_weights")
     aparser.add_argument("-X", "--infile1", dest="infile1")
     aparser.add_argument("-O", "--outfile_predict", dest="outfile_predict")
     aparser.add_argument("-f", "--fasta_path", dest="fasta_path")
@@ -219,6 +213,5 @@ if __name__ == '__main__':
     args = aparser.parse_args()
 
     main(args.inputs, args.infile_estimator, args.outfile_predict,
-         infile_weights=args.infile_weights, infile1=args.infile1,
-         fasta_path=args.fasta_path, ref_seq=args.ref_seq,
-         vcf_path=args.vcf_path)
+         infile1=args.infile1, fasta_path=args.fasta_path,
+         ref_seq=args.ref_seq, vcf_path=args.vcf_path)

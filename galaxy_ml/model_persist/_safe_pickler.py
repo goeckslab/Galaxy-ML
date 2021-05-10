@@ -154,11 +154,14 @@ def gen_pickle_whitelist():
         "numpy.core.multiarray._reconstruct",
         "numpy.core.multiarray.scalar",
         "numpy.dtype",
+        "numpy.float64",
+        "numpy.int64",
         "numpy.ma.core._mareconstruct",
         "numpy.ma.core.MaskedArray",
         "numpy.mean",
         "numpy.ndarray",
-        "numpy.random.__RandomState_ctor"])
+        "numpy.random.__RandomState_ctor",
+        "numpy.random._pickle.__randomstate_ctor"])
 
     rval['KERAS_NAMES'].extend([
         "keras.engine.sequential.Sequential",
@@ -170,6 +173,7 @@ def gen_pickle_whitelist():
         "_codecs.encode",
         "builtins.object",
         "builtins.bytearray",
+        "collections.OrderedDict",
         "copyreg._reconstructor"
     ])
 

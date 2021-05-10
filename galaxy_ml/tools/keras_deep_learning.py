@@ -245,8 +245,7 @@ def config_keras_model(inputs, outfile):
         json.dump(json.loads(json_string), f, indent=2)
 
 
-def build_keras_model(inputs, outfile, model_json, infile_weights=None,
-                      batch_mode=False):
+def build_keras_model(inputs, outfile, model_json, batch_mode=False):
     """ for `keras_model_builder` tool
 
     Parameters
@@ -257,8 +256,6 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
         Path to galaxy dataset containing the keras_galaxy model output.
     model_json : str
         Path to dataset containing keras model JSON.
-    infile_weights : str or None
-        If string, path to dataset containing model weights.
     batch_mode : bool, default=False
         Whether to build online batch classifier.
     """
@@ -281,8 +278,9 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
 
     # load prefitted model
     if inputs['mode_selection']['mode_type'] == 'prefitted':
-        estimator = klass.from_config(config)
-        estimator.load_weights(infile_weights)
+        # estimator = klass.from_config(config)
+        # estimator.load_weights(infile_weights)
+        raise Exception("Prefitted was deprecated!")
     # build train model
     else:
         cls_name = inputs['mode_selection']['learning_type']
@@ -317,7 +315,7 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
         estimator = klass(config, **options)
 
     print(repr(estimator))
-    # save model by pickle
+    # save model
     dump_model_to_h5(estimator, outfile, verbose=1)
 
 
@@ -328,7 +326,6 @@ if __name__ == '__main__':
     aparser.add_argument("-i", "--inputs", dest="inputs", required=True)
     aparser.add_argument("-m", "--model_json", dest="model_json")
     aparser.add_argument("-t", "--tool_id", dest="tool_id")
-    aparser.add_argument("-w", "--infile_weights", dest="infile_weights")
     aparser.add_argument("-o", "--outfile", dest="outfile")
     args = aparser.parse_args()
 
@@ -339,7 +336,6 @@ if __name__ == '__main__':
     tool_id = args.tool_id
     outfile = args.outfile
     model_json = args.model_json
-    infile_weights = args.infile_weights
 
     # for keras_model_config tool
     if tool_id == 'keras_model_config':
@@ -353,6 +349,5 @@ if __name__ == '__main__':
 
         build_keras_model(inputs=inputs,
                           model_json=model_json,
-                          infile_weights=infile_weights,
                           batch_mode=batch_mode,
                           outfile=outfile)

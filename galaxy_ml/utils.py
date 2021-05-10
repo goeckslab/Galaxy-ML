@@ -789,19 +789,19 @@ def gen_test_estimators():
     estimator = linear_model.LinearRegression()
     dump_model_to_h5(
         estimator,
-        test_folder.joinpath('LinearRegression01.h5'))
+        test_folder.joinpath('LinearRegression01.h5mlm'))
 
     estimator = ensemble.RandomForestRegressor(
         n_estimators=10, random_state=10)
     dump_model_to_h5(
         estimator,
-        test_folder.joinpath('RandomForestRegressor01.h5'))
+        test_folder.joinpath('RandomForestRegressor01.h5mlm'))
 
     estimator = xgboost.XGBRegressor(
         learning_rate=0.1, n_estimators=100, random_state=0)
     dump_model_to_h5(
         estimator,
-        test_folder.joinpath('XGBRegressor01.h5'))
+        test_folder.joinpath('XGBRegressor01.h5mlm'))
 
     estimator = ensemble.AdaBoostRegressor(
         learning_rate=1.0, n_estimators=50)
@@ -809,3 +809,26 @@ def gen_test_estimators():
     dump_model_to_h5(
         pipe,
         test_folder.joinpath('pipeline10'))
+
+    import pandas as pd
+    X_path = test_folder.joinpath('regression_X.tabular')
+    X = pd.read_csv(X_path, sep='\t').values
+    y_path = test_folder.joinpath('regression_y.tabular')
+    y = pd.read_csv(y_path, sep='\t').values.ravel()
+
+    estimator = ensemble.RandomForestRegressor(
+        n_estimators=10, random_state=10)
+    searcher = model_selection.GridSearchCV(estimator, {})
+    searcher.fit(X, y)
+
+    dump_model_to_h5(
+        searcher,
+        test_folder.joinpath('GridSearchCV01.h5mlm')
+    )
+
+    rfe = feature_selection.RFE(estimator)
+    rfe.fit(X, y)
+    dump_model_to_h5(
+        rfe,
+        test_folder.joinpath('RFE.h5mlm')
+    )

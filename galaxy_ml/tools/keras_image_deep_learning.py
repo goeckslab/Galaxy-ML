@@ -2,7 +2,6 @@ import argparse
 import json
 import numpy as np
 import pandas as pd
-import pickle
 import warnings
 
 from itertools import chain
@@ -12,10 +11,9 @@ from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import (_predict_generator,
                                            KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageDataFrameBatchGenerator
-from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
 from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
-                             get_main_estimator, get_scoring,
-                             read_columns)
+                             get_scoring, read_columns)
 
 
 WORKING_DIR = __import__('os').getcwd()
@@ -186,6 +184,8 @@ def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
     # for sklearn metrics
     if sk_scoring['primary_scoring'] != 'default':
         scorer = get_scoring(sk_scoring)
+        if not isinstance(scorer, (dict, list)):
+            scorer = [sk_scoring['primary_scoring']]
         scorer = _check_multimetric_scoring(estimator, scoring=scorer)
         sk_scores = gen_compute_scores(y_true, predictions, scorer)
         scores.update(sk_scores)
@@ -196,46 +196,35 @@ def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
         return scores, None, None
 
 
-def main(inputs, infile_estimator, infile_images, infile_dataframe,
-         outfile_result, infile_weights=None, outfile_object=None,
-         outfile_weights=None, outfile_y_true=None,
+def main(inputs, infile_estimator, infile_dataframe,
+         outfile_result, outfile_object=None, outfile_y_true=None,
          outfile_y_preds=None, groups=None):
     """
     Parameter
     ---------
     inputs : str
-        File path to galaxy tool parameter
+        File path to galaxy tool parameter.
 
     infile_estimator : str
-        File path to estimator
-
-    infile_images : str
-        File path to datasets containing images
+        File path to estimator.
 
     infile_dataframe : str
-        File path to tabular dataset containing image information
+        File path to tabular dataset containing image information.
 
     outfile_result : str
-        File path to save the results, either cv_results or test result
-
-    infile_weights : str
-        File path to input model weights, used in evaluation and
-        prediction mode.
+        File path to save the results, either cv_results or test result.
 
     outfile_object : str, optional
-        File path to save searchCV object
-
-    outfile_weights : str, optional
-        File path to save deep learning model weights
+        File path to save searchCV object.
 
     outfile_y_true : str, optional
-        File path to target values for prediction
+        File path to target values for prediction.
 
     outfile_y_preds : str, optional
-        File path to save deep learning model weights
+        File path to save predictions.
 
     groups : str
-        File path to dataset containing groups labels
+        File path to dataset containing groups labels.
     """
     warnings.simplefilter('ignore')
 
@@ -305,7 +294,6 @@ def main(inputs, infile_estimator, infile_images, infile_dataframe,
 
     # Model Predictions
     if exp_scheme == 'model_predict':
-        estimator.load_weights(infile_weights)
         steps = params['experiment_schemes']['pred_steps']
 
         generator = image_generator.flow(X, y=None, batch_size=batch_size)
@@ -322,7 +310,6 @@ def main(inputs, infile_estimator, infile_images, infile_dataframe,
 
     # Model Evaluation
     if exp_scheme == 'model_eval':
-        estimator.load_weights(infile_weights)
         # compile model
         estimator.model_.compile(loss=estimator.loss,
                                  optimizer=estimator._optimizer,
@@ -413,45 +400,25 @@ def main(inputs, infile_estimator, infile_images, infile_dataframe,
               index=False)
 
     if outfile_object:
-        main_est = get_main_estimator(estimator)
-
-        if hasattr(main_est, 'model_') \
-                and hasattr(main_est, 'save_weights'):
-            if outfile_weights:
-                main_est.save_weights(outfile_weights)
-            del main_est.model_
-            del main_est.fit_params
-            del main_est.model_class_
-            main_est.data_batch_generator.dataframe = None
-            main_est.callbacks = []
-            if getattr(main_est, 'data_generator_', None):
-                del main_est.data_generator_
-
-        with open(outfile_object, 'wb') as output_handler:
-            pickle.dump(estimator, output_handler,
-                        pickle.HIGHEST_PROTOCOL)
+        dump_model_to_h5(estimator, outfile_object)
 
 
 if __name__ == '__main__':
     aparser = argparse.ArgumentParser()
     aparser.add_argument("-i", "--inputs", dest="inputs", required=True)
     aparser.add_argument("-e", "--estimator", dest="infile_estimator")
-    aparser.add_argument("-w", "--infile_weights", dest="infile_weights")
-    aparser.add_argument("-X", "--infile_images", dest="infile_images")
+    # aparser.add_argument("-X", "--infile_images", dest="infile_images")
     aparser.add_argument("-y", "--infile_dataframe", dest="infile_dataframe")
     aparser.add_argument("-O", "--outfile_result", dest="outfile_result")
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
-    aparser.add_argument("-t", "--outfile_weights", dest="outfile_weights")
     aparser.add_argument("-l", "--outfile_y_true", dest="outfile_y_true")
     aparser.add_argument("-p", "--outfile_y_preds", dest="outfile_y_preds")
     aparser.add_argument("-g", "--groups", dest="groups")
     args = aparser.parse_args()
 
-    main(args.inputs, args.infile_estimator, args.infile_images,
+    main(args.inputs, args.infile_estimator,
          args.infile_dataframe, args.outfile_result,
-         infile_weights=args.infile_weights,
          outfile_object=args.outfile_object,
-         outfile_weights=args.outfile_weights,
          outfile_y_true=args.outfile_y_true,
          outfile_y_preds=args.outfile_y_preds,
          groups=args.groups)

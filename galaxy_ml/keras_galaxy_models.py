@@ -7,6 +7,7 @@ Email: guqiang01@gmail.com
 """
 
 import collections
+import copy
 import h5py
 import json
 import numpy as np
@@ -597,7 +598,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             return None
 
         callbacks = []
-        for cb in self.callbacks:
+        for cb in copy.deepcopy(self.callbacks):
             params = cb['callback_selection']
             callback_type = params.pop('callback_type')
 

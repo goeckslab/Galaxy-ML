@@ -44,18 +44,18 @@ _, tmp_gbc_pickle = tempfile.mkstemp(suffix='.zip')
 gbc_json = os.path.join(module_folder,
                         './tools/test-data/gbc_model01.json')
 gbc_h5 = os.path.join(module_folder,
-                      'tools/test-data/gbc_model01.h5')
-_, tmp_gbc_h5 = tempfile.mkstemp(suffix='.h5')
+                      'tools/test-data/gbc_model01.h5mlm')
+_, tmp_gbc_h5 = tempfile.mkstemp(suffix='.h5mlm')
 
 xgbc_json = os.path.join(module_folder,
                          'tools/test-data/xgbc_model01.json')
 xgbc_h5 = os.path.join(module_folder,
-                       'tools/test-data/xgbc_model01.h5')
-_, tmp_xgbc_h5 = tempfile.mkstemp(suffix='.h5')
+                       'tools/test-data/xgbc_model01.h5mlm')
+_, tmp_xgbc_h5 = tempfile.mkstemp(suffix='.h5mlm')
 
 kgc_h5 = os.path.join(module_folder,
-                      'tools/test-data/kgc_model01.h5')
-_, tmp_kgc_h5 = tempfile.mkstemp(suffix='.h5')
+                      'tools/test-data/kgc_model01.h5mlm')
+_, tmp_kgc_h5 = tempfile.mkstemp(suffix='.h5mlm')
 
 
 def teardown():
@@ -260,7 +260,7 @@ def test_safe_load_model():
 
     test_folder = './tools/test-data'
     for name in os.listdir(test_folder):
-        if re.match('^(?!.*(json|\.h5)).*(pipeline|model|regressor)\d+.*$',
+        if re.match('^(?!.*(json|\.h5|\.h5mlm)).*(pipeline|model|regressor)\d+.*$',
                     name, flags=re.I):
             if name in ('gbr_model01_py3', 'rfr_model01'):
                 continue

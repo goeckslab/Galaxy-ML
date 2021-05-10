@@ -5,7 +5,6 @@ import json
 import numpy as np
 import os
 import pandas as pd
-import pickle
 import skrebate
 import sys
 import warnings
@@ -21,10 +20,10 @@ from skopt import BayesSearchCV
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.binarize_target import IRAPSClassifier
-from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring,
                              read_columns, try_get_attr, get_module,
-                             clean_params, get_main_estimator)
+                             clean_params)
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
@@ -99,30 +98,33 @@ def _eval_search_params(params_builder):
                 imblearn.under_sampling.CondensedNearestNeighbour(
                     random_state=0, n_jobs=N_JOBS),
                 imblearn.under_sampling.EditedNearestNeighbours(
-                    random_state=0, n_jobs=N_JOBS),
+                    n_jobs=N_JOBS),
                 imblearn.under_sampling.RepeatedEditedNearestNeighbours(
-                    random_state=0, n_jobs=N_JOBS),
-                imblearn.under_sampling.AllKNN(random_state=0, n_jobs=N_JOBS),
+                    n_jobs=N_JOBS),
+                imblearn.under_sampling.AllKNN(n_jobs=N_JOBS),
                 imblearn.under_sampling.InstanceHardnessThreshold(
                     random_state=0, n_jobs=N_JOBS),
                 imblearn.under_sampling.NearMiss(
-                    random_state=0, n_jobs=N_JOBS),
+                    n_jobs=N_JOBS),
                 imblearn.under_sampling.NeighbourhoodCleaningRule(
-                    random_state=0, n_jobs=N_JOBS),
+                    n_jobs=N_JOBS),
                 imblearn.under_sampling.OneSidedSelection(
                     random_state=0, n_jobs=N_JOBS),
                 imblearn.under_sampling.RandomUnderSampler(
                     random_state=0),
                 imblearn.under_sampling.TomekLinks(
-                    random_state=0, n_jobs=N_JOBS),
+                    n_jobs=N_JOBS),
                 imblearn.over_sampling.ADASYN(random_state=0, n_jobs=N_JOBS),
-                imblearn.over_sampling.RandomOverSampler(random_state=0),
-                imblearn.over_sampling.SMOTE(random_state=0, n_jobs=N_JOBS),
-                imblearn.over_sampling.SVMSMOTE(random_state=0, n_jobs=N_JOBS),
                 imblearn.over_sampling.BorderlineSMOTE(
                     random_state=0, n_jobs=N_JOBS),
+                imblearn.over_sampling.KMeansSMOTE(
+                    random_state=0, n_jobs=N_JOBS),
+                imblearn.over_sampling.RandomOverSampler(random_state=0),
+                imblearn.over_sampling.SMOTE(random_state=0, n_jobs=N_JOBS),
+                imblearn.over_sampling.SMOTEN(random_state=0, n_jobs=N_JOBS),
                 imblearn.over_sampling.SMOTENC(
                     categorical_features=[], random_state=0, n_jobs=N_JOBS),
+                imblearn.over_sampling.SVMSMOTE(random_state=0, n_jobs=N_JOBS),
                 imblearn.combine.SMOTEENN(random_state=0),
                 imblearn.combine.SMOTETomek(random_state=0))
             newlist = []
@@ -436,17 +438,16 @@ def _set_memory(estimator, memory):
 
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None,
-         outfile_weights=None, groups=None,
-         ref_seq=None, intervals=None, targets=None,
-         fasta_path=None):
+         groups=None, ref_seq=None, intervals=None,
+         targets=None, fasta_path=None):
     """
     Parameter
     ---------
     inputs : str
-        File path to galaxy tool parameter
+        File path to galaxy tool parameter.
 
     infile_estimator : str
-        File path to estimator
+        File path to estimator.
 
     infile1 : str
         File path to dataset containing features
@@ -459,9 +460,6 @@ def main(inputs, infile_estimator, infile1, infile2,
 
     outfile_object : str, optional
         File path to save searchCV object
-
-    outfile_weights : str, optional
-        File path to save model weights
 
     groups : str
         File path to dataset containing groups labels
@@ -492,6 +490,8 @@ def main(inputs, infile_estimator, infile1, infile2,
             params['outer_split']['split_mode'] == 'nested_cv') else False
 
     estimator = load_model_from_h5(infile_estimator)
+
+    estimator = clean_params(estimator)
 
     if estimator.__class__.__name__ == 'KerasGBatchClassifier':
         _fit_and_score = try_get_attr('galaxy_ml.model_validations',
@@ -563,15 +563,10 @@ def main(inputs, infile_estimator, infile1, infile2,
     params_builder = params['search_schemes']['search_params_builder']
     param_grid = _eval_search_params(params_builder)
 
-    estimator = clean_params(estimator)
-
     # save the SearchCV object without fit
     if params['save'] == 'save_no_fit':
         searcher = optimizer(estimator, param_grid, **options)
-        print(searcher)
-        with open(outfile_object, 'wb') as output_handler:
-            pickle.dump(searcher, output_handler,
-                        pickle.HIGHEST_PROTOCOL)
+        dump_model_to_h5(searcher, outfile_object)
         return 0
 
     # read inputs and loads new attributes, like paths
@@ -698,26 +693,8 @@ def main(inputs, infile_estimator, infile1, infile2,
                           "nested gridsearch or `refit` is False!")
             return
 
-        # clean prams
-        best_estimator_ = clean_params(best_estimator_)
-
-        main_est = get_main_estimator(best_estimator_)
-
-        if hasattr(main_est, 'model_') \
-                and hasattr(main_est, 'save_weights'):
-            if outfile_weights:
-                main_est.save_weights(outfile_weights)
-            del main_est.model_
-            del main_est.fit_params
-            del main_est.model_class_
-            main_est.callbacks = []
-            if getattr(main_est, 'data_generator_', None):
-                del main_est.data_generator_
-
-        with open(outfile_object, 'wb') as output_handler:
-            print("Best estimator is saved: %s " % repr(best_estimator_))
-            pickle.dump(best_estimator_, output_handler,
-                        pickle.HIGHEST_PROTOCOL)
+        print("Saving best estimator: %s " % repr(best_estimator_))
+        dump_model_to_h5(best_estimator_, outfile_object)
 
 
 if __name__ == '__main__':
@@ -728,7 +705,6 @@ if __name__ == '__main__':
     aparser.add_argument("-y", "--infile2", dest="infile2")
     aparser.add_argument("-O", "--outfile_result", dest="outfile_result")
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
-    aparser.add_argument("-w", "--outfile_weights", dest="outfile_weights")
     aparser.add_argument("-g", "--groups", dest="groups")
     aparser.add_argument("-r", "--ref_seq", dest="ref_seq")
     aparser.add_argument("-b", "--intervals", dest="intervals")
@@ -738,6 +714,6 @@ if __name__ == '__main__':
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
-         outfile_weights=args.outfile_weights, groups=args.groups,
-         ref_seq=args.ref_seq, intervals=args.intervals,
-         targets=args.targets, fasta_path=args.fasta_path)
+         groups=args.groups, ref_seq=args.ref_seq,
+         intervals=args.intervals, targets=args.targets,
+         fasta_path=args.fasta_path)

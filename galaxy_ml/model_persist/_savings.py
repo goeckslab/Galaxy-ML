@@ -29,7 +29,7 @@ from ._safe_pickler import _SafePickler
 # reserved keys
 _URL = '-URL-'
 _REPR = '-repr-'
-_PY_VERSION = '-cpython-'
+_PY_VERSION = '-python-'
 _NP_VERSION = '-numpy-'
 _OBJ = '-object-'
 _REDUCE = '-reduce-'
@@ -47,6 +47,7 @@ _DATATYPE = '-datatype-'
 _VALUE = '-value-'
 _TUPLE = '-tuple-'
 _SET = '-set-'
+_FROZENSET = '-frozenset-'
 _BYTES = '-bytes-'
 _NP_NDARRAY_O = '-np_ndarray_o_type-'
 _WEIGHTS = '-model_weights-'
@@ -115,7 +116,7 @@ class ModelToHDF5:
 
             file.attrs[_URL] = \
                 str('https://github.com/goeckslab/Galaxy-ML').encode('utf-8')
-            
+
             file.attrs[_REPR] = repr(obj).encode('utf-8')
 
             file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
@@ -209,8 +210,8 @@ class ModelToHDF5:
             "%s must return a tuple, but got %s" % (reduce, type(rv))
 
         lenth = len(rv)
-        assert (lenth in [2, 3]),\
-            ("Reduce tuple is expected to return 2- 3 elements, "
+        assert (lenth in (2, 3, 4, 5)),\
+            ("Reduce tuple is expected to return 2 - 5 elements, "
              "but got %d elements" % lenth)
 
         save = self.save
@@ -278,6 +279,13 @@ class ModelToHDF5:
         return {_SET: aslist}
 
     dispatch[set] = save_set
+
+    def save_frozenset(self, obj):
+        self.memoize(obj)
+        aslist = self.save(list(obj))
+        return {_FROZENSET: aslist}
+
+    dispatch[frozenset] = save_frozenset
 
     def save_dict(self, obj):
         if len(obj) == 0:
@@ -442,6 +450,8 @@ class HDF5ToModel:
                 return self.load_tuple(data[_TUPLE])
             if _SET in data:
                 return self.load_set(data[_SET])
+            if _FROZENSET in data:
+                return self.load_frozenset(data[_FROZENSET])
             if _NP_NDARRAY in data:
                 return self.load_np_ndarray(data[_NP_NDARRAY])
             if _NP_NDARRAY_O in data:
@@ -503,6 +513,11 @@ class HDF5ToModel:
     def load_set(self, data):
         obj = self.load_all(data)
         return tuple(obj)
+
+    def load_frozenset(self, data):
+        obj = self.load_all(data)
+        self.memoize(obj)
+        return frozenset(obj)
 
     def load_dict(self, data):
         newdict = {}
