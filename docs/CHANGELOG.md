@@ -1,3 +1,18 @@
+### Version 0.9.0
+
+#### Changes
+
+- Updates scikit-learn to v0.24.x, tensorflow to v2.4.x, xgboost to v1.3.x, mlxtend to v0.17.x, skrebate to v.62, imbalanced-learn to v0.8.x and so on.
+- Makes load_model and save_model util methods in keras_galaxy_model module.
+- Refactors `_SafePickler` and moves it from `utils` to `model_persist`.
+- Refactors `dump_model_to_h5` and `load_model_from_h5` to dynamically save and load xgboost and tensorflow models.
+- Replaces pickled models with `h5mlm` models in all tools.
+
+#### Bug Fixes
+
+- 
+
+
 ### Version 0.8.3
 
 #### Changes
