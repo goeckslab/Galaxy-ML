@@ -44,18 +44,18 @@ _, tmp_gbc_pickle = tempfile.mkstemp(suffix='.zip')
 gbc_json = os.path.join(module_folder,
                         './tools/test-data/gbc_model01.json')
 gbc_h5 = os.path.join(module_folder,
-                      'tools/test-data/gbc_model01.h5mlm')
-_, tmp_gbc_h5 = tempfile.mkstemp(suffix='.h5mlm')
+                      'tools/test-data/gbc_model01.h5')
+_, tmp_gbc_h5 = tempfile.mkstemp(suffix='.h5')
 
 xgbc_json = os.path.join(module_folder,
                          'tools/test-data/xgbc_model01.json')
 xgbc_h5 = os.path.join(module_folder,
-                       'tools/test-data/xgbc_model01.h5mlm')
-_, tmp_xgbc_h5 = tempfile.mkstemp(suffix='.h5mlm')
+                       'tools/test-data/xgbc_model01.h5')
+_, tmp_xgbc_h5 = tempfile.mkstemp(suffix='.h5')
 
 kgc_h5 = os.path.join(module_folder,
-                      'tools/test-data/kgc_model01.h5mlm')
-_, tmp_kgc_h5 = tempfile.mkstemp(suffix='.h5mlm')
+                      'tools/test-data/kgc_model01.h5')
+_, tmp_kgc_h5 = tempfile.mkstemp(suffix='.h5')
 
 
 def teardown():
