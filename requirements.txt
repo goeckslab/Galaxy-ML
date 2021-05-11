@@ -19,5 +19,7 @@ matplotlib>=3.1.1
 scikit-optimize>=0.8, <0.9
 h5py>=2.10.0,<3.0
 six<=1.15.0
-pydot>=1.4.1
-graphviz>=2.40.1
+
+# conda packages needed for tools. 
+#pydot>=1.4.1
+#graphviz>=2.40.1
