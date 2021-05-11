@@ -2,30 +2,34 @@
 Utility to persist arbitrary sklearn objects to HDF5
 A hybrid method that combines json and HDF5 methods.
 
-Author: Qiang Gu
-Email: guqiang01@gmail.com
-Date: 2020-2021
-
 Classes:
 
     ModelToHDF5
     HDF5ToModel
 
 """
+import _compat_pickle
 import h5py
+import io
 import json
 import numpy
-import six
 import sys
+import tempfile
 import types
 import warnings
-from keras.engine.network import Network
-from keras.models import load_model
+
+from pathlib import Path
+from xgboost import XGBModel, sklearn
+
+from ..keras_galaxy_models import BaseKerasModel, load_model
 from ..utils import get_search_params
+from ._safe_pickler import _SafePickler
 
 
 # reserved keys
-_PY_VERSION = '-cpython-'
+_URL = '-URL-'
+_REPR = '-repr-'
+_PY_VERSION = '-python-'
 _NP_VERSION = '-numpy-'
 _OBJ = '-object-'
 _REDUCE = '-reduce-'
@@ -43,14 +47,16 @@ _DATATYPE = '-datatype-'
 _VALUE = '-value-'
 _TUPLE = '-tuple-'
 _SET = '-set-'
+_FROZENSET = '-frozenset-'
 _BYTES = '-bytes-'
-_PRIMITIVE = '-primitive-'
 _NP_NDARRAY_O = '-np_ndarray_o_type-'
 _WEIGHTS = '-model_weights-'
 _CONFIG = '-model_config-'
 _HYPERPARAMETER = '-model_hyperparameters-'
 _KERAS_MODELS = '-keras_models-'
 _KERAS_MODEL = '-keras_model-'
+_XGBOOST_MODELS = '-xgboost_models-'
+_XGBOOST_MODEL = '-xgboost_model-'
 
 PY_VERSION = sys.version.split(' ')[0]
 
@@ -96,8 +102,10 @@ class ModelToHDF5:
             Whether to save model hyperparameter.
         """
         try:
-            if isinstance(file_path, str):
+            if isinstance(file_path, (str, Path)):
                 file = h5py.File(file_path, mode=mode)
+            else:
+                file = file_path
 
             if not isinstance(file, h5py.Group):
                 raise ValueError("The type of file_path, %s, is "
@@ -105,6 +113,11 @@ class ModelToHDF5:
                                  "are file path (str), h5py.File "
                                  "and h5py.Group object!"
                                  % (str(file_path)))
+
+            file.attrs[_URL] = \
+                str('https://github.com/goeckslab/Galaxy-ML').encode('utf-8')
+
+            file.attrs[_REPR] = repr(obj).encode('utf-8')
 
             file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
 
@@ -115,6 +128,7 @@ class ModelToHDF5:
 
             self.weights = []
             self.keras_models = []
+            self.xgboost_models = []
 
             config = {_OBJ: self.save(obj)}
             file[_CONFIG] = json.dumps(config).encode('utf8')
@@ -128,13 +142,23 @@ class ModelToHDF5:
                 k_models_group = file.create_group(_KERAS_MODELS)
                 for idx, model in enumerate(self.keras_models):
                     idx_group = k_models_group.create_group(str(idx))
-                    model.save(idx_group)
+                    model.save_model(idx_group)
+
+            if self.xgboost_models:
+                xgb_group = file.create_group(_XGBOOST_MODELS)
+                for idx, model in enumerate(self.xgboost_models):
+                    with tempfile.TemporaryDirectory() as tmp:
+                        path = Path(tmp).joinpath('model.json')
+                        model.save_model(path)
+                        with open(path, 'r') as f:
+                            model_json = f.read()
+                    xgb_group[str(idx)] = model_json.encode('utf8')
 
             if store_hyperparameter:
                 h_params = get_search_params(obj)
                 file[_HYPERPARAMETER] = json.dumps(h_params).encode('utf8')
 
-        except:
+        except Exception:
             raise
         finally:
             file.close()
@@ -161,8 +185,12 @@ class ModelToHDF5:
         if issc:
             return self.save_global(obj)
 
-        if isinstance(obj, Network):
+        if isinstance(obj, BaseKerasModel):
             return self.save_keras_model(obj)
+
+        # fitted xgboost estimators
+        if isinstance(obj, XGBModel) and hasattr(self, '_Booster'):
+            return self.save_xgboost_model(obj)
 
         return self.save_reduce(obj)
 
@@ -182,8 +210,8 @@ class ModelToHDF5:
             "%s must return a tuple, but got %s" % (reduce, type(rv))
 
         lenth = len(rv)
-        assert (lenth in [2, 3]),\
-            ("Reduce tuple is expected to return 2- 3 elements, "
+        assert (lenth in (2, 3, 4, 5)),\
+            ("Reduce tuple is expected to return 2 - 5 elements, "
              "but got %d elements" % lenth)
 
         save = self.save
@@ -252,6 +280,13 @@ class ModelToHDF5:
 
     dispatch[set] = save_set
 
+    def save_frozenset(self, obj):
+        self.memoize(obj)
+        aslist = self.save(list(obj))
+        return {_FROZENSET: aslist}
+
+    dispatch[frozenset] = save_frozenset
+
     def save_dict(self, obj):
         if len(obj) == 0:
             return {}
@@ -290,9 +325,9 @@ class ModelToHDF5:
 
     def save_np_ndarray(self, obj):
         _dtype = obj.dtype
-        if _dtype.descr == [('', '|O')]:
+        if _dtype.kind in ('O', 'U', 'M'):
             newdict = {}
-            newdict[_DTYPE] = self.save(obj.dtype)
+            newdict[_DTYPE] = self.save(_dtype)
             newdict[_VALUES] = self.save(obj.tolist())
             return {_NP_NDARRAY_O: newdict}
         else:
@@ -335,16 +370,23 @@ class ModelToHDF5:
         self.keras_models.append(obj)
         return new_dict
 
+    def save_xgboost_model(self, obj):
+        self.memoize(obj)
+        new_dict = {_XGBOOST_MODEL: len(self.xgboost_models)}
+        self.xgboost_models.append(obj)
+        return new_dict
+
 
 class HDF5ToModel:
     """
     Rebuild model from HDF5 generated by `ModelToHDF5.save`.
     """
 
-    def __init__(self, verbose=0):
+    def __init__(self, verbose=0, sanitize=True):
         # Store newly-built object
         self.memo = {}
         self.verbose = verbose
+        self.sanitize = sanitize
 
     def memoize(self, obj):
         lenth = len(self.memo)
@@ -354,8 +396,10 @@ class HDF5ToModel:
 
     def load(self, file_path):
         try:
-            if isinstance(file_path, str):
+            if isinstance(file_path, (str, Path)):
                 data = h5py.File(file_path, 'r')
+            else:
+                data = file_path
             if not isinstance(data, h5py.Group):
                 raise ValueError("The type of %s is not supported! "
                                  "Supported types are file path (str), "
@@ -369,14 +413,19 @@ class HDF5ToModel:
                               "your own risk."
                               % (data[_PY_VERSION].decode('utf8'),
                                  PY_VERSION.decode('utf8')))
+            if self.sanitize:
+                self.safe_unpickler = _SafePickler(io.StringIO(''))
+
             if _WEIGHTS in data:
                 self.weights = data[_WEIGHTS]
             if _KERAS_MODELS in data:
                 self.keras_models = data[_KERAS_MODELS]
+            if _XGBOOST_MODELS in data:
+                self.xgboost_models = data[_XGBOOST_MODELS]
             config = data[_CONFIG][()].decode('utf8')
             config = json.loads(config)
             model = self.load_all(config[_OBJ])
-        except:
+        except Exception:
             raise
         finally:
             data.close()
@@ -401,6 +450,8 @@ class HDF5ToModel:
                 return self.load_tuple(data[_TUPLE])
             if _SET in data:
                 return self.load_set(data[_SET])
+            if _FROZENSET in data:
+                return self.load_frozenset(data[_FROZENSET])
             if _NP_NDARRAY in data:
                 return self.load_np_ndarray(data[_NP_NDARRAY])
             if _NP_NDARRAY_O in data:
@@ -409,6 +460,8 @@ class HDF5ToModel:
                 return self.load_np_datatype(data[_NP_DATATYPE])
             if _KERAS_MODEL in data:
                 return self.load_keras_model(data[_KERAS_MODEL])
+            if _XGBOOST_MODEL in data:
+                return self.load_xgboost_model(data[_XGBOOST_MODEL])
             return self.load_dict(data)
         f = self.dispatch.get(t)
         if f:
@@ -461,6 +514,11 @@ class HDF5ToModel:
         obj = self.load_all(data)
         return tuple(obj)
 
+    def load_frozenset(self, data):
+        obj = self.load_all(data)
+        self.memoize(obj)
+        return frozenset(obj)
+
     def load_dict(self, data):
         newdict = {}
         _keys = data.pop(_KEYS, [])
@@ -474,10 +532,13 @@ class HDF5ToModel:
         return newdict
 
     def find_class(self, module, name):
-        if module == 'copy_reg' and not six.PY2:
-            module = 'copyreg'
-        elif module == '__builtin__' and not six.PY2:
-            module = 'builtins'
+        if self.safe_unpickler:
+            return self.safe_unpickler.find_class(module, name)
+
+        if (module, name) in _compat_pickle.NAME_MAPPING:
+            module, name = _compat_pickle.NAME_MAPPING[(module, name)]
+        elif module in _compat_pickle.IMPORT_MAPPING:
+            module = _compat_pickle.IMPORT_MAPPING[module]
         __import__(module, level=0)
         mod = sys.modules[module]
         return getattr(mod, name)
@@ -502,7 +563,7 @@ class HDF5ToModel:
 
         try:
             obj = args[0].__new__(args[0], * args)
-        except:
+        except Exception:
             obj = func(*args)
 
         _state = data.get(_STATE)
@@ -544,6 +605,15 @@ class HDF5ToModel:
         self.memoize(obj)
         return obj
 
+    def load_xgboost_model(self, data):
+        model_byte = self.xgboost_models[str(data)][()]
+        model_json = json.loads(model_byte.decode('utf-8'))
+        params = model_json['learner']['attributes']['scikit_learn']
+        class_name = json.loads(params)['type']
+        obj = getattr(sklearn, class_name)()
+        obj.load_model(bytearray(model_byte))
+        return obj
+
 
 def dump_model_to_h5(obj, file_path, verbose=0,
                      store_hyperparameter=True):
@@ -560,9 +630,10 @@ def dump_model_to_h5(obj, file_path, verbose=0,
         obj, file_path, store_hyperparameter=store_hyperparameter)
 
 
-def load_model_from_h5(file_path, verbose=0):
+def load_model_from_h5(file_path, verbose=0, sanitize=True):
     """
     file_path : str or hdf5.File or hdf5.Group object
     verbose : 0 or 1
     """
-    return HDF5ToModel(verbose=verbose).load(file_path)
+    return HDF5ToModel(verbose=verbose, sanitize=sanitize)\
+        .load(file_path)

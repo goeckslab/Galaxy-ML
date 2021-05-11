@@ -1,14 +1,13 @@
 import argparse
 import json
-import keras
-import pandas as pd
-import pickle
 import six
 import warnings
 
 from ast import literal_eval
-from keras.models import Sequential, Model
-from galaxy_ml.utils import try_get_attr, get_search_params, SafeEval
+from tensorflow import keras
+from tensorflow.keras.models import Sequential, Model
+from galaxy_ml.model_persist import dump_model_to_h5
+from galaxy_ml.utils import try_get_attr, SafeEval
 
 
 safe_eval = SafeEval()
@@ -246,8 +245,7 @@ def config_keras_model(inputs, outfile):
         json.dump(json.loads(json_string), f, indent=2)
 
 
-def build_keras_model(inputs, outfile, model_json, infile_weights=None,
-                      batch_mode=False, outfile_params=None):
+def build_keras_model(inputs, outfile, model_json, batch_mode=False):
     """ for `keras_model_builder` tool
 
     Parameters
@@ -258,12 +256,8 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
         Path to galaxy dataset containing the keras_galaxy model output.
     model_json : str
         Path to dataset containing keras model JSON.
-    infile_weights : str or None
-        If string, path to dataset containing model weights.
     batch_mode : bool, default=False
         Whether to build online batch classifier.
-    outfile_params : str, default=None
-        File path to search parameters output.
     """
     with open(model_json, 'r') as f:
         json_model = json.load(f)
@@ -275,7 +269,7 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
     if json_model['class_name'] == 'Sequential':
         options['model_type'] = 'sequential'
         klass = Sequential
-    elif json_model['class_name'] == 'Model':
+    elif json_model['class_name'] == 'Functional':
         options['model_type'] = 'functional'
         klass = Model
     else:
@@ -284,8 +278,9 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
 
     # load prefitted model
     if inputs['mode_selection']['mode_type'] == 'prefitted':
-        estimator = klass.from_config(config)
-        estimator.load_weights(infile_weights)
+        # estimator = klass.from_config(config)
+        # estimator.load_weights(infile_weights)
+        raise Exception("Prefitted was deprecated!")
     # build train model
     else:
         cls_name = inputs['mode_selection']['learning_type']
@@ -318,19 +313,10 @@ def build_keras_model(inputs, outfile, model_json, infile_weights=None,
             options['class_positive_factor'] = \
                 inputs['mode_selection']['class_positive_factor']
         estimator = klass(config, **options)
-        if outfile_params:
-            hyper_params = get_search_params(estimator)
-            # TODO: remove this after making `verbose` tunable
-            for h_param in hyper_params:
-                if h_param[1].endswith('verbose'):
-                    h_param[0] = '@'
-            df = pd.DataFrame(hyper_params, columns=['', 'Parameter', 'Value'])
-            df.to_csv(outfile_params, sep='\t', index=False)
 
     print(repr(estimator))
-    # save model by pickle
-    with open(outfile, 'wb') as f:
-        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+    # save model
+    dump_model_to_h5(estimator, outfile, verbose=1)
 
 
 if __name__ == '__main__':
@@ -340,9 +326,7 @@ if __name__ == '__main__':
     aparser.add_argument("-i", "--inputs", dest="inputs", required=True)
     aparser.add_argument("-m", "--model_json", dest="model_json")
     aparser.add_argument("-t", "--tool_id", dest="tool_id")
-    aparser.add_argument("-w", "--infile_weights", dest="infile_weights")
     aparser.add_argument("-o", "--outfile", dest="outfile")
-    aparser.add_argument("-p", "--outfile_params", dest="outfile_params")
     args = aparser.parse_args()
 
     input_json_path = args.inputs
@@ -351,9 +335,7 @@ if __name__ == '__main__':
 
     tool_id = args.tool_id
     outfile = args.outfile
-    outfile_params = args.outfile_params
     model_json = args.model_json
-    infile_weights = args.infile_weights
 
     # for keras_model_config tool
     if tool_id == 'keras_model_config':
@@ -367,7 +349,5 @@ if __name__ == '__main__':
 
         build_keras_model(inputs=inputs,
                           model_json=model_json,
-                          infile_weights=infile_weights,
                           batch_mode=batch_mode,
-                          outfile=outfile,
-                          outfile_params=outfile_params)
+                          outfile=outfile)

@@ -2,7 +2,7 @@ import numpy as np
 
 from sklearn.base import BaseEstimator
 from keras_preprocessing.image import Iterator
-from keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 from sklearn.utils.validation import indexable
 
 

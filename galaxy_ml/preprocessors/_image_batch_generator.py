@@ -27,7 +27,7 @@ from keras_preprocessing.image.utils import (array_to_img,
                                              img_to_array,
                                              load_img,
                                              validate_filename)
-from keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 

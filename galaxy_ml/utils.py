@@ -1,14 +1,11 @@
 import ast
 import collections
-import json
 import imblearn
 import numpy as np
 import pandas
 import pickle
-import re
 import scipy
 import sklearn
-import skopt
 import skrebate
 import sys
 import time
@@ -16,146 +13,21 @@ import warnings
 import xgboost
 
 from asteval import Interpreter, make_symbol_table
-from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline
-from mlxtend import regressor, classifier
+from pathlib import Path
 from scipy.io import mmread
 from sklearn import (
     cluster, compose, decomposition, ensemble, feature_extraction,
     feature_selection, gaussian_process, kernel_approximation, metrics,
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
-from sklearn.pipeline import Pipeline
-# TODO remove following imports after scikit-learn v0.22
-from sklearn.experimental import enable_hist_gradient_boosting
-from .externals.selene_sdk.utils import compute_score
 
-
-# handle pickle white list file
-WL_FILE = __import__('os').path.join(
-    __import__('os').path.dirname(__file__), 'pk_whitelist.json')
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
 
 
-__all__ = ('load_model', 'read_columns', 'feature_selector', 'get_X_y',
+__all__ = ('read_columns', 'feature_selector', 'get_X_y',
            'SafeEval', 'get_estimator', 'get_cv', 'balanced_accuracy_score',
-           'get_scoring', 'get_search_params', 'check_def')
-
-
-class _SafePickler(pickle.Unpickler, object):
-    """
-    Used to safely deserialize scikit-learn model objects
-    Usage:
-        eg.: _SafePickler.load(pickled_file_object)
-    """
-    def __init__(self, file):
-        super(_SafePickler, self).__init__(file)
-        # load global white list
-        with open(WL_FILE, 'r') as f:
-            self.pk_whitelist = json.load(f)
-
-        self.bad_names = (
-            'and', 'as', 'assert', 'break', 'class', 'continue',
-            'def', 'del', 'elif', 'else', 'except', 'exec',
-            'finally', 'for', 'from', 'global', 'if', 'import',
-            'in', 'is', 'lambda', 'not', 'or', 'pass', 'print',
-            'raise', 'return', 'try', 'system', 'while', 'with',
-            'True', 'False', 'None', 'eval', 'execfile', '__import__',
-            '__package__', '__subclasses__', '__bases__', '__globals__',
-            '__code__', '__closure__', '__func__', '__self__', '__module__',
-            '__dict__', '__class__', '__call__', '__get__',
-            '__getattribute__', '__subclasshook__', '__new__',
-            '__init__', 'func_globals', 'func_code', 'func_closure',
-            'im_class', 'im_func', 'im_self', 'gi_code', 'gi_frame',
-            '__asteval__', 'f_locals', '__mro__')
-
-        # unclassified good globals
-        self.good_names = [
-            'copy_reg._reconstructor', '__builtin__.object',
-            '__builtin__.bytearray', 'builtins.object',
-            'builtins.bytearray']
-
-        self.keras_names = [
-            'keras.engine.sequential.Sequential',
-            'keras.engine.sequential.Model']
-
-        self.skopt_names = [
-            'skopt.searchcv.BayesSearchCV']
-
-        # custom module in Galaxy-ML
-        self.custom_modules = [
-            'keras_galaxy_models',
-            'feature_selectors', 'preprocessors',
-            'iraps_classifier', 'model_validations']
-
-    # override
-    def find_class(self, module, name):
-        # balack list first
-        if name in self.bad_names:
-            raise pickle.UnpicklingError("global '%s.%s' is forbidden"
-                                         % (module, name))
-
-        # custom module in Galaxy-ML
-        # compatible with models from versions before 1.0.7.0
-        if module in self.custom_modules:
-            return try_get_attr('galaxy_ml.' + module, name)
-
-        # Load objects serialized in older versions
-        # TODO make this deprecate
-        if module.startswith('__main__.'):
-            module = 'galaxy_ml.' + module[9:]
-        if module.startswith('galaxy_ml.'):
-            splits = module.split('.')
-            if len(splits) > 2:
-                module = splits[0] + '.' + splits[1]
-            return try_get_attr(module, name)
-
-        fullname = module + '.' + name
-        # keras names
-        keras_names = self.keras_names
-        if fullname in keras_names:
-            # dynamic import, suppress message:
-            # "Using TensorFlow backend."
-            exec("import keras")
-            mod = sys.modules[module]
-            return getattr(mod, name)
-
-        # For objects from outside libraries, it's necessary to verify
-        # both module and name. Currently only a blacklist checker
-        # is working.
-        # TODO: replace with a whitelist checker.
-        good_names = self.good_names
-        pk_whitelist = self.pk_whitelist
-        if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-            if (fullname in good_names)\
-                or (module.startswith(('sklearn.', 'xgboost.', 'skrebate.',
-                                       'imblearn.', 'mlxtend.', 'numpy.',
-                                       'skopt'))
-                    or module == 'numpy'):
-                if fullname not in (pk_whitelist['SK_NAMES'] +
-                                    pk_whitelist['SKR_NAMES'] +
-                                    pk_whitelist['XGB_NAMES'] +
-                                    pk_whitelist['NUMPY_NAMES'] +
-                                    pk_whitelist['IMBLEARN_NAMES'] +
-                                    pk_whitelist['MLXTEND_NAMES'] +
-                                    pk_whitelist['SKOPT_NAMES'] +
-                                    keras_names +
-                                    good_names):
-                    # raise pickle.UnpicklingError
-                    pickle.UnpicklingError("global '%s' is forbidden"
-                                           % fullname)
-
-                mod = sys.modules[module]
-                return getattr(mod, name)
-
-        raise pickle.UnpicklingError("global '%s' is forbidden" % fullname)
-
-
-def load_model(file):
-    """Load pickled object with `_SafePicker`
-    """
-    return _SafePickler(file).load()
+           'get_scoring', 'get_search_params')
 
 
 def read_columns(f, c=None, c_option='by_index_number',
@@ -225,8 +97,9 @@ def feature_selector(inputs, X=None, y=None):
                 pass
         if inputs['model_inputter']['input_mode'] == 'prefitted':
             model_file = inputs['model_inputter']['fitted_estimator']
-            with open(model_file, 'rb') as model_handler:
-                fitted_estimator = load_model(model_handler)
+            load_model_from_h5 = try_get_attr(
+                'galaxy_ml.model_persist', 'load_model_from_h5')
+            fitted_estimator = load_model_from_h5(model_file)
             new_selector = selector(fitted_estimator, prefit=True, **options)
         else:
             estimator_json = inputs['model_inputter']['estimator_selector']
@@ -383,17 +256,18 @@ class SafeEval(Interpreter):
         if load_numpy:
             from_numpy_random = [
                 'beta', 'binomial', 'bytes', 'chisquare', 'choice',
-                'dirichlet', 'division', 'exponential', 'f', 'gamma',
-                'geometric', 'gumbel', 'hypergeometric', 'laplace',
-                'logistic', 'lognormal', 'logseries', 'mtrand',
-                'multinomial', 'multivariate_normal', 'negative_binomial',
-                'noncentral_chisquare', 'noncentral_f', 'normal', 'pareto',
-                'permutation', 'poisson', 'power', 'rand', 'randint',
-                'randn', 'random', 'random_integers', 'random_sample',
-                'ranf', 'rayleigh', 'sample', 'seed', 'set_state',
+                'dirichlet', 'exponential', 'f', 'gamma', 'geometric',
+                'gumbel', 'hypergeometric', 'laplace', 'logistic',
+                'lognormal', 'logseries', 'multinomial',
+                'multivariate_normal', 'negative_binomial',
+                'noncentral_chisquare', 'noncentral_f', 'normal',
+                'pareto', 'permutation', 'poisson', 'power', 'rand',
+                'randint', 'randn', 'random', 'random_integers',
+                'random_sample', 'ranf', 'rayleigh', 'sample',
                 'shuffle', 'standard_cauchy', 'standard_exponential',
                 'standard_gamma', 'standard_normal', 'standard_t',
-                'triangular', 'uniform', 'vonmises', 'wald', 'weibull', 'zipf']
+                'triangular', 'uniform', 'vonmises', 'wald', 'weibull',
+                'zipf']
             for f in from_numpy_random:
                 syms['np_random_' + f] = getattr(np.random, f)
 
@@ -441,16 +315,17 @@ def get_estimator(estimator_json):
     """
     estimator_module = estimator_json['selected_module']
 
+    load_model_from_h5 = try_get_attr(
+        'galaxy_ml.model_persist', 'load_model_from_h5')
+
     if estimator_module == 'custom_estimator':
         c_estimator = estimator_json['c_estimator']
-        with open(c_estimator, 'rb') as model_handler:
-            new_model = load_model(model_handler)
+        new_model = load_model_from_h5(c_estimator)
         return new_model
 
     if estimator_module == "binarize_target":
         wrapped_estimator = estimator_json['wrapped_estimator']
-        with open(wrapped_estimator, 'rb') as model_handler:
-            wrapped_estimator = load_model(model_handler)
+        wrapped_estimator = load_model_from_h5(wrapped_estimator)
         options = {}
         if estimator_json['z_score'] is not None:
             options['z_score'] = estimator_json['z_score']
@@ -558,6 +433,97 @@ def get_cv(cv_json):
     return splitter, groups
 
 
+class SearchParam(object):
+    """
+    Sortable Wrapper class for search parameters
+    """
+    def __init__(self, s_param, value):
+        self.s_param = s_param
+        self.value = value
+
+    @property
+    def depth(self):
+        return len(self.s_param.split('__'))
+
+    @property
+    def sort_depth(self):
+        if self.depth > 2:
+            return 2
+        else:
+            return self.depth
+
+
+def get_search_params(estimator):
+    """Format the output of `estimator.get_params()`
+
+    Parameters
+    ----------
+    estimator : python object
+
+    Returns
+    -------
+    list of list, i.e., [`mark`, `param_name`, `param_value`].
+    """
+    res = estimator.get_params()
+    params = [SearchParam(k, v) for k, v in res.items()]
+    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
+
+    results = []
+    for param in params:
+        # params below won't be shown for search in the searchcv tool
+        # And show partial `repr` for values which are dictionary,
+        # especially useful for keras models
+        k, v = param.s_param, param.value
+        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'name', 'nthread',
+                    '_path')
+        exact_keywords = ('steps')
+        if k.endswith(keywords) or k in exact_keywords:
+            results.append(['*', k, k+": "+repr(v)])
+        elif type(v) is dict:
+            results.append(['@', k, k+": "+repr(v)[:100]])
+        else:
+            results.append(['@', k, k+": "+repr(v)])
+    results.append(
+        ["", "Note:",
+         "@, params eligible for search in searchcv tool."])
+
+    return results
+
+
+def clean_params(estimator, n_jobs=None):
+    """clean unwanted hyperparameter settings
+
+    If n_jobs is not None, set it into the estimator, if applicable
+
+    Return
+    ------
+    Cleaned estimator object
+    """
+    ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN',
+                         'ReduceLROnPlateau', 'CSVLogger', 'None')
+
+    estimator_params = estimator.get_params()
+
+    for name, p in estimator_params.items():
+        # all potential unauthorized file write
+        if name == 'memory' or name.endswith('__memory') \
+                or name.endswith(('_path', '_dir')):
+            new_p = {name: None}
+            estimator.set_params(**new_p)
+        elif n_jobs is not None and (name == 'n_jobs' or
+                                     name.endswith('__n_jobs')):
+            new_p = {name: n_jobs}
+            estimator.set_params(**new_p)
+        elif name.endswith('callbacks'):
+            for cb in p:
+                cb_type = cb['callback_selection']['callback_type']
+                if cb_type not in ALLOWED_CALLBACKS:
+                    raise ValueError(
+                        "Prohibited callback type: %s!" % cb_type)
+
+    return estimator
+
+
 # needed when sklearn < v0.20
 def balanced_accuracy_score(y_true, y_pred):
     """Compute balanced accuracy score, which is now available in
@@ -617,43 +583,77 @@ def get_scoring(scoring_json):
     return all_scorers[primary_scoring]
 
 
-def get_search_params(estimator):
-    """Format the output of `estimator.get_params()`
+def get_main_estimator(estimator):
+    """return main estimator. For pipeline, main estimator's
+    final estimator. For fitted SearchCV object, that's the
+    best_estimator_. For stacking ensemble family estimator,
+    main estimator is the meta estimator.
+    """
+    est_name = estimator.__class__.__name__
+    # support pipeline object
+    if isinstance(estimator, pipeline.Pipeline):
+        return get_main_estimator(estimator.steps[-1][-1])
+    # support GridSearchCV/RandomSearchCV
+    elif isinstance(estimator, model_selection._search.BaseSearchCV):
+        return get_main_estimator(estimator.best_estimator_)
+    # support stacking ensemble estimators
+    # TODO support nested pipeline/stacking estimators
+    elif est_name in ('StackingCVClassifier', 'StackingClassifier'):
+        return get_main_estimator(estimator.meta_clf_)
+    elif est_name in ('StackingCVRegressor', 'StackingRegressor'):
+        return get_main_estimator(estimator.meta_regr_)
+    else:
+        return estimator
+
+
+def gen_compute_scores(y_true, pred_probas, scorers):
+    """ general score computing based on input scorers
 
     Parameters
     ----------
-    estimator : python object
+    y_true : array
+        True label or target values
+    pred_probas : array
+        Prediction values, probability for classification problem
+    scorers : dict or scorer object
+        dict of `sklearn.metrics._scorer.SCORER`
 
     Returns
     -------
-    list of list, i.e., [`mark`, `param_name`, `param_value`].
+    Returns a dict of floats if scorer is a dict, otherwise a
+    single float is returned.
     """
-    res = estimator.get_params()
-    SearchParam = try_get_attr('galaxy_ml.keras_galaxy_models',
-                               'SearchParam')
-    params = [SearchParam(k, v) for k, v in res.items()]
-    params = sorted(params, key=lambda x: (x.sort_depth, x.s_param))
+    from sklearn.utils.multiclass import type_of_target
+    y_type = type_of_target(y_true)
 
-    results = []
-    for param in params:
-        # params below won't be shown for search in the searchcv tool
-        # And show partial `repr` for values which are dictionary,
-        # especially useful for keras models
-        k, v = param.s_param, param.value
-        keywords = ('n_jobs', 'pre_dispatch', 'memory', 'name', 'nthread',
-                    '_path')
-        exact_keywords = ('steps')
-        if k.endswith(keywords) or k in exact_keywords:
-            results.append(['*', k, k+": "+repr(v)])
-        elif type(v) is dict:
-            results.append(['@', k, k+": "+repr(v)[:100]])
-        else:
-            results.append(['@', k, k+": "+repr(v)])
-    results.append(
-        ["", "Note:",
-         "@, params eligible for search in searchcv tool."])
+    # support binary and multi-label
+    # TODO: multi-class metrics
+    if y_type not in ('binary', 'multilabel-indicator'):
+        raise ValueError("Scorer for multi-class classification is not "
+                         "yet implemented!")
 
-    return results
+    if y_type == 'binary':
+        pred_probas = pred_probas.ravel()
+        pred_labels = (pred_probas > 0.5).astype('int32')
+        targets = y_true.ravel().astype('int32')
+    else:
+        pred_labels = (pred_probas > 0.5).astype('int32')
+        targets = y_true.astype('int32')
+
+    if not isinstance(scorers, dict):
+        preds = pred_labels if scorers.__class__.__name__ == \
+            '_PredictScorer' else pred_probas
+        score = scorers._score_func(targets, preds, **scorers._kwargs)
+
+        return score
+    else:
+        scores = {}
+        for name, scorer in scorers.items():
+            preds = pred_labels if scorer.__class__.__name__\
+                == '_PredictScorer' else pred_probas
+            score = scorer._score_func(targets, preds, **scorer._kwargs)
+            scores[name] = score
+        return scores
 
 
 def try_get_attr(module, name):
@@ -758,113 +758,77 @@ def get_module(module):
         return sys.modules['externals.selene_sdk']
 
 
-def get_main_estimator(estimator):
-    """return main estimator. For pipeline, main estimator's
-    final estimator. For fitted SearchCV object, that's the
-    best_estimator_. For stacking ensemble family estimator,
-    main estimator is the meta estimator.
+def gen_test_estimators():
+    """ Generate couple of estimators for tests.
     """
-    est_name = estimator.__class__.__name__
-    # support pipeline object
-    if isinstance(estimator, Pipeline):
-        return get_main_estimator(estimator.steps[-1][-1])
-    # support GridSearchCV/RandomSearchCV
-    elif isinstance(estimator, model_selection._search.BaseSearchCV):
-        return get_main_estimator(estimator.best_estimator_)
-    # support stacking ensemble estimators
-    # TODO support nested pipeline/stacking estimators
-    elif est_name in ('StackingCVClassifier', 'StackingClassifier'):
-        return get_main_estimator(estimator.meta_clf_)
-    elif est_name in ('StackingCVRegressor', 'StackingRegressor'):
-        return get_main_estimator(estimator.meta_regr_)
-    else:
-        return estimator
+    test_folder = Path(__file__).parent
+    test_folder = test_folder.joinpath('tools', 'test-data')
 
+    with open(test_folder.joinpath('LinearRegression01.zip'), 'wb') as f:
+        estimator = linear_model.LinearRegression()
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
 
-def clean_params(estimator, n_jobs=None):
-    """clean unwanted hyperparameter settings
+    with open(test_folder.joinpath('RandomForestRegressor01.zip'), 'wb') as f:
+        estimator = ensemble.RandomForestRegressor(
+            n_estimators=10, random_state=10)
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
 
-    If n_jobs is not None, set it into the estimator, if applicable
+    with open(test_folder.joinpath('XGBRegressor01.zip'), 'wb') as f:
+        estimator = xgboost.XGBRegressor(
+            learning_rate=0.1, n_estimators=100, random_state=0)
+        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
 
-    Return
-    ------
-    Cleaned estimator object
-    """
-    ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN',
-                         'ReduceLROnPlateau', 'CSVLogger', 'None')
+    with open(test_folder.joinpath('pipeline10'), 'wb') as f:
+        estimator = ensemble.AdaBoostRegressor(
+            learning_rate=1.0, n_estimators=50)
+        pipe = pipeline.make_pipeline(estimator)
+        pickle.dump(pipe, f, pickle.HIGHEST_PROTOCOL)
 
-    estimator_params = estimator.get_params()
+    dump_model_to_h5 = try_get_attr(
+        'galaxy_ml.model_persist', 'dump_model_to_h5')
+    estimator = linear_model.LinearRegression()
+    dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('LinearRegression01.h5mlm'))
 
-    for name, p in estimator_params.items():
-        # all potential unauthorized file write
-        if name == 'memory' or name.endswith('__memory') \
-                or name.endswith(('_path', '_dir')):
-            new_p = {name: None}
-            estimator.set_params(**new_p)
-        elif n_jobs is not None and (name == 'n_jobs' or
-                                     name.endswith('__n_jobs')):
-            new_p = {name: n_jobs}
-            estimator.set_params(**new_p)
-        elif name.endswith('callbacks'):
-            for cb in p:
-                cb_type = cb['callback_selection']['callback_type']
-                if cb_type not in ALLOWED_CALLBACKS:
-                    raise ValueError(
-                        "Prohibited callback type: %s!" % cb_type)
+    estimator = ensemble.RandomForestRegressor(
+        n_estimators=10, random_state=10)
+    dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('RandomForestRegressor01.h5mlm'))
 
-    return estimator
+    estimator = xgboost.XGBRegressor(
+        learning_rate=0.1, n_estimators=100, random_state=0)
+    dump_model_to_h5(
+        estimator,
+        test_folder.joinpath('XGBRegressor01.h5mlm'))
 
+    estimator = ensemble.AdaBoostRegressor(
+        learning_rate=1.0, n_estimators=50)
+    pipe = pipeline.make_pipeline(estimator)
+    dump_model_to_h5(
+        pipe,
+        test_folder.joinpath('pipeline10'))
 
-def gen_compute_scores(y_true, pred_probas, scorer, is_multimetric=True):
-    """ general score computing based on input scorers
+    import pandas as pd
+    X_path = test_folder.joinpath('regression_X.tabular')
+    X = pd.read_csv(X_path, sep='\t').values
+    y_path = test_folder.joinpath('regression_y.tabular')
+    y = pd.read_csv(y_path, sep='\t').values.ravel()
 
-    Parameters
-    ----------
-    y_true : array
-        True label or target values
-    pred_probas : array
-        Prediction values, probability for classification problem
-    scorer : dict
-        dict of `sklearn.metrics.scorer.SCORER`
-    is_multimetric : bool, default is True
-    """
-    if y_true.ndim == 1 or y_true.shape[-1] == 1:
-        pred_probas = pred_probas.ravel()
-        pred_labels = (pred_probas > 0.5).astype('int32')
-        targets = y_true.ravel().astype('int32')
-        if not is_multimetric:
-            preds = pred_labels if scorer.__class__.__name__ == \
-                '_PredictScorer' else pred_probas
-            score = scorer._score_func(targets, preds, **scorer._kwargs)
+    estimator = ensemble.RandomForestRegressor(
+        n_estimators=10, random_state=10)
+    searcher = model_selection.GridSearchCV(estimator, {})
+    searcher.fit(X, y)
 
-            return score
-        else:
-            scores = {}
-            for name, one_scorer in scorer.items():
-                preds = pred_labels if one_scorer.__class__.__name__\
-                    == '_PredictScorer' else pred_probas
-                score = one_scorer._score_func(targets, preds,
-                                               **one_scorer._kwargs)
-                scores[name] = score
+    dump_model_to_h5(
+        searcher,
+        test_folder.joinpath('GridSearchCV01.h5mlm')
+    )
 
-    # TODO: multi-class metrics
-    # multi-label
-    else:
-        pred_labels = (pred_probas > 0.5).astype('int32')
-        targets = y_true.astype('int32')
-        if not is_multimetric:
-            preds = pred_labels if scorer.__class__.__name__ == \
-                '_PredictScorer' else pred_probas
-            score, _ = compute_score(preds, targets,
-                                     scorer._score_func)
-            return score
-        else:
-            scores = {}
-            for name, one_scorer in scorer.items():
-                preds = pred_labels if one_scorer.__class__.__name__\
-                    == '_PredictScorer' else pred_probas
-                score, _ = compute_score(preds, targets,
-                                         one_scorer._score_func)
-                scores[name] = score
-
-    return scores
+    rfe = feature_selection.RFE(estimator)
+    rfe.fit(X, y)
+    dump_model_to_h5(
+        rfe,
+        test_folder.joinpath('RFE.h5mlm')
+    )

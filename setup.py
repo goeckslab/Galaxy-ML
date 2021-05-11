@@ -48,7 +48,7 @@ machine learning tools(Galaxy-ML).
 Galaxy-ML is a web machine learning end-to-end pipeline building
 framework, with special support to biomedical data. Under the
 management of unified scikit-learn APIs, cutting-edge machine
-learning libraries (scikit-learn, keras, mlxtend, imbalanced-learn,
+learning libraries (scikit-learn, tensorflow, mlxtend, imbalanced-learn,
 and more) are combined together to provide thousands
 of different pipelines suitable for various needs. In the form
 of Galalxy tools, Galaxy-ML provides scalabe, reproducible and

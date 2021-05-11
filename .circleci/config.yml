@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6.8
+      - image: circleci/python:3.7.10
     steps:
       - checkout
       - run:
@@ -25,7 +25,7 @@ jobs:
           path: test-reports
   tool_lint:
     docker:
-      - image: circleci/python:3.6.8
+      - image: circleci/python:3.7.10
     steps:
       - checkout
       - run:
@@ -39,7 +39,7 @@ jobs:
             planemo lint
   tool_test:
     docker:
-      - image: circleci/python:3.6.8
+      - image: circleci/python:3.7.10
     parallelism: 4
     steps:
       - checkout

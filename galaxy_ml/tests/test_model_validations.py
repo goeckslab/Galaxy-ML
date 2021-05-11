@@ -9,20 +9,18 @@ from galaxy_ml.model_validations import (
     train_test_split, OrderedKFold, RepeatedOrderedKFold)
 from galaxy_ml.keras_galaxy_models import KerasGClassifier
 
-from keras.callbacks import EarlyStopping
-from keras.models import Sequential
-from keras.layers import Dense
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.ensemble import RandomForestRegressor
-from six.moves import zip
 from sklearn.model_selection._validation import _fit_and_score
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import SCORERS
-from sklearn.utils.mocking import MockDataFrame
-from sklearn.utils.testing import assert_equal
-from sklearn.utils.testing import assert_array_equal
-from sklearn.utils.testing import ignore_warnings
+from sklearn.utils._mocking import MockDataFrame
+from sklearn.utils._testing import assert_array_equal
+from sklearn.utils._testing import ignore_warnings
 # from nose.tools import nottest
 
 
@@ -56,11 +54,7 @@ def test_train_test_split_errors():
                   some_argument=1.1)
     pytest.raises(ValueError, train_test_split, range(3), range(42))
     pytest.raises(ValueError, train_test_split, range(10),
-                  shuffle=True)
-    pytest.raises(ValueError, train_test_split, range(10),
-                  shuffle='group', labels=None)
-    pytest.raises(TypeError, train_test_split, range(10),
-                  shuffle='stratified', labels=None)
+                  shuffle=False, labels=[])
 
     with pytest.raises(ValueError,
                        match=r'train_size=11 should be either positive and '
@@ -77,7 +71,7 @@ def test_train_test_split():
     # simple test
     split = train_test_split(X, y, test_size=None, train_size=.5)
     X_train, X_test, y_train, y_test = split
-    assert_equal(len(y_test), len(y_train))
+    assert len(y_test) == len(y_train)
     # test correspondence of X and y
     assert_array_equal(X_train[:, 0], y_train * 10)
     assert_array_equal(X_test[:, 0], y_test * 10)
@@ -92,10 +86,10 @@ def test_train_test_split():
     X_4d = np.arange(10 * 5 * 3 * 2).reshape(10, 5, 3, 2)
     y_3d = np.arange(10 * 7 * 11).reshape(10, 7, 11)
     split = train_test_split(X_4d, y_3d)
-    assert_equal(split[0].shape, (7, 5, 3, 2))
-    assert_equal(split[1].shape, (3, 5, 3, 2))
-    assert_equal(split[2].shape, (7, 7, 11))
-    assert_equal(split[3].shape, (3, 7, 11))
+    assert split[0].shape == (7, 5, 3, 2)
+    assert split[1].shape == (3, 5, 3, 2)
+    assert split[2].shape == (7, 7, 11)
+    assert split[3].shape == (3, 7, 11)
 
     # test shuffle='stratified' option
     y = np.array([1, 1, 1, 1, 2, 2, 2, 2])
@@ -105,10 +99,10 @@ def test_train_test_split():
                                        shuffle='stratified',
                                        labels=y,
                                        random_state=0)
-        assert_equal(len(test), exp_test_size)
-        assert_equal(len(test) + len(train), len(y))
+        assert len(test) == exp_test_size
+        assert len(test) + len(train) == len(y)
         # check the 1:1 ratio of ones and twos in the data is preserved
-        assert_equal(np.sum(train == 1), np.sum(train == 2))
+        assert np.sum(train == 1) == np.sum(train == 2)
 
     # test shuffle='group' option
     y = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
@@ -118,10 +112,10 @@ def test_train_test_split():
                                        shuffle='group',
                                        labels=y,
                                        random_state=0)
-        assert_equal(len(test), exp_test_size)
-        assert_equal(np.unique(test).size, exp_test_size//3)
-        assert_equal(len(test) + len(train), len(y))
-        assert_equal(np.unique(train).size + np.unique(test).size, 4)
+        assert len(test) == exp_test_size
+        assert np.unique(test).size == exp_test_size//3
+        assert len(test) + len(train) == len(y)
+        assert np.unique(train).size + np.unique(test).size == 4
 
     # test shuffle='simple' option
     y = np.array([1, 1, 1, 1, 2, 2, 2, 2])
@@ -131,8 +125,8 @@ def test_train_test_split():
                                        shuffle='simple',
                                        labels=y,
                                        random_state=42)
-        assert_equal(len(test), exp_test_size)
-        assert_equal(len(test) + len(train), len(y))
+        assert len(test) == exp_test_size
+        assert len(test) + len(train) == len(y)
 
     # test unshuffled split
     y = np.arange(10)
@@ -326,7 +320,7 @@ def test_ordered_kfold_n_stratification_bins():
 def test_fit_and_score():
     X = np.arange(100).reshape((10, 10))
     y = np.arange(10)
-    estimator = RandomForestRegressor(random_state=42)
+    estimator = RandomForestRegressor(random_state=42, n_estimators=10)
 
     scorer = SCORERS['r2']
     train, test = next(KFold(n_splits=5).split(X, y))
@@ -338,7 +332,7 @@ def test_fit_and_score():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    expect1 = [-16.0]
+    expect1 = {'fit_failed': False, 'test_scores': -16.0}
     assert expect1 == got1, got1
 
     got2 = _fit_and_score(estimator, X, y, scorer, train, test,
@@ -347,23 +341,25 @@ def test_fit_and_score():
                           return_train_score=True)
 
     expect2 = [0.97, -16.0]
-    assert expect2 == [round(x, 2) for x in got2], got2
+    assert expect2 == [round(got2['train_scores'], 2),
+                       round(got2['test_scores'], 2)], got2
 
 
 def test_fit_and_score_keras_model():
-    np.random.seed(42)
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
+                                 loss='binary_crossentropy',
                                  metrics=[], batch_size=32,
-                                 epochs=30, seed=42)
+                                 epochs=30, seed=42,
+                                 verbose=0)
 
     scorer = SCORERS['accuracy']
     train, test = next(KFold(n_splits=5).split(X, y))
     assert np.array_equal(test, np.arange(154)), test
 
     new_params = {
-        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
-        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+        'layers_1_Dense__config__kernel_initializer__config__seed': 0,
+        'layers_2_Dense__config__kernel_initializer__config__seed': 0
     }
     parameters = new_params
     fit_params = {'shuffle': False}
@@ -372,21 +368,23 @@ def test_fit_and_score_keras_model():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert round(got1[0], 1) == 0.7, got1
+    assert round(got1['test_scores'], 2) == 0.56, got1
 
 
 def test_fit_and_score_keras_model_callbacks():
     config = train_model.get_config()
     regressor = KerasGClassifier(config, optimizer='adam',
+                                 loss='binary_crossentropy',
                                  metrics=[], batch_size=32,
-                                 epochs=500, seed=42)
+                                 epochs=500, seed=42,
+                                 verbose=0)
 
     scorer = SCORERS['accuracy']
     train, test = next(KFold(n_splits=5).split(X, y))
 
     new_params = {
-        'layers_0_Dense__config__kernel_initializer__config__seed': 0,
-        'layers_1_Dense__config__kernel_initializer__config__seed': 0
+        'layers_1_Dense__config__kernel_initializer__config__seed': 0,
+        'layers_2_Dense__config__kernel_initializer__config__seed': 0
     }
     parameters = new_params
     callbacks = [EarlyStopping()]
@@ -396,14 +394,17 @@ def test_fit_and_score_keras_model_callbacks():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    assert 0.67 <= round(got1[0], 2) <= 0.73, got1
+    print(got1['test_scores'])
+    assert 0.55 <= round(got1['test_scores'], 2) <= 0.60, got1
 
 
 def test_fit_and_score_keras_model_in_gridsearchcv():
     config = train_model.get_config()
     clf = KerasGClassifier(config, optimizer='adam',
+                           loss='binary_crossentropy',
                            metrics=[], batch_size=32,
-                           epochs=10, seed=42)
+                           epochs=10, seed=42,
+                           verbose=0)
 
     df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
     X = df.iloc[:, 0:8].values.astype(float)
@@ -413,8 +414,8 @@ def test_fit_and_score_keras_model_in_gridsearchcv():
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=123)
 
     new_params = {
-        'layers_0_Dense__config__kernel_initializer__config__seed': [0],
-        'layers_1_Dense__config__kernel_initializer__config__seed': [0]
+        'layers_1_Dense__config__kernel_initializer__config__seed': [0],
+        'layers_2_Dense__config__kernel_initializer__config__seed': [0]
     }
 
     grid = GridSearchCV(clf, param_grid=new_params, scoring=scorer,
@@ -424,4 +425,4 @@ def test_fit_and_score_keras_model_in_gridsearchcv():
 
     got1 = grid.best_score_
 
-    assert round(got1, 2) == 0.49, got1
+    assert round(got1, 2) == 0.52, got1

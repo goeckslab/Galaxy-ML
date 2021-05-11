@@ -17,10 +17,10 @@ from sklearn import (cluster, compose, decomposition, ensemble,
 
 from sklearn.base import BaseEstimator
 from sklearn.base import MetaEstimatorMixin, clone, is_classifier
-from sklearn.feature_selection.rfe import _rfe_single_fit, RFE, RFECV
+from sklearn.feature_selection._rfe import _rfe_single_fit, RFE, RFECV
 from sklearn.model_selection import check_cv
-from sklearn.metrics.scorer import check_scoring
-from sklearn.utils import check_X_y, safe_indexing, safe_sqr
+from sklearn.metrics._scorer import check_scoring
+from sklearn.utils import check_X_y, safe_sqr
 
 
 __all__ = ('DyRFE', 'DyRFECV', '_MyPipeline', '_MyimbPipeline',

@@ -4,22 +4,21 @@ import json
 import numpy as np
 import os
 import pandas as pd
-import pickle
 import warnings
 from itertools import chain
 from scipy.io import mmread
 from sklearn.pipeline import Pipeline
-from sklearn.metrics.scorer import _check_multimetric_scoring
+from sklearn.metrics._scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score
-from sklearn.utils import indexable, safe_indexing
+from sklearn.utils import indexable, _safe_indexing
 
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.keras_galaxy_models import (_predict_generator,
                                            KerasGBatchClassifier)
-from galaxy_ml.utils import (SafeEval, get_scoring, load_model,
-                             read_columns, get_module,
-                             clean_params, get_main_estimator,
-                             gen_compute_scores)
+from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
+from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
+                             get_main_estimator, get_scoring, get_module,
+                             read_columns)
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
@@ -87,8 +86,8 @@ def train_test_split_none(*arrays, **kwargs):
         test = index_arr[np.isin(groups, group_names)]
         train = index_arr[~np.isin(groups, group_names)]
         rval = list(chain.from_iterable(
-            (safe_indexing(a, train),
-             safe_indexing(a, test)) for a in new_arrays))
+            (_safe_indexing(a, train),
+             _safe_indexing(a, test)) for a in new_arrays))
     else:
         rval = train_test_split(*new_arrays, **kwargs)
 
@@ -99,9 +98,9 @@ def train_test_split_none(*arrays, **kwargs):
 
 
 def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
-                                      y=None, sk_scoring=None,
-                                      steps=None, batch_size=32,
-                                      return_predictions=False):
+                                       y=None, sk_scoring=None,
+                                       steps=None, batch_size=32,
+                                       return_predictions=False):
     """output scores for bother keras and sklearn metrics
 
     Parameters
@@ -149,10 +148,10 @@ def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
     # for sklearn metrics
     if sk_scoring['primary_scoring'] != 'default':
         scorer = get_scoring(sk_scoring)
-        scorer, _ = _check_multimetric_scoring(estimator,
-                                               scoring=scorer)
-        sk_scores = gen_compute_scores(y_true, predictions, scorer,
-                                       is_multimetric=True)
+        if not isinstance(scorer, (dict, list)):
+            scorer = [sk_scoring['primary_scoring']]
+        scorer = _check_multimetric_scoring(estimator, scoring=scorer)
+        sk_scores = gen_compute_scores(y_true, predictions, scorer)
         scores.update(sk_scores)
 
     if return_predictions:
@@ -163,7 +162,7 @@ def _evaluate_keras_and_sklearn_scores(estimator, data_generator, X,
 
 def main(inputs, infile_estimator, infile1, infile2,
          outfile_result, outfile_object=None,
-         outfile_weights=None, outfile_y_true=None,
+         outfile_y_true=None,
          outfile_y_preds=None, groups=None,
          ref_seq=None, intervals=None, targets=None,
          fasta_path=None):
@@ -171,46 +170,43 @@ def main(inputs, infile_estimator, infile1, infile2,
     Parameter
     ---------
     inputs : str
-        File path to galaxy tool parameter
+        File path to galaxy tool parameter.
 
     infile_estimator : str
-        File path to estimator
+        File path to estimator.
 
     infile1 : str
-        File path to dataset containing features
+        File path to dataset containing features.
 
     infile2 : str
-        File path to dataset containing target values
+        File path to dataset containing target values.
 
     outfile_result : str
-        File path to save the results, either cv_results or test result
+        File path to save the results, either cv_results or test result.
 
     outfile_object : str, optional
-        File path to save searchCV object
-
-    outfile_weights : str, optional
-        File path to save deep learning model weights
+        File path to save searchCV object.
 
     outfile_y_true : str, optional
-        File path to target values for prediction
+        File path to target values for prediction.
 
     outfile_y_preds : str, optional
-        File path to save deep learning model weights
+        File path to save predictions.
 
     groups : str
-        File path to dataset containing groups labels
+        File path to dataset containing groups labels.
 
     ref_seq : str
-        File path to dataset containing genome sequence file
+        File path to dataset containing genome sequence file.
 
     intervals : str
-        File path to dataset containing interval file
+        File path to dataset containing interval file.
 
     targets : str
-        File path to dataset compressed target bed file
+        File path to dataset compressed target bed file.
 
     fasta_path : str
-        File path to dataset containing fasta file
+        File path to dataset containing fasta file.
     """
     warnings.simplefilter('ignore')
 
@@ -218,8 +214,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         params = json.load(param_handler)
 
     #  load estimator
-    with open(infile_estimator, 'rb') as estimator_handler:
-        estimator = load_model(estimator_handler)
+    estimator = load_model_from_h5(infile_estimator)
 
     estimator = clean_params(estimator)
 
@@ -358,7 +353,9 @@ def main(inputs, infile_estimator, infile1, infile2,
     # handle scorer, convert to scorer dict
     scoring = params['experiment_schemes']['metrics']['scoring']
     scorer = get_scoring(scoring)
-    scorer, _ = _check_multimetric_scoring(estimator, scoring=scorer)
+    if not isinstance(scorer, (dict, list)):
+        scorer = [scoring['primary_scoring']]
+    scorer = _check_multimetric_scoring(estimator, scoring=scorer)
 
     # handle test (first) split
     test_split_options = (params['experiment_schemes']
@@ -415,7 +412,7 @@ def main(inputs, infile_estimator, infile1, infile2,
 
         scores, predictions, y_true = _evaluate_keras_and_sklearn_scores(
             estimator, data_generator, X_test, y=y_test,
-            sk_scoring=sk_scoring, steps=steps, batch_size=batch_size,
+            sk_scoring=scoring, steps=steps, batch_size=batch_size,
             return_predictions=bool(outfile_y_true))
 
     else:
@@ -438,8 +435,7 @@ def main(inputs, infile_estimator, infile1, infile2,
             predictions = estimator.predict(X_test)
 
         y_true = y_test
-        sk_scores = _score(estimator, X_test, y_test, scorer,
-                           is_multimetric=True)
+        sk_scores = _score(estimator, X_test, y_test, scorer)
         scores.update(sk_scores)
 
     # handle output
@@ -463,24 +459,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     memory.clear(warn=False)
 
     if outfile_object:
-        main_est = estimator
-        if isinstance(estimator, Pipeline):
-            main_est = estimator.steps[-1][-1]
-
-        if hasattr(main_est, 'model_') \
-                and hasattr(main_est, 'save_weights'):
-            if outfile_weights:
-                main_est.save_weights(outfile_weights)
-            del main_est.model_
-            del main_est.fit_params
-            del main_est.model_class_
-            main_est.callbacks = []
-            if getattr(main_est, 'data_generator_', None):
-                del main_est.data_generator_
-
-        with open(outfile_object, 'wb') as output_handler:
-            pickle.dump(estimator, output_handler,
-                        pickle.HIGHEST_PROTOCOL)
+        dump_model_to_h5(estimator, outfile_object)
 
 
 if __name__ == '__main__':
@@ -491,7 +470,6 @@ if __name__ == '__main__':
     aparser.add_argument("-y", "--infile2", dest="infile2")
     aparser.add_argument("-O", "--outfile_result", dest="outfile_result")
     aparser.add_argument("-o", "--outfile_object", dest="outfile_object")
-    aparser.add_argument("-w", "--outfile_weights", dest="outfile_weights")
     aparser.add_argument("-l", "--outfile_y_true", dest="outfile_y_true")
     aparser.add_argument("-p", "--outfile_y_preds", dest="outfile_y_preds")
     aparser.add_argument("-g", "--groups", dest="groups")
@@ -503,7 +481,6 @@ if __name__ == '__main__':
 
     main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
          args.outfile_result, outfile_object=args.outfile_object,
-         outfile_weights=args.outfile_weights,
          outfile_y_true=args.outfile_y_true,
          outfile_y_preds=args.outfile_y_preds,
          groups=args.groups,

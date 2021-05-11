@@ -7,18 +7,18 @@ import time
 import warnings
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics.scorer import r2_scorer
+from sklearn.metrics._scorer import r2_scorer
 from galaxy_ml.model_validations import OrderedKFold
 from galaxy_ml.binarize_target import (
     IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
     BinarizeTargetRegressor, binarize_auc_scorer,
     binarize_average_precision_scorer, BINARIZE_SCORERS)
-from galaxy_ml.utils import load_model
+from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
 
 
 warnings.simplefilter('ignore')
@@ -58,7 +58,7 @@ def test_binarize_target_classifier():
         PRECISION=BINARIZE_SCORERS['precision'],
         F1_MACRO=BINARIZE_SCORERS['f1_macro']
     )
-    clf = RandomForestClassifier(random_state=42)
+    clf = RandomForestClassifier(n_estimators=10, random_state=42)
     estimator = BinarizeTargetClassifier(clf)
 
     result_val = cross_validate(
@@ -81,16 +81,14 @@ def test_binarize_target_classifier():
     assert round(f1_macro_mean, 4) == 0.4922, f1_macro_mean
 
     # new test
-    clf = SVC(random_state=10)
+    clf = SVC(random_state=10, gamma='auto')
     estimator = BinarizeTargetClassifier(clf)
 
     # save models
-    with open('./tools/test-data/binarize_svc.zip', 'wb') as f:
-        pickle.dump(estimator, f, pickle.HIGHEST_PROTOCOL)
+    dump_model_to_h5(estimator, './tools/test-data/binarize_svc.h5')
 
     # load models
-    with open('./tools/test-data/binarize_svc.zip', 'rb') as f:
-        estimator = load_model(f)
+    estimator = load_model_from_h5('./tools/test-data/binarize_svc.h5')
 
     result_val = cross_validate(
         estimator, X, y, cv=cv, scoring=scoring,
@@ -106,7 +104,7 @@ def test_binarize_target_classifier():
 def test_pipeline_in_binarize_target_classifier():
 
     std = StandardScaler()
-    clf = SVC(random_state=10)
+    clf = RandomForestClassifier(n_estimators=10, random_state=42)
     pipe = Pipeline([('std', std), ('clf', clf)])
     estimator = BinarizeTargetClassifier(pipe)
 
@@ -123,7 +121,7 @@ def test_pipeline_in_binarize_target_classifier():
     best_est = search.best_estimator_
     best_score = search.best_score_
 
-    assert round(best_score, 2) == 0.33, best_score
+    assert round(best_score, 2) == 0.21, best_score
 
     # save models
     with tempfile.TemporaryFile() as f:
@@ -137,7 +135,7 @@ def test_binarize_target_regressor():
         AP=binarize_average_precision_scorer,
         R2=r2_scorer
     )
-    clf = RandomForestRegressor(random_state=42)
+    clf = GradientBoostingRegressor(random_state=42, n_estimators=10)
     estimator = BinarizeTargetRegressor(clf)
 
     result_val = cross_validate(
@@ -145,8 +143,8 @@ def test_binarize_target_regressor():
         verbose=0, n_jobs=2)
 
     ap_mean = result_val['test_AP'].mean()
-    assert round(ap_mean, 4) == 0.1794, ap_mean
+    assert round(ap_mean, 4) == 0.1950, ap_mean
     roc_mean = result_val['test_AUC'].mean()
-    assert round(roc_mean, 4) == 0.5764, roc_mean
+    assert round(roc_mean, 4) == 0.5885, roc_mean
     r2_mean = result_val['test_R2'].mean()
-    assert round(r2_mean, 4) == -0.2046, r2_mean
+    assert round(r2_mean, 4) == -0.0582, r2_mean

@@ -7,35 +7,43 @@ Email: guqiang01@gmail.com
 """
 
 import collections
-import keras
+import copy
+import h5py
+import json
 import numpy as np
 import random
 import tensorflow as tf
 import warnings
 import six
 from abc import ABCMeta
-from keras import backend as K
-from keras.callbacks import Callback
-from keras.callbacks import (EarlyStopping, LearningRateScheduler,
-                             TensorBoard, RemoteMonitor,
-                             ModelCheckpoint, TerminateOnNaN,
-                             CSVLogger)
-from keras.engine.training_utils import iter_sequence_infinite
-from keras.models import Sequential, Model
-from keras.optimizers import (SGD, RMSprop, Adagrad,
-                              Adadelta, Adam, Adamax, Nadam)
-from keras.utils import to_categorical, multi_gpu_model
-from keras.utils.data_utils import (Sequence, OrderedEnqueuer,
-                                    GeneratorEnqueuer)
-from keras.utils.generic_utils import has_arg, to_list
+from pathlib import Path
+from tensorflow import keras
+import sys
+
+from tensorflow.keras.callbacks import (
+    Callback, CSVLogger, EarlyStopping, LearningRateScheduler,
+    TensorBoard, RemoteMonitor, ModelCheckpoint, TerminateOnNaN
+)
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.optimizers import (
+    Adadelta, Adagrad, Adam, Adamax, Nadam, SGD, RMSprop, Ftrl)
+from tensorflow.keras.utils import (
+    Sequence, OrderedEnqueuer, GeneratorEnqueuer, to_categorical)
+from tensorflow.python.keras.saving import hdf5_format
+from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+from tensorflow.python.keras.utils.data_utils import iter_sequence_infinite
+from tensorflow.python.keras.utils.generic_utils import (has_arg,
+                                                         to_list)
 from sklearn.base import (BaseEstimator, ClassifierMixin,
                           RegressorMixin, clone, is_classifier)
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.utils import check_array, check_X_y
-from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.multiclass import (check_classification_targets,
+                                      type_of_target)
 from sklearn.utils.validation import check_is_fitted, check_random_state
 from .externals.selene_sdk.utils import compute_score
+from . import utils
 
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
@@ -49,17 +57,16 @@ class BaseOptimizer(BaseEstimator):
     """
     Base wrapper for Keras Optimizers
     """
-    def get_params(self, deep=True):
-        out = super(BaseOptimizer, self).get_params(deep=deep)
-        for k, v in six.iteritems(out):
-            try:
-                out[k] = K.eval(v)
-            except AttributeError:
-                pass
-        return out
+    def get_params(self, deep=False):
+        out = {}
 
-    def set_params(self, **params):
-        raise NotImplementedError()
+        for k, v in self._hyper.items():
+            if isinstance(v, tf.Variable):
+                out[k] = v.numpy().item()
+            else:
+                out[k] = v
+
+        return out
 
 
 class KerasSGD(SGD, BaseOptimizer):
@@ -242,25 +249,10 @@ def check_params(params, fn):
                 "{} is not a legal parameter".format(p))
 
 
-class SearchParam(object):
+class SearchParam(utils.SearchParam):
     """
     Sortable Wrapper class for search parameters
     """
-    def __init__(self, s_param, value):
-        self.s_param = s_param
-        self.value = value
-
-    @property
-    def depth(self):
-        return len(self.s_param.split('__'))
-
-    @property
-    def sort_depth(self):
-        if self.depth > 2:
-            return 2
-        else:
-            return self.depth
-
     def to_dict(self):
         return _param_to_dict(self.s_param, self.value)
 
@@ -352,32 +344,55 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     Parameters
     ----------
     config : dictionary
-        from `model.get_config()`
+        From `model.get_config()`
     model_type : str
         'sequential' or 'functional'
-    optimizer : str, default 'sgd'
-        'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
-    loss : str, default 'binary_crossentropy'
-        same as Keras `loss`
+    optimizer : str, default 'rmsprop'
+        One of ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam',
+        'adamax', 'nadam', 'ftrl']. Used in model.compile.
+    loss : str or None
+        From Keras `loss`. Used in model.compile.
     metrics : list of strings, default []
-    lr : None or float
-        optimizer parameter, default change with `optimizer`
+        Used in model.compile.
+    loss_weights : list or dictionary
+        Used in model.compile.
+    run_eagerly : bool, default = False.
+        If True, this Model's logic will not be wrapped in a `tf.function`.
+        Recommended to leave this as None unless your Model cannot be run
+        inside a tf.function. Used in model.compile.
+    steps_per_execution : int, default = 1.
+        The number of batches to run during each tf.function call.
+        Used in model.compile.
+    learning_rate : None or float
+        Optimizer parameter, default value changes with `optimizer`.
     momentum : None or float
-        for optimizer `sgd` only, ignored otherwise
+        For optimizer `sgd` only, ignored otherwise
     nesterov : None or bool
-        for optimizer `sgd` only, ignored otherwise
-    decay : None or float
-        optimizer parameter, default change with `optimizer`
+        For optimizer `sgd` only, ignored otherwise
+    epsilon : None or float
+        Optimizer parameter, default change with `optimizer`
     rho : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`
+    centered : bool, default = False
+        For optimizer 'rmsprop' only, ignored otherwise.
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
     beta_2 : None or float
-        optimizer parameter, default change with `optimizer`
-    schedule_decay : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
+    initial_accumulator_value : float
+        Must be less or equal to zero. For `Ftrl` only.
+    beta : float
+        For `Ftrl` only.
+    learning_rate_power : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l1_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_shrinkage_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
     epochs : int
         fit_param from Keras
     batch_size : None or int, default=None
@@ -392,7 +407,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_fraction : Float. default=0.1
+    validation_split : float.
         The proportion of training data to set aside as validation set.
         Must be within [0, 1). Will be ignored if `validation_data` is
         set via fit_params.
@@ -401,153 +416,161 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     validation_steps : None or int, default is None
         fit params, validation steps. if None, it will be number
         of samples divided by batch_size.
-    seed : None or int, default None
-        backend random seed
     verbose : 0, 1 or 2
         Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
         epoch. If > 0, log device placement
+    seed : None or int, default None
+        backend random seed
     """
     def __init__(self, config, model_type='sequential',
-                 optimizer='sgd', loss='binary_crossentropy',
-                 metrics=[], lr=None, momentum=None, decay=None,
-                 nesterov=None, rho=None, amsgrad=None, beta_1=None,
-                 beta_2=None, schedule_decay=None, epochs=1,
-                 batch_size=None, seed=None, callbacks=None,
-                 validation_fraction=0.1, steps_per_epoch=None,
-                 validation_steps=None, verbose=0, **fit_params):
+                 optimizer='rmsprop', loss=None, metrics=[],
+                 loss_weights=None, run_eagerly=None,
+                 steps_per_execution=None, learning_rate=None,
+                 momentum=None, nesterov=None, epsilon=None,
+                 rho=None, centered=None,  amsgrad=None,
+                 beta_1=None, beta_2=None, learning_rate_power=None,
+                 initial_accumulator_value=None, beta=None,
+                 l1_regularization_strength=None,
+                 l2_regularization_strength=None,
+                 l2_shrinkage_regularization_strength=None,
+                 epochs=1, batch_size=None, callbacks=None,
+                 validation_split=0.1, steps_per_epoch=None,
+                 validation_steps=None, verbose=1, seed=None,
+                 **fit_params):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = metrics
+        self.loss_weights = loss_weights
+        self.run_eagerly = run_eagerly
+        self.steps_per_execution = steps_per_execution
+        # optimizer parameters
+        self.learning_rate = learning_rate
+        self.momentum = momentum
+        self.epsilon = epsilon
+        self.centered = centered
+        self.nesterov = nesterov
+        self.rho = rho
+        self.amsgrad = amsgrad
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.learning_rate_power = learning_rate_power
+        self.initial_accumulator_value = initial_accumulator_value
+        self.beta = beta
+        self.l1_regularization_strength = l1_regularization_strength
+        self.l2_regularization_strength = l2_regularization_strength
+        self.l2_shrinkage_regularization_strength = \
+            l2_shrinkage_regularization_strength
+        # fit parameters
         self.epochs = epochs
         self.batch_size = batch_size or 32
-        self.seed = seed
         self.callbacks = callbacks
 
-        if validation_fraction is None:
-            validation_fraction = 0.
-        if not (0.0 <= validation_fraction < 1.0):
-            raise ValueError("validation_fraction must be in range [0, 1)")
-        self.validation_fraction = validation_fraction
+        if not (0.0 <= validation_split < 1.0):
+            raise ValueError("validation_split must be in range [0, 1)")
+        self.validation_split = validation_split
 
         self.steps_per_epoch = steps_per_epoch
         self.validation_steps = validation_steps
         self.verbose = verbose
+        self.seed = seed
         self.fit_params = fit_params
-        # TODO support compile parameters
 
         check_params(fit_params, Model.fit)
-
-        if self.optimizer == 'sgd':
-            self.lr = 0.01 if lr is None else lr
-            self.momentum = 0 if momentum is None else momentum
-            self.decay = 0 if decay is None else decay
-            self.nesterov = False if nesterov is None else nesterov
-
-        elif self.optimizer == 'rmsprop':
-            self.lr = 0.001 if lr is None else lr
-            self.rho = 0.9 if rho is None else rho
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adagrad':
-            self.lr = 0.01 if lr is None else lr
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adadelta':
-            self.lr = 1.0 if lr is None else lr
-            self.rho = 0.95 if rho is None else rho
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'adam':
-            self.lr = 0.001 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.decay = 0 if decay is None else decay
-            self.amsgrad = False if amsgrad is None else amsgrad
-
-        elif self.optimizer == 'adamax':
-            self.lr = 0.002 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.decay = 0 if decay is None else decay
-
-        elif self.optimizer == 'nadam':
-            self.lr = 0.002 if lr is None else lr
-            self.beta_1 = 0.9 if beta_1 is None else beta_1
-            self.beta_2 = 0.999 if beta_2 is None else beta_2
-            self.schedule_decay = 0.004 if schedule_decay is None\
-                else schedule_decay
-
-        else:
-            raise ValueError("Unsupported optimizer type: %s" % optimizer)
 
     @property
     def _optimizer(self):
         if self.optimizer == 'sgd':
-            if not hasattr(self, 'momentum'):
-                self.momentum = 0
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            if not hasattr(self, 'nesterov'):
-                self.nesterov = False
-            return SGD(lr=self.lr, momentum=self.momentum,
-                       decay=self.decay, nesterov=self.nesterov)
+            options = dict(
+                learning_rate=self.learning_rate or 0.01,
+                momentum=self.momentum or 0,
+                nesterov=self.nesterov or False
+            )
+
+            return SGD(**options)
 
         elif self.optimizer == 'rmsprop':
-            if not hasattr(self, 'rho'):
-                self.rho = 0.9
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return RMSprop(lr=self.lr, rho=self.rho, decay=self.decay)
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                rho=self.rho or 0.9,
+                momentum=self.momentum or 0.,
+                epsilon=self.epsilon or 1e-07,
+                centered=self.centered or False
+            )
 
-        elif self.optimizer == 'adagrad':
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adagrad(lr=self.lr, decay=self.decay)
-
-        elif self.optimizer == 'adadelta':
-            if not hasattr(self, 'rho'):
-                self.rho = 0.95
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adadelta(lr=self.lr, rho=self.rho,
-                            decay=self.decay)
+            return RMSprop(**options)
 
         elif self.optimizer == 'adam':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            if not hasattr(self, 'amsgrad'):
-                self.amsgrad = False
-            return Adam(lr=self.lr, beta_1=self.beta_1,
-                        beta_2=self.beta_2, decay=self.decay,
-                        amsgrad=self.amsgrad)
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07,
+                amsgrad=self.amsgrad or False
+            )
+
+            return Adam(**options)
+
+        elif self.optimizer == 'adadelta':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                rho=self.rho or 0.95,
+                epsilon=self.epsilon or 1e-7,
+            )
+
+            return Adadelta(**options)
+
+        elif self.optimizer == 'adagrad':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                initial_accumulator_value=(
+                    self.initial_accumulator_value or 0.1),
+                epsilon=self.epsilon or 1e-07
+            )
+
+            return Adagrad(**options)
 
         elif self.optimizer == 'adamax':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'decay'):
-                self.decay = 0
-            return Adamax(lr=self.lr, beta_1=self.beta_1,
-                          beta_2=self.beta_2,
-                          decay=self.decay)
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07
+            )
+
+            return Adamax(**options)
 
         elif self.optimizer == 'nadam':
-            if not hasattr(self, 'beta_1'):
-                self.beta_1 = 0.9
-            if not hasattr(self, 'beta_2'):
-                self.beta_2 = 0.999
-            if not hasattr(self, 'schedule_decay'):
-                self.schedule_decay = 0.004
-            return Nadam(lr=self.lr, beta_1=self.beta_1,
-                         beta_2=self.beta_2,
-                         schedule_decay=self.schedule_decay)
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                beta_1=self.beta_1 or 0.9,
+                beta_2=self.beta_2 or 0.999,
+                epsilon=self.epsilon or 1e-07
+            )
+
+            return Nadam(**options)
+
+        elif self.optimizer == 'ftrl':
+            options = dict(
+                learning_rate=self.learning_rate or 0.001,
+                learning_rate_power=self.learning_rate_power or -0.5,
+                initial_accumulator_value=(
+                    self.initial_accumulator_value or 0.1),
+                l1_regularization_strength=(
+                    self.l1_regularization_strength or 0),
+                l2_regularization_strength=(
+                    self.l2_regularization_strength or 0),
+                l2_shrinkage_regularization_strength=(
+                    self.l2_shrinkage_regularization_strength or 0),
+                beta=self.beta or 0.
+            )
+
+            return Ftrl(**options)
+
+        else:
+            raise ValueError("Unsupported optimizer type: %s!"
+                             % self.optimizer)
 
     @property
     def named_layers(self):
@@ -575,26 +598,23 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             return None
 
         callbacks = []
-        for cb in self.callbacks:
+        for cb in copy.deepcopy(self.callbacks):
             params = cb['callback_selection']
             callback_type = params.pop('callback_type')
 
-            curr_dir = __import__('os').getcwd()
+            curr_dir = Path.cwd()
 
             if callback_type in ('None', ''):
                 continue
             elif callback_type == 'ModelCheckpoint':
                 if not params.get('filepath', None):
-                    params['filepath'] = \
-                        __import__('os').path.join(curr_dir, 'weights.hdf5')
+                    params['filepath'] = curr_dir.joinpath('weights.hdf5')
             elif callback_type == 'TensorBoard':
                 if not params.get('log_dir', None):
-                    params['log_dir'] = \
-                        __import__('os').path.join(curr_dir, 'logs')
+                    params['log_dir'] = curr_dir.joinpath('logs')
             elif callback_type == 'CSVLogger':
                 if not params:
-                    params['filename'] = \
-                        __import__('os').path.join(curr_dir, 'log.csv')
+                    params['filename'] = curr_dir.joinpath('log.csv')
                     params['separator'] = '\t'
                     params['append'] = True
 
@@ -606,58 +626,56 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             return None
         return callbacks
 
-    def _make_validation_split(self, X, y):
+    def _make_validation_split(self, X, y=None, sample_weight=None):
         n_samples = X.shape[0]
 
         if y is not None and is_classifier(self):
             splitter_type = StratifiedShuffleSplit
         else:
             splitter_type = ShuffleSplit
-        random_state = check_random_state(self.seed)
-        cv = splitter_type(test_size=self.validation_fraction,
+        # make split randomness fixed.
+        random_state = check_random_state(self.seed or 0)
+        cv = splitter_type(test_size=self.validation_split,
                            random_state=random_state)
         idx_train, idx_val = next(cv.split(X, y))
         if idx_train.shape[0] == 0 or idx_val.shape[0] == 0:
             raise ValueError(
                 "Splitting %d samples into a train set and a validation set "
-                "with validation_fraction=%r led to an empty set (%d and %d "
-                "samples). Please either change validation_fraction or "
+                "with validation_split=%r led to an empty set (%d and %d "
+                "samples). Please either change validation_split or "
                 "increase number of samples"
-                % (n_samples, self.validation_fraction, idx_train.shape[0],
+                % (n_samples, self.validation_split, idx_train.shape[0],
                    idx_val.shape[0]))
 
-        if y is None:
-            X_train = X[idx_train]
-            validation_data = (X[idx_val],)
-            return X_train, None, validation_data
-        else:
-            X_train, y_train = X[idx_train], y[idx_train]
-            validation_data = (X[idx_val], y[idx_val])
+        train_data, validation_data = (X[idx_train], ), (X[idx_val], )
 
-        return X_train, y_train, validation_data
+        if y is None:
+            train_data += (None, )
+            validation_data += (None, )
+        else:
+            train_data += (y[idx_train], )
+            validation_data += (y[idx_val], )
+
+        if sample_weight is None:
+            train_data += (None, )
+        else:
+            train_data += (sample_weight[idx_train], )
+
+        return train_data, validation_data
 
     def _fit(self, X, y, **kwargs):
         # base fit
-        if K.backend() == 'tensorflow':
-            # default
-            intra_op = 0
-            inter_op = 0
-            if self.seed is not None:
-                np.random.seed(self.seed)
-                random.seed(self.seed)
-                tf.compat.v1.set_random_seed(self.seed)
-                intra_op = 1
-                inter_op = 1
+        # context._context = None
+        # context._create_context()
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            tf.random.set_seed(self.seed)
+            # tf.config.threading.set_intra_op_parallelism_threads(1)
+            # tf.config.threading.set_inter_op_parallelism_threads(1)
 
-            session_conf = tf.compat.v1.ConfigProto(
-                intra_op_parallelism_threads=intra_op,
-                inter_op_parallelism_threads=inter_op,
-                log_device_placement=bool(self.verbose))
-
-            sess = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph(),
-                config=session_conf)
-            K.set_session(sess)
+        # tf.config.set_soft_device_placement(True)
+        # tf.debugging.set_log_device_placement(self.verbose > 1)
 
         config = self.config
 
@@ -673,31 +691,36 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             config,
             custom_objects=dict(tf=tf))
 
-        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
-                            metrics=self.metrics)
+        self.model_.compile(
+            optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
+            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
+            steps_per_execution=self.steps_per_execution
+        )
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
         fit_params = self.fit_params
-
-        # make validation split
-        if self.validation_fraction and 'validation_data' not in kwargs \
-                and 'validation_data' not in fit_params:
-            X, y, validation_data = self._make_validation_split(X, y)
-            fit_params['validation_data'] = validation_data
-
-        callbacks = self._callbacks
-        steps_per_epoch = self.steps_per_epoch
-        validation_steps = self.validation_steps
-        verbose = self.verbose
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
-                               callbacks=callbacks,
-                               steps_per_epoch=steps_per_epoch,
-                               validation_steps=validation_steps,
-                               verbose=verbose))
+                               callbacks=self._callbacks,
+                               validation_split=self.validation_split,
+                               steps_per_epoch=self.steps_per_epoch,
+                               validation_steps=self.validation_steps,
+                               verbose=self.verbose))
         fit_params.update(kwargs)
+        sample_weight = fit_params.get('sample_weight', None)
+        validation_split = fit_params.get('validation_split', 0.)
+        validation_data = fit_params.get('validation_data', None)
+
+        # customize validation split
+        if validation_split and not validation_data:
+            train_data, validation_data = self._make_validation_split(
+                X, y, sample_weight)
+            X, y, sample_weight = train_data
+            fit_params['validation_data'] = validation_data
+            fit_params['sample_weight'] = sample_weight
+            fit_params['validation_split'] = 0.
 
         history = self.model_.fit(X, y, **fit_params)
 
@@ -705,8 +728,6 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
     def get_params(self, deep=True):
         """Return parameter names for GridSearch"""
-        # call self._optimizer to activate hidden attributes
-        self._optimizer
         out = super(BaseKerasModel, self).get_params(deep=deep)
 
         if not deep:
@@ -825,10 +846,11 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if not hasattr(self, 'model_'):
             raise ValueError("Keras model is not fitted. No weights to save!")
 
-        self.model_.save_weights(filepath, overwrite=overwrite)
+        self.model_.save_weights(
+            filepath, overwrite=overwrite, save_format='h5')
 
     def load_weights(self, filepath, by_name=False,
-                     skip_mismatch=False, reshape=False):
+                     skip_mismatch=False, options=None):
         """Loads all layer weights from a HDF5 save file.
 
         parameters
@@ -844,8 +866,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             in the number of weights, or a mismatch in the shape of the
             weight (only valid when `by_name`=True).
 
-        reshape : Reshape weights to fit the layer when the correct number
-            of weight arrays is present but their shape does not match.
+        options : Optional tf.train.CheckpointOptions object that specifies
+            options for loading weights.
         """
         config = self.config
 
@@ -863,7 +885,60 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_.load_weights(filepath, by_name=by_name,
                                  skip_mismatch=skip_mismatch,
-                                 reshape=reshape)
+                                 options=options)
+
+    def save_model(self, file_or_group, extra_attrs=None, skip_params=None):
+        """ Serialize configuration and weights to hdf5. Good for prediction.
+        Should not be used in continuing training.
+
+        Parameters
+        -----------
+        file_or_group : str, Path-like or h5py.Group objtect.
+        extra_attrs : list of strings or None.
+            Extra attributes to serialize.
+        skip_params : list of strings or None.
+            List of parameters that don't need to keep.
+        """
+        if not isinstance(file_or_group, h5py.Group):
+            if not isinstance(file_or_group, (Path, str)):
+                raise ValueError("Type of `file_or_group` must be str, Path or"
+                                 " Group, but got %s!" % type(file_or_group))
+            group = h5py.File(file_or_group, 'w')
+        else:
+            group = file_or_group
+
+        class_name = self.__class__.__name__
+        params = self.get_params(deep=False)
+        if not skip_params:
+            skip_params = []
+        if not isinstance(skip_params, (list, tuple)):
+            skip_params = [skip_params]
+        for p in skip_params:
+            params.pop(p, None)
+
+        group['class_name'] = class_name
+        group['params'] = json.dumps(params).encode('utf8')
+
+        if hasattr(self, 'model_'):
+            weights = group.create_group('weights')
+            hdf5_format.save_weights_to_hdf5_group(
+                weights, self.model_.layers)
+
+        if extra_attrs:
+            if not extra_attrs:
+                extra_attrs = []
+            if not isinstance(extra_attrs, (list, tuple)):
+                extra_attrs = [extra_attrs]
+            attrs = group.create_group('attributes')
+            for att in extra_attrs:
+                try:
+                    attrs[att] = getattr(self, att)
+                except Exception as e:
+                    warnings.warn(e)
+                    continue
+
+        if isinstance(file_or_group, (Path, str)):
+            group.close()
 
 
 class KerasGClassifier(BaseKerasModel, ClassifierMixin):
@@ -947,6 +1022,11 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
 
+    def save_model(self, file_or_group, extra_attrs=['classes_'],
+                   skip_params=None):
+        return super().save_model(file_or_group, extra_attrs=extra_attrs,
+                                  skip_params=skip_params)
+
 
 class KerasGRegressor(BaseKerasModel, RegressorMixin):
     """
@@ -990,26 +1070,47 @@ class KerasGBatchClassifier(KerasGClassifier):
     optimizer : str, default 'sgd'
         'sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam'
     loss : str, default 'binary_crossentropy'
-        same as Keras `loss`
+        Keras `loss`.
     metrics : list of strings, default []
-    lr : None or float
-        optimizer parameter, default change with `optimizer`
+    loss_weights : list or dictionary
+        Used in model.compile.
+    run_eagerly : bool, default = False.
+        If True, this Model's logic will not be wrapped in a `tf.function`.
+        Recommended to leave this as None unless your Model cannot be run
+        inside a tf.function. Used in model.compile.
+    steps_per_execution : int, default = 1.
+        The number of batches to run during each tf.function call.
+        Used in model.compile.
+    learning_rate : None or float
+        Optimizer parameter, default value changes with `optimizer`.
     momentum : None or float
-        for optimizer `sgd` only, ignored otherwise
+        For optimizer `sgd` only, ignored otherwise
     nesterov : None or bool
-        for optimizer `sgd` only, ignored otherwise
-    decay : None or float
-        optimizer parameter, default change with `optimizer`
+        For optimizer `sgd` only, ignored otherwise
+    epsilon : None or float
+        Optimizer parameter, default change with `optimizer`
     rho : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`
+    centered : bool, default = False
+        For optimizer 'rmsprop' only, ignored otherwise.
     amsgrad : None or bool
         for optimizer `adam` only, ignored otherwise
     beta_1 : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
     beta_2 : None or float
-        optimizer parameter, default change with `optimizer`
-    schedule_decay : None or float
-        optimizer parameter, default change with `optimizer`
+        Optimizer parameter, default change with `optimizer`.
+    initial_accumulator_value : float
+        Must be less or equal to zero. For `Ftrl` only.
+    beta : float
+        For `Ftrl` only.
+    learning_rate_power : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l1_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
+    l2_shrinkage_regularization_strength : float
+        Must be greater than or equal to zero. For `Ftrl` only.
     epochs : int
         fit_param from Keras
     batch_size : None or int, default=None
@@ -1024,7 +1125,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                  "patience": 10,
                  "mode": "auto",
                  "restore_best_weights": False}}
-    validation_fraction : Float. default=0.1
+    validation_split : Float. default=0.
         The proportion of training data to set aside as validation set.
         Must be within [0, 1). Will be ignored if `validation_data` is
         set via fit_params.
@@ -1033,11 +1134,11 @@ class KerasGBatchClassifier(KerasGClassifier):
     validation_steps : None or int, default is None
         fit params, validation steps. if None, it will be number
         of samples divided by batch_size.
-    seed : None or int, default None
-        backend random seed
     verbose : 0, 1 or 2
         Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per
         epoch. If > 0, log device placement
+    seed : None or int, default None
+        Backend random seed
     n_jobs : int, default=1
     prediction_steps : None or int, default is None
         prediction steps. If None, it will be number of samples
@@ -1048,56 +1149,53 @@ class KerasGBatchClassifier(KerasGClassifier):
         If float, 0.2, corresponds to class_weight
         {0: 1/0.2, 1: 1}
     """
-    def __init__(self, config, data_batch_generator,
-                 model_type='sequential', optimizer='sgd',
-                 loss='binary_crossentropy', metrics=[], lr=None,
-                 momentum=None, decay=None, nesterov=None, rho=None,
-                 amsgrad=None, beta_1=None, beta_2=None,
-                 schedule_decay=None, epochs=1, batch_size=None,
-                 seed=None, n_jobs=1, callbacks=None,
-                 validation_fraction=0.1, steps_per_epoch=None,
-                 validation_steps=None, verbose=0,
-                 prediction_steps=None, class_positive_factor=1,
-                 **fit_params):
+    def __init__(self, config, data_batch_generator=None,
+                 model_type='sequential', optimizer='rmsprop',
+                 loss='binary_crossentropy', metrics=[],
+                 loss_weights=None, run_eagerly=None,
+                 steps_per_execution=None, learning_rate=None,
+                 momentum=None, nesterov=None, epsilon=None, rho=None,
+                 centered=None, amsgrad=None, beta_1=None, beta_2=None,
+                 learning_rate_power=None, initial_accumulator_value=None,
+                 beta=None, l1_regularization_strength=None,
+                 l2_regularization_strength=None,
+                 l2_shrinkage_regularization_strength=None,
+                 epochs=1, batch_size=None, callbacks=None,
+                 validation_split=0., steps_per_epoch=None,
+                 validation_steps=None, verbose=1, seed=None,
+                 n_jobs=1, prediction_steps=None,
+                 class_positive_factor=1, **fit_params):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
-            loss=loss, metrics=metrics, lr=lr, momentum=momentum,
-            decay=decay, nesterov=nesterov, rho=rho,
-            amsgrad=amsgrad, beta_1=beta_1, beta_2=beta_2,
-            schedule_decay=schedule_decay, epochs=epochs,
-            batch_size=batch_size, seed=seed, callbacks=callbacks,
-            validation_fraction=validation_fraction,
+            loss=loss, metrics=metrics, loss_weights=loss_weights,
+            run_eagerly=run_eagerly, steps_per_execution=steps_per_execution,
+            learning_rate=learning_rate, momentum=momentum,
+            nesterov=nesterov, epsilon=epsilon, rho=rho,
+            centered=centered, amsgrad=amsgrad, beta_1=beta_1,
+            beta_2=beta_2, learning_rate_power=learning_rate_power,
+            initial_accumulator_value=initial_accumulator_value,
+            beta=beta, l1_regularization_strength=l1_regularization_strength,
+            l2_regularization_strength=l2_regularization_strength,
+            l2_shrinkage_regularization_strength=(
+                l2_shrinkage_regularization_strength),
+            epochs=epochs, batch_size=batch_size, callbacks=callbacks,
+            validation_split=validation_split,
             steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps,
-            verbose=verbose,
-            **fit_params)
+            validation_steps=validation_steps, verbose=verbose,
+            seed=seed, **fit_params)
+
         self.data_batch_generator = data_batch_generator
+        self.n_jobs = n_jobs
         self.prediction_steps = prediction_steps
         self.class_positive_factor = class_positive_factor
-        self.n_jobs = n_jobs
 
     def fit(self, X, y=None, class_weight=None, sample_weight=None, **kwargs):
         """ fit the model
         """
-        if K.backend() == 'tensorflow':
-            # default
-            intra_op = 0
-            inter_op = 0
-            if self.seed is not None:
-                np.random.seed(self.seed)
-                random.seed(self.seed)
-                tf.compat.v1.set_random_seed(self.seed)
-                intra_op = 1
-                inter_op = 1
-
-            session_conf = tf.compat.v1.ConfigProto(
-                intra_op_parallelism_threads=intra_op,
-                inter_op_parallelism_threads=inter_op,
-                log_device_placement=bool(self.verbose))
-
-            sess = tf.compat.v1.Session(
-                graph=tf.compat.v1.get_default_graph(), config=session_conf)
-            K.set_session(sess)
+        if self.seed is not None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
+            tf.random.set_seed(self.seed)
 
         check_params(kwargs, Model.fit_generator)
 
@@ -1158,42 +1256,35 @@ class KerasGBatchClassifier(KerasGClassifier):
         except Exception:
             pass
 
-        self.model_.compile(loss=self.loss, optimizer=self._optimizer,
-                            metrics=self.metrics)
+        self.model_.compile(
+            optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
+            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
+            steps_per_execution=self.steps_per_execution
+        )
 
         fit_params = self.fit_params
+        fit_params.update(dict(epochs=self.epochs,
+                               callbacks=self._callbacks,
+                               steps_per_epoch=self.steps_per_epoch,
+                               validation_steps=self.validation_steps,
+                               verbose=self.verbose))
+        fit_params.update(kwargs)
+        sample_weight = fit_params.get('sample_weight', None)
+        validation_data = fit_params.get('validation_data', None)
 
-        # make validation split
-        if self.validation_fraction and 'validation_data' not in kwargs \
-                and 'validation_data' not in fit_params:
-            X, y, validation_data = self._make_validation_split(X, y)
+        # customize validation split
+        if self.validation_split and not validation_data:
+            train_data, validation_data = self._make_validation_split(
+                X, y, sample_weight)
+            X, y, sample_weight = train_data
             fit_params['validation_data'] = validation_data
 
-        batch_size = self.batch_size or 32
-        epochs = self.epochs
-        n_jobs = self.n_jobs
-        callbacks = self._callbacks
-        steps_per_epoch = self.steps_per_epoch
-        validation_steps = self.validation_steps
-        verbose = self.verbose
-
-        fit_params.update(dict(
-            epochs=epochs,
-            workers=n_jobs,
-            callbacks=callbacks,
-            use_multiprocessing=False,
-            steps_per_epoch=steps_per_epoch,
-            validation_steps=validation_steps,
-            verbose=verbose))
-
-        # kwargs from function `fit ` override object initiation values.
-        fit_params.update(kwargs)
-
         validation_data = fit_params.get('validation_data', None)
+        # make validation data generator
         if validation_data:
             val_steps = fit_params.pop('validation_steps', None)
             if val_steps:
-                val_size = val_steps * batch_size
+                val_size = val_steps * self.batch_size
             else:
                 val_size = validation_data[0].shape[0]
             fit_params['validation_data'] = \
@@ -1201,7 +1292,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                                             sample_size=val_size)
 
         history = self.model_.fit_generator(
-            self.data_generator_.flow(X, y, batch_size=batch_size,
+            self.data_generator_.flow(X, y, batch_size=self.batch_size,
                                       sample_weight=sample_weight),
             shuffle=self.seed is None,
             **fit_params)
@@ -1228,13 +1319,13 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         check_params(kwargs, Model.predict_generator)
 
-        batch_size = self.batch_size or 32
+        batch_size = kwargs.pop('batch_size', None) or self.batch_size
         n_jobs = self.n_jobs
         steps = kwargs.pop('steps', None)
         if not steps:
             steps = self.prediction_steps
 
-        # through data generator
+        # make predict data generator
         if X.ndim == 2 and X.shape[1] == 1:
             if not pred_data_generator:
                 pred_data_generator = getattr(self, 'data_generator_', None)
@@ -1305,11 +1396,11 @@ class KerasGBatchClassifier(KerasGClassifier):
                          'You should pass `metrics=["accuracy"]` to '
                          'the `model.compile()` method.')
 
-    def evaluate(self, X_test, y_test=None, scorer=None, is_multimetric=False,
+    def evaluate(self, X_test, y_test=None, scorers=None, error_score='raise',
                  steps=None, batch_size=None):
         """Compute the score(s) with sklearn scorers on a given test
-        set. Will return a single float if is_multimetric is False and a
-        dict of floats, if is_multimetric is True
+        set. Will return a dict of floats if scorer is a dict, otherwise a
+        single float is returned.
         """
         if not steps:
             steps = self.prediction_steps
@@ -1322,47 +1413,58 @@ class KerasGBatchClassifier(KerasGClassifier):
         pred_probas, y_true = _predict_generator(self.model_, generator,
                                                  steps=steps)
 
-        # binary classification
-        if y_true.ndim == 1 or y_true.shape[-1] == 1:
+        t_type = type_of_target(y_true)
+
+        # TODO: multi-class metrics
+        if t_type not in ('binary', 'multilabel-indicator'):
+            raise ValueError("Scorer for multi-class classification is not "
+                             "yet implemented!")
+
+        # binary classification and multi-class
+        if t_type == 'binary':
             pred_probas = pred_probas.ravel()
             pred_labels = (pred_probas > 0.5).astype('int32')
             targets = y_true.ravel().astype('int32')
-            if not is_multimetric:
-                preds = pred_labels if scorer.__class__.__name__ == \
-                    '_PredictScorer' else pred_probas
-                score = scorer._score_func(targets, preds, **scorer._kwargs)
-
-                return score
-            else:
-                scores = {}
-                for name, one_scorer in scorer.items():
-                    preds = pred_labels if one_scorer.__class__.__name__\
-                        == '_PredictScorer' else pred_probas
-                    score = one_scorer._score_func(targets, preds,
-                                                   **one_scorer._kwargs)
-                    scores[name] = score
-
-        # TODO: multi-class metrics
-        # multi-label
         else:
             pred_labels = (pred_probas > 0.5).astype('int32')
             targets = y_true.astype('int32')
-            if not is_multimetric:
-                preds = pred_labels if scorer.__class__.__name__ == \
-                    '_PredictScorer' else pred_probas
-                score, _ = compute_score(preds, targets,
-                                         scorer._score_func)
-                return score
-            else:
-                scores = {}
-                for name, one_scorer in scorer.items():
-                    preds = pred_labels if one_scorer.__class__.__name__\
-                        == '_PredictScorer' else pred_probas
-                    score, _ = compute_score(preds, targets,
-                                             one_scorer._score_func)
-                    scores[name] = score
 
-        return scores
+        if not isinstance(scorers, dict):
+            try:
+                preds = pred_labels if scorers.__class__.__name__ == \
+                    '_PredictScorer' else pred_probas
+                score_func = scorers._score_func \
+                    if t_type == 'binary' \
+                    else compute_score
+                score = score_func(targets, preds, **scorers._kwargs)
+            except Exception:
+                if error_score == 'raise':
+                    raise
+                else:
+                    score = error_score
+            return score
+        else:
+            scores = {}
+            try:
+                for name, scorer in scorers.items():
+                    preds = pred_labels if scorer.__class__.__name__\
+                        == '_PredictScorer' else pred_probas
+                    score_func = scorer._score_func \
+                        if t_type == 'binary' \
+                        else compute_score
+                    score = score_func(targets, preds, **scorer._kwargs)
+                    scores[name] = score
+            except Exception:
+                if error_score == 'raise':
+                    raise
+                else:
+                    scores = {name: error_score for name in scorers}
+            return scores
+
+    def save_model(self, file_or_group, extra_attrs=['classes_'],
+                   skip_params=['data_batch_generator']):
+        return super().save_model(file_or_group, extra_attrs=extra_attrs,
+                                  skip_params=skip_params)
 
 
 def _predict_generator(model, generator, steps=None,
@@ -1373,7 +1475,7 @@ def _predict_generator(model, generator, steps=None,
     with prediction results
     """
     # TODO: support prediction callbacks
-    model._make_predict_function()
+    model.make_predict_function()
 
     steps_done = 0
     all_preds = []
@@ -1461,3 +1563,51 @@ def _predict_generator(model, generator, steps=None,
     else:
         return ([np.concatenate(out) for out in all_preds],
                 [np.concatenate(label) for label in all_y])
+
+
+def load_model(file_or_group):
+    """ Deserialize a keras_g_model from hdf5.
+
+    Parameters
+    ----------
+    file_or_group : str, Path-like or h5py.Group objtect.
+    """
+    if not isinstance(file_or_group, h5py.Group):
+        if not isinstance(file_or_group, (Path, str)):
+            raise ValueError("Type of `file_or_group` must be str, Path or"
+                             " Group, but got %s!" % type(file_or_group))
+        group = h5py.File(file_or_group, 'r')
+    else:
+        group = file_or_group
+
+    class_name = group['class_name'][()]
+    params = group['params'][()].decode('utf8')
+    params = json.loads(params)
+
+    klass = getattr(sys.modules[__name__], class_name)
+    obj = klass(**params)
+
+    weights = group.get('weights')
+    if weights is not None:
+        config = obj.config
+
+        if obj.model_type not in ['sequential', 'functional']:
+            raise ValueError("Unsupported model type %s" % obj.model_type)
+
+        if obj.model_type == 'sequential':
+            obj.model_class_ = Sequential
+        else:
+            obj.model_class_ = Model
+
+        obj.model_ = obj.model_class_.from_config(
+            config,
+            custom_objects=dict(tf=tf))
+
+        hdf5_format.load_weights_from_hdf5_group(weights, obj.model_.layers)
+
+    attributes = group.get('attributes')
+    if attributes:
+        for k, v in attributes.items():
+            setattr(obj, k, v[()])
+
+    return obj

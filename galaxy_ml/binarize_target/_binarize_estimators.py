@@ -97,6 +97,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             self.n_outputs_ = self.classifier_.n_outputs_
         if hasattr(self.classifier_, 'n_features_'):
             self.n_features_ = self.classifier_.n_features_
+        if hasattr(self.classifier_, 'classes_'):
+            self.classes_ = self.classifier_.classes_
 
         return self
 
@@ -108,7 +110,10 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
     def decision_function(self, X):
         """Predict using a fitted estimator
         """
-        return self.classifier_.decision_function(X)
+        try:
+            return self.classifier_.decision_function(X)
+        except Exception:
+            raise
 
     def predict_proba(self, X):
         """Predict using a fitted estimator

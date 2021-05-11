@@ -3,19 +3,22 @@ import numbers
 import time
 import warnings
 
+from joblib import logger
+
+from sklearn.base import clone
 from sklearn.exceptions import FitFailedWarning
-from sklearn.model_selection._validation import _index_param_value
-from sklearn.model_selection._validation import _score
+from sklearn.model_selection._validation import _fit_and_score\
+    as _sk_fit_and_score
 from sklearn.utils.metaestimators import _safe_split
-from sklearn.utils.validation import _num_samples
-# from sklearn.utils import _message_with_time
-from traceback import format_exception_only
+from sklearn.utils.validation import _check_fit_params, _num_samples
+from traceback import format_exc
 
 
 def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
                    parameters, fit_params, return_train_score=False,
                    return_parameters=False, return_n_test_samples=False,
                    return_times=False, return_estimator=False,
+                   split_progress=None, candidate_progress=None,
                    error_score=np.nan):
     """override the sklearn.model_selection._validation._fit_and_score
 
@@ -23,9 +26,9 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
     ----------
     estimator : estimator object implementing 'fit'
         The object to use to fit the data.
-    X : array-like of shape at least 2D
+    X : array-like of shape (n_samples, n_features)
         The data to fit.
-    y : array-like, optional, default: None
+    y : array-like of shape (n_samples,) or (n_samples, n_outputs) or None
         The target variable to try to predict in the case of
         supervised learning.
     scorer : A single callable or dict mapping scorer name to the callable
@@ -35,112 +38,131 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
         callable object / function.
         The callable object / fn should have signature
         ``scorer(estimator, X, y)``.
-    train : array-like, shape (n_train_samples,)
+    train : array-like of shape (n_train_samples,)
         Indices of training samples.
-    test : array-like, shape (n_test_samples,)
+    test : array-like of shape (n_test_samples,)
         Indices of test samples.
-    verbose : integer
+    verbose : int
         The verbosity level.
-    error_score : 'raise' or numeric
+    error_score : 'raise' or numeric, default=np.nan
         Value to assign to the score if an error occurs in estimator fitting.
         If set to 'raise', the error is raised.
-        If a numeric value is given, FitFailedWarning is raised. This parameter
-        does not affect the refit step, which will always raise the error.
+        If a numeric value is given, FitFailedWarning is raised.
     parameters : dict or None
         Parameters to be set on the estimator.
     fit_params : dict or None
         Parameters that will be passed to ``estimator.fit``.
-    return_train_score : boolean, optional, default: False
+    return_train_score : bool, default=False
         Compute and return score on training set.
-    return_parameters : boolean, optional, default: False
+    return_parameters : bool, default=False
         Return parameters that has been used for the estimator.
-    return_n_test_samples : boolean, optional, default: False
-        Whether to return the ``n_test_samples``
-    return_times : boolean, optional, default: False
+    split_progress : {list, tuple} of int, default=None
+        A list or tuple of format (<current_split_id>, <total_num_of_splits>).
+    candidate_progress : {list, tuple} of int, default=None
+        A list or tuple of format
+        (<current_candidate_id>, <total_number_of_candidates>).
+    return_n_test_samples : bool, default=False
+        Whether to return the ``n_test_samples``.
+    return_times : bool, default=False
         Whether to return the fit/score times.
-    return_estimator : boolean, optional, default: False
+    return_estimator : bool, default=False
         Whether to return the fitted estimator.
+
     Returns
     -------
-    train_scores : dict of scorer name -> float, optional
-        Score on training set (for all the scorers),
-        returned only if `return_train_score` is `True`.
-    test_scores : dict of scorer name -> float, optional
-        Score on testing set (for all the scorers).
-    n_test_samples : int
-        Number of test samples.
-    fit_time : float
-        Time spent for fitting in seconds.
-    score_time : float
-        Time spent for scoring in seconds.
-    parameters : dict or None, optional
-        The parameters that have been evaluated.
-    estimator : estimator object
-        The fitted estimator
+    result : dict with the following attributes
+        train_scores : dict of scorer name -> float
+            Score on training set (for all the scorers),
+            returned only if `return_train_score` is `True`.
+        test_scores : dict of scorer name -> float
+            Score on testing set (for all the scorers).
+        n_test_samples : int
+            Number of test samples.
+        fit_time : float
+            Time spent for fitting in seconds.
+        score_time : float
+            Time spent for scoring in seconds.
+        parameters : dict or None
+            The parameters that have been evaluated.
+        estimator : estimator object
+            The fitted estimator.
+        fit_failed : bool
+            The estimator failed to fit.
     """
+    if estimator.__class__.__name__ != 'KerasGBatchClassifier':
+        return _sk_fit_and_score(estimator, X, y, scorer, train, test, verbose,
+                                 parameters, fit_params,
+                                 return_train_score=return_train_score,
+                                 return_parameters=return_parameters,
+                                 return_n_test_samples=return_n_test_samples,
+                                 return_times=return_times,
+                                 return_estimator=return_estimator,
+                                 split_progress=split_progress,
+                                 candidate_progress=candidate_progress,
+                                 error_score=error_score)
+
+    if not isinstance(error_score, numbers.Number) and error_score != 'raise':
+        raise ValueError(
+            "error_score must be the string 'raise' or a numeric value. "
+            "(Hint: if using 'raise', please make sure that it has been "
+            "spelled correctly.)"
+        )
+
+    progress_msg = ""
+    if verbose > 2:
+        if split_progress is not None:
+            progress_msg = f" {split_progress[0]+1}/{split_progress[1]}"
+        if candidate_progress and verbose > 9:
+            progress_msg += (f"; {candidate_progress[0]+1}/"
+                             f"{candidate_progress[1]}")
+
     if verbose > 1:
         if parameters is None:
-            msg = ''
+            params_msg = ''
         else:
-            msg = '%s' % (', '.join('%s=%s' % (k, v)
-                          for k, v in parameters.items()))
-        print("[CV] %s %s" % (msg, (64 - len(msg)) * '.'))
+            sorted_keys = sorted(parameters)  # Ensure deterministic o/p
+            params_msg = (', '.join(f'{k}={parameters[k]}'
+                                    for k in sorted_keys))
+    if verbose > 9:
+        start_msg = f"[CV{progress_msg}] START {params_msg}"
+        print(f"{start_msg}{(80 - len(start_msg)) * '.'}")
 
     # Adjust length of sample weights
     fit_params = fit_params if fit_params is not None else {}
-    fit_params = {k: _index_param_value(X, v, train)
-                  for k, v in fit_params.items()}
+    fit_params = _check_fit_params(X, fit_params, train)
 
-    train_scores = {}
     if parameters is not None:
-        estimator.set_params(**parameters)
+        # clone after setting parameters in case any parameters
+        # are estimators (like pipeline steps)
+        # because pipeline doesn't clone steps in fit
+        cloned_parameters = {}
+        for k, v in parameters.items():
+            cloned_parameters[k] = clone(v, safe=False)
+
+        estimator = estimator.set_params(**cloned_parameters)
 
     start_time = time.time()
 
     X_train, y_train = _safe_split(estimator, X, y, train)
     X_test, y_test = _safe_split(estimator, X, y, test, train)
 
-    is_multimetric = not callable(scorer)
-    n_scorers = len(scorer.keys()) if is_multimetric else 1
-
-    ##########################################################
-    # Changes on sklearn.model_selection._search
-    # for param in estimator.get_params().keys():
-    #    # suppose work for both pipeline or single
-    #    # keras model
-    #    if param.endswith('validation_data'):
-    #        fit_params.update(
-    #            {param: (X_test, y_test)})
-    #        break
-    # Changes end
-    ##########################################################
+    result = {}
     try:
         if y_train is None:
             estimator.fit(X_train, **fit_params)
         else:
             estimator.fit(X_train, y_train, **fit_params)
-
-    except Exception as e:
+    except Exception:
         # Note fit time as time until error
         fit_time = time.time() - start_time
         score_time = 0.0
         if error_score == 'raise':
             raise
-        elif error_score == 'raise-deprecating':
-            warnings.warn("From version 0.22, errors during fit will result "
-                          "in a cross validation score of NaN by default. Use "
-                          "error_score='raise' if you want an exception "
-                          "raised or error_score=np.nan to adopt the "
-                          "behavior from version 0.22.",
-                          FutureWarning)
-            raise
         elif isinstance(error_score, numbers.Number):
-            if is_multimetric:
-                test_scores = dict(zip(scorer.keys(),
-                                   [error_score, ] * n_scorers))
+            if isinstance(scorer, dict):
+                test_scores = {name: error_score for name in scorer}
                 if return_train_score:
-                    train_scores = dict(zip(scorer.keys(),
-                                        [error_score, ] * n_scorers))
+                    train_scores = test_scores.copy()
             else:
                 test_scores = error_score
                 if return_train_score:
@@ -148,86 +170,57 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
             warnings.warn("Estimator fit failed. The score on this train-test"
                           " partition for these parameters will be set to %f. "
                           "Details: \n%s" %
-                          (error_score, format_exception_only(type(e), e)[0]),
+                          (error_score, format_exc()),
                           FitFailedWarning)
-        else:
-            raise ValueError("error_score must be the string 'raise' or a"
-                             " numeric value. (Hint: if using 'raise', please"
-                             " make sure that it has been spelled correctly.)")
-
+        result["fit_failed"] = True
     else:
-        fit_time = time.time() - start_time
+        result["fit_failed"] = False
 
-        #######################################################################
-        #######################################################################
-        if estimator.__class__.__name__ == 'KerasGBatchClassifier':
-            test_scores = estimator.evaluate(X_test, y_test,
-                                             scorer, is_multimetric)
-        else:
-            # _score will return dict if is_multimetric is True
-            test_scores = _score(estimator, X_test, y_test,
-                                 scorer, is_multimetric)
+        fit_time = time.time() - start_time
+        test_scores = estimator.evaluate(X_test, y_test, scorer,
+                                         error_score)
         score_time = time.time() - start_time - fit_time
         if return_train_score:
-            if estimator.__class__.__name__ == 'KerasGBatchClassifier':
-                train_scores = estimator.evaluate(X_train, y_train,
-                                                  scorer, is_multimetric)
-            else:
-                train_scores = _score(estimator, X_train, y_train, scorer,
-                                      is_multimetric)
-        #######################################################################
-        #######################################################################
-    if verbose > 2:
-        if is_multimetric:
-            for scorer_name in sorted(test_scores):
-                msg += ", %s=" % scorer_name
-                if return_train_score:
-                    msg += "(train=%.3f," % train_scores[scorer_name]
-                    msg += " test=%.3f)" % test_scores[scorer_name]
-                else:
-                    msg += "%.3f" % test_scores[scorer_name]
-        else:
-            msg += ", score="
-            msg += ("%.3f" % test_scores if not return_train_score else
-                    "(train=%.3f, test=%.3f)" % (train_scores, test_scores))
+            train_scores = estimator.evaluate(
+                X_train, y_train, scorer, error_score
+            )
 
     if verbose > 1:
         total_time = score_time + fit_time
-        print(_message_with_time('CV', msg, total_time))
+        end_msg = f"[CV{progress_msg}] END "
+        result_msg = params_msg + (";" if params_msg else "")
+        if verbose > 2:
+            if isinstance(test_scores, dict):
+                for scorer_name in sorted(test_scores):
+                    result_msg += f" {scorer_name}: ("
+                    if return_train_score:
+                        scorer_scores = train_scores[scorer_name]
+                        result_msg += f"train={scorer_scores:.3f}, "
+                    result_msg += f"test={test_scores[scorer_name]:.3f})"
+            else:
+                result_msg += ", score="
+                if return_train_score:
+                    result_msg += (f"(train={train_scores:.3f}, "
+                                   f"test={test_scores:.3f})")
+                else:
+                    result_msg += f"{test_scores:.3f}"
+        result_msg += f" total time={logger.short_format_time(total_time)}"
 
-    ret = [train_scores, test_scores] if return_train_score else [test_scores]
+        # Right align the result_msg
+        end_msg += "." * (80 - len(end_msg) - len(result_msg))
+        end_msg += result_msg
+        print(end_msg)
 
+    result["test_scores"] = test_scores
+    if return_train_score:
+        result["train_scores"] = train_scores
     if return_n_test_samples:
-        ret.append(_num_samples(X_test))
+        result["n_test_samples"] = _num_samples(X_test)
     if return_times:
-        ret.extend([fit_time, score_time])
+        result["fit_time"] = fit_time
+        result["score_time"] = score_time
     if return_parameters:
-        ret.append(parameters)
+        result["parameters"] = parameters
     if return_estimator:
-        ret.append(estimator)
-    return ret
-
-
-# `sklearn.utils._message_with_time` is available from v0.21.x.
-def _message_with_time(source, message, time):
-    """Create one line message for logging purposes
-    Parameters
-    ----------
-    source : str
-        String indicating the source or the reference of the message
-    message : str
-        Short message
-    time : int
-        Time in seconds
-    """
-    start_message = "[%s] " % source
-
-    # adapted from joblib.logger.short_format_time without the Windows -.1s
-    # adjustment
-    if time > 60:
-        time_str = "%4.1fmin" % (time / 60)
-    else:
-        time_str = " %5.1fs" % time
-    end_message = " %s, total=%s" % (message, time_str)
-    dots_len = (70 - len(start_message) - len(end_message))
-    return "%s%s%s" % (start_message, dots_len * '.', end_message)
+        result["estimator"] = estimator
+    return result

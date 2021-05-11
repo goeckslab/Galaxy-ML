@@ -16,7 +16,7 @@ from abc import ABCMeta
 from joblib import Parallel, delayed
 from scipy.stats import ttest_ind
 from sklearn.base import BaseEstimator, RegressorMixin, clone
-from sklearn.feature_selection.univariate_selection import _BaseFilter
+from sklearn.feature_selection._univariate_selection import _BaseFilter
 from sklearn.utils import as_float_array, check_X_y, check_random_state
 from sklearn.utils.validation import check_is_fitted, check_memory
 
