@@ -31,6 +31,7 @@ _URL = '-URL-'
 _REPR = '-repr-'
 _PY_VERSION = '-python-'
 _NP_VERSION = '-numpy-'
+_GALAXY_ML = '-Galaxy-ML-'
 _OBJ = '-object-'
 _REDUCE = '-reduce-'
 _GLOBAL = '-global-'
@@ -120,6 +121,14 @@ class ModelToHDF5:
             file.attrs[_REPR] = repr(obj).encode('utf-8')
 
             file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
+
+            galaxy_ml_module = Path(__file__).parent.parent.joinpath('__init__.py')
+            with open(galaxy_ml_module, 'r') as fh:
+                for line in fh:
+                    if line.startswith('__version__'):
+                        __version__ = line.split('=')[1].strip()[1:-1]
+                        file.attrs[_GALAXY_ML] = str(__version__).encode('utf8')
+                        break
 
             np_module = sys.modules.get('numpy')
             if np_module:

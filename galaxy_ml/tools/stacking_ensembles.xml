@@ -159,7 +159,7 @@
                     <param name="selected_estimator" value="XGBClassifier" />
                 </conditional>
             </repeat>
-            <output name="outfile" file="StackingVoting03.h5" compare="sim_size" delta="5" />
+            <output name="outfile" file="StackingVoting03.h5mlm" compare="sim_size" delta="5" />
         </test>
         <test>
             <conditional name="algo_selection">
