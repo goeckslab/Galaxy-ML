@@ -62,7 +62,7 @@ jobs:
             . ~/venv/bin/activate
             cd galaxy_ml/tools
             TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
-            planemo test ${TESTFILES}
+            planemo test ${TESTFILES} --galaxy_branch dev
 workflows:
   version: 2
   build_and_test:
