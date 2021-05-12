@@ -1,4 +1,4 @@
-<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@">
+<tool id="sklearn_searchcv" name="Hyperparameter Search" version="@VERSION@" profile="@PROFILE@">
     <description>performs hyperparameter optimization using various SearchCVs</description>
     <macros>
         <import>main_macros.xml</import>

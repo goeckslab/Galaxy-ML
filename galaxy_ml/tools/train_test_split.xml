@@ -1,4 +1,4 @@
-<tool id="sklearn_train_test_split" name="Split Dataset" version="@VERSION@">
+<tool id="sklearn_train_test_split" name="Split Dataset" version="@VERSION@" profile="@PROFILE@">
     <description>into training and test subsets</description>
     <macros>
         <import>main_macros.xml</import>

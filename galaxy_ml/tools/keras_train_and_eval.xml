@@ -1,4 +1,4 @@
-<tool id="keras_train_and_eval" name="Deep learning training and evaluation" version="@VERSION@">
+<tool id="keras_train_and_eval" name="Deep learning training and evaluation" version="@VERSION@" profile="@PROFILE@">
     <description>conduct deep training and evaluation either implicitly or explicitly</description>
     <macros>
         <import>main_macros.xml</import>

@@ -1,4 +1,4 @@
-<tool id="sklearn_estimator_attributes" name="Estimator attributes" version="@VERSION@">
+<tool id="sklearn_estimator_attributes" name="Estimator attributes" version="@VERSION@" profile="@PROFILE@">
     <description>get important attributes from an estimator or scikit object</description>
     <macros>
         <import>main_macros.xml</import>

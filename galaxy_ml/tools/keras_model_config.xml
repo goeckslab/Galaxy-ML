@@ -1,4 +1,4 @@
-<tool id="keras_model_config" name="Create a deep learning model architecture" version="@VERSION@">
+<tool id="keras_model_config" name="Create a deep learning model architecture" version="@VERSION@" profile="@PROFILE@">
   <description>using Keras</description>
   <macros>
     <import>main_macros.xml</import>

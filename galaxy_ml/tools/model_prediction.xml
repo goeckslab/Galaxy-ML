@@ -1,4 +1,4 @@
-<tool id="model_prediction" name="Model Prediction" version="@VERSION@">
+<tool id="model_prediction" name="Model Prediction" version="@VERSION@" profile="@PROFILE@">
     <description>predicts on new data using a preffited model</description>
     <macros>
         <import>main_macros.xml</import>

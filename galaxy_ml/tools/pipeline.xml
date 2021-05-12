@@ -1,4 +1,4 @@
-<tool id="sklearn_build_pipeline" name="Pipeline Builder" version="@VERSION@" profile="21.01">
+<tool id="sklearn_build_pipeline" name="Pipeline Builder" version="@VERSION@" profile="@PROFILE@">
     <description>an all-in-one platform to build pipeline, single estimator, preprocessor and custom wrappers</description>
     <macros>
         <import>main_macros.xml</import>
