@@ -1,4 +1,4 @@
-<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@">
+<tool id="ml_visualization_ex" name="Machine Learning Visualization Extension" version="@VERSION@" profile="@PROFILE@">
     <description>includes several types of plotting for machine learning</description>
     <macros>
         <import>main_macros.xml</import>
