@@ -447,7 +447,7 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="14" />
-                    <has_text text="0.7868509373448503" />
+                    <has_text text="0.78685093734485" />
                 </assert_contents>
             </output>
         </test>
