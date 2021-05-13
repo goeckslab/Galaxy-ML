@@ -296,7 +296,9 @@ def build_keras_model(inputs, outfile, model_json, batch_mode=False):
                         ['optimizer_selection']['optimizer_options']))
 
         train_metrics = (inputs['mode_selection']['compile_params']
-                         ['metrics']).split(',')
+                         ['metrics'])
+        if not isinstance(train_metrics, list):      # for older galaxy
+            train_metrics = train_metrics.split(',')
         if train_metrics[-1] == 'none':
             train_metrics = train_metrics[:-1]
         options['metrics'] = train_metrics
