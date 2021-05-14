@@ -1,4 +1,4 @@
-<tool id="sklearn_model_validation" name="Model Validation" version="@VERSION@">
+<tool id="sklearn_model_validation" name="Model Validation" version="@VERSION@" profile="@PROFILE@">
     <description>includes cross_validate, cross_val_predict, learning_curve, and more</description>
     <macros>
         <import>main_macros.xml</import>

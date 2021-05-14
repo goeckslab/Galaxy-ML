@@ -1,4 +1,4 @@
-<tool id="keras_image_deep_learning" name="Image Deep Learning" version="@VERSION@">
+<tool id="keras_image_deep_learning" name="Image Deep Learning" version="@VERSION@" profile="@PROFILE@">
     <description>performs training, evaluation and predictions using image data generator</description>
     <macros>
         <import>main_macros.xml</import>

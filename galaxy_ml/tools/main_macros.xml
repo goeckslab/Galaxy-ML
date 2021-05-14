@@ -1,6 +1,8 @@
 <macros>
   <token name="@VERSION@">1.0.9.0</token>
 
+  <token name="@PROFILE@">21.05</token>
+
   <xml name="python_requirements">
       <requirements>
           <requirement type="package" version="3.7">python</requirement>
