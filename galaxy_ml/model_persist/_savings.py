@@ -278,12 +278,12 @@ class ModelToHDF5:
 
     dispatch[bytes] = save_bytes
 
-    """def save_unicode(self, obj):
-        self.memoize(obj)
-        return {_UNICODE: obj}
+    # def save_unicode(self, obj):
+    #     self.memoize(obj)
+    #     return {_UNICODE: obj}
 
-    if six.PY2:
-        dispatch[unicode] = save_unicode"""
+    # if six.PY2:
+    #     dispatch[unicode] = save_unicode
     # dispatch[bytearray] = save_primitive
 
     def save_list(self, obj):
@@ -324,7 +324,6 @@ class ModelToHDF5:
                 newdict[k] = v
             else:"""
             newdict[k] = self.save(v)
-
         return newdict
 
     dispatch[dict] = save_dict
@@ -364,7 +363,6 @@ class ModelToHDF5:
         newdict = {}
         newdict[_DATATYPE] = self.save(type(obj))
         newdict[_VALUE] = self.save(obj.item())
-
         return {_NP_DATATYPE: newdict}
 
     dispatch[numpy.bool_] = save_np_datatype
@@ -551,11 +549,10 @@ class HDF5ToModel:
                 newdict[k] = v
             else:"""
             newdict[k] = self.load_all(v)
-
         return newdict
 
     def find_class(self, module, name):
-        if self.safe_unpickler:
+        if self.sanitize:
             return self.safe_unpickler.find_class(module, name)
 
         if (module, name) in _compat_pickle.NAME_MAPPING:
@@ -619,7 +616,6 @@ class HDF5ToModel:
         _dtype = self.load_all(data[_DTYPE])
         _values = self.load_all(data[_VALUES])
         obj = numpy.array(_values, dtype=_dtype)
-
         return obj
 
     def load_np_ndarray(self, data):
@@ -630,7 +626,6 @@ class HDF5ToModel:
         _datatype = self.load_all(data[_DATATYPE])
         _value = self.load_all(data[_VALUE])
         obj = _datatype(_value)
-
         return obj
 
     def load_keras_model(self, data):
