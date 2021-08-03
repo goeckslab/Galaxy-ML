@@ -208,3 +208,8 @@ Pipeline(memory=None,
                                       weights='uniform'))],
          verbose=False)
 ```
+
+#### Publication
+
+
+Gu Q, Kumar A, Bray S, Creason A, Khanteymoori A, Jalili V, et al. (2021) Galaxy-ML: An accessible, reproducible, and scalable machine learning toolkit for biomedicine. PLoS Comput Biol 17(6): e1009014. https://doi.org/10.1371/journal.pcbi.1009014
