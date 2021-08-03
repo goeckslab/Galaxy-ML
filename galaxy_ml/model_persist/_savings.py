@@ -38,6 +38,8 @@ _GLOBAL = '-global-'
 _FUNC = '--func-'
 _ARGS = '-args-'
 _STATE = '-state-'
+_LISTITEMS = '-listitems-'
+_DICTITEMS = '-dictitems-'
 _KEYS = '-keys-'
 _MEMO = '-memo-'
 _NP_NDARRAY = '-np_ndarray-'
@@ -215,13 +217,14 @@ class ModelToHDF5:
         else:
             raise HPicklerError(
                 "Can't reduce %r object: %r" % (type(obj).__name__, obj))
-        assert (type(rv) is tuple),\
-            "%s must return a tuple, but got %s" % (reduce, type(rv))
+        if not isinstance(rv, tuple):
+            raise HPicklerError(
+               "%s must return a tuple, but got %s" % (reduce, type(rv)))
 
-        lenth = len(rv)
-        assert (lenth in (2, 3, 4, 5)),\
-            ("Reduce tuple is expected to return 2 - 5 elements, "
-             "but got %d elements" % lenth)
+        l = len(rv)
+        if not (2 <= l <= 5):
+            raise HPicklerError("Tuple returned by %s must have "
+                                "two to five elements" % reduce)
 
         save = self.save
 
@@ -235,9 +238,20 @@ class ModelToHDF5:
         assert (type(args) is tuple)
         rval[_ARGS] = {_TUPLE: save(list(args))}
 
-        if lenth == 3:
+        if l >= 3:
             state = rv[2]
-            rval[_STATE] = save(state)
+            if state:
+                rval[_STATE] = save(state)
+
+        if l >= 4:
+            listitems = rv[3]
+            if listitems:
+                rval[_LISTITEMS] = save(list(listitems))
+
+        if l == 5:
+            dictitems = rv[4]
+            if dictitems:
+                rval[_DICTITEMS] = save(list(dictitems))
 
         self.memoize(obj)
         return {_REDUCE: rval}
@@ -264,12 +278,12 @@ class ModelToHDF5:
 
     dispatch[bytes] = save_bytes
 
-    """def save_unicode(self, obj):
-        self.memoize(obj)
-        return {_UNICODE: obj}
+    # def save_unicode(self, obj):
+    #     self.memoize(obj)
+    #     return {_UNICODE: obj}
 
-    if six.PY2:
-        dispatch[unicode] = save_unicode"""
+    # if six.PY2:
+    #     dispatch[unicode] = save_unicode
     # dispatch[bytearray] = save_primitive
 
     def save_list(self, obj):
@@ -310,7 +324,6 @@ class ModelToHDF5:
                 newdict[k] = v
             else:"""
             newdict[k] = self.save(v)
-
         return newdict
 
     dispatch[dict] = save_dict
@@ -350,7 +363,6 @@ class ModelToHDF5:
         newdict = {}
         newdict[_DATATYPE] = self.save(type(obj))
         newdict[_VALUE] = self.save(obj.item())
-
         return {_NP_DATATYPE: newdict}
 
     dispatch[numpy.bool_] = save_np_datatype
@@ -537,11 +549,10 @@ class HDF5ToModel:
                 newdict[k] = v
             else:"""
             newdict[k] = self.load_all(v)
-
         return newdict
 
     def find_class(self, module, name):
-        if self.safe_unpickler:
+        if self.sanitize:
             return self.safe_unpickler.find_class(module, name)
 
         if (module, name) in _compat_pickle.NAME_MAPPING:
@@ -586,6 +597,16 @@ class HDF5ToModel:
                 for k, v in state.items():
                     setattr(obj, k, v)
 
+        _listitems = data.get(_LISTITEMS)
+        if _listitems:
+            value = self.load_all(_listitems)
+            obj.extend(value)
+
+        _dictitems = data.get(_DICTITEMS)
+        if _dictitems:
+            for k, v in self.load_all(_dictitems):
+                obj[k] = v
+
         if self.verbose:
             print(func)
         self.memoize(obj)
@@ -595,7 +616,6 @@ class HDF5ToModel:
         _dtype = self.load_all(data[_DTYPE])
         _values = self.load_all(data[_VALUES])
         obj = numpy.array(_values, dtype=_dtype)
-
         return obj
 
     def load_np_ndarray(self, data):
@@ -606,7 +626,6 @@ class HDF5ToModel:
         _datatype = self.load_all(data[_DATATYPE])
         _value = self.load_all(data[_VALUE])
         obj = _datatype(_value)
-
         return obj
 
     def load_keras_model(self, data):

@@ -20,6 +20,8 @@ from galaxy_ml.keras_galaxy_models import KerasGClassifier
 from galaxy_ml import model_persist
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+from imblearn.over_sampling import SMOTEN
+from imblearn.pipeline import make_pipeline
 
 
 df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
@@ -247,6 +249,41 @@ def test_keras_dump_and_load():
         kgc.predict(X_test),
         model.predict(X_test)
     )
+
+
+# imbalanced-learn
+def test_imblearn_dump_and_load():
+    smt = SMOTEN(random_state=42)
+    rfc = RandomForestClassifier(random_state=10)
+    
+    pipe = make_pipeline(smt, rfc)
+
+    pipe.fit(X_train, y_train)
+
+    _, tmp_imb_pipe_h5 = tempfile.mkstemp(suffix='.h5')
+    imb_pipe_h5 = os.path.join(module_folder,
+                               'tools/test-data/imb_pipeline.h5')
+
+    print("\nDumping imblearn pipeline to HDF5...")
+    start_time = time.time()
+    model_persist.dump_model_to_h5(pipe, tmp_imb_pipe_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+    print("File size: %s" % str(os.path.getsize(tmp_imb_pipe_h5)))
+    diff = os.path.getsize(tmp_imb_pipe_h5) - os.path.getsize(imb_pipe_h5)
+    assert abs(diff) < 40, os.path.getsize(imb_pipe_h5)
+
+    print("\nLoading hdf5 model...")
+    start_time = time.time()
+    model = model_persist.load_model_from_h5(tmp_imb_pipe_h5)
+    end_time = time.time()
+    print("(%s s)" % str(end_time - start_time))
+
+    assert np.array_equal(
+        pipe.predict(X_test),
+        model.predict(X_test)
+    )
+    os.remove(tmp_imb_pipe_h5)
 
 
 def test_safe_load_model():
