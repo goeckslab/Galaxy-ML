@@ -25,7 +25,17 @@ class _SafePickler(pickle.Unpickler, object):
         super(_SafePickler, self).__init__(file)
         # load global white list
         with open(WL_FILE, 'r') as f:
-            self.pk_whitelist = json.load(f)
+            pk_whitelist = json.load(f)
+
+        self.whitelist = pk_whitelist['SK_NAMES'] + \
+            pk_whitelist['SKR_NAMES'] + \
+            pk_whitelist['XGB_NAMES'] + \
+            pk_whitelist['NUMPY_NAMES'] + \
+            pk_whitelist['IMBLEARN_NAMES'] + \
+            pk_whitelist['MLXTEND_NAMES'] + \
+            pk_whitelist['SKOPT_NAMES'] + \
+            pk_whitelist['KERAS_NAMES'] + \
+            pk_whitelist['GENERAL_NAMES']
 
         self.bad_names = (
             'and', 'as', 'assert', 'break', 'class', 'continue',
@@ -77,19 +87,8 @@ class _SafePickler(pickle.Unpickler, object):
             module = _compat_pickle.IMPORT_MAPPING[module]
 
         fullname = module + '.' + name
-        pk_whitelist = self.pk_whitelist
 
-        whitelist = pk_whitelist['SK_NAMES'] + \
-            pk_whitelist['SKR_NAMES'] + \
-            pk_whitelist['XGB_NAMES'] + \
-            pk_whitelist['NUMPY_NAMES'] + \
-            pk_whitelist['IMBLEARN_NAMES'] + \
-            pk_whitelist['MLXTEND_NAMES'] + \
-            pk_whitelist['SKOPT_NAMES'] + \
-            pk_whitelist['KERAS_NAMES'] + \
-            pk_whitelist['GENERAL_NAMES']
-
-        if fullname not in whitelist:
+        if fullname not in self.whitelist:
             # raise pickle.UnpicklingError
             raise pickle.UnpicklingError("Global '%s' is forbidden"
                                          % fullname)
@@ -126,9 +125,8 @@ def gen_pickle_whitelist():
         'exceptions', 'externals', 'clone', 'get_config',
         'set_config', 'config_context', 'show_versions',
         'datasets')
-    for submodule in sklearn.__all__ + ['_loss']:
-        if submodule in sk_submodule_excludes:
-            continue
+    for submodule in (set(sklearn.__all__ + ['_loss'])
+                      - set(sk_submodule_excludes)):
         rval['SK_NAMES'].extend(
             find_members('sklearn.' + submodule))
 
