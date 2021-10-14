@@ -142,7 +142,7 @@ def get_sequential_model(config):
             options.update(kwargs)
 
         # add input_shape to the first layer only
-        if not getattr(model, '_layers') and input_shape is not None:
+        if not model.get_config()['layers'] and input_shape is not None:
             options['input_shape'] = input_shape
 
         model.add(klass(**options))
