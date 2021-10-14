@@ -75,6 +75,5 @@
       }
     ]
   },
-  "keras_version": "2.4.0",
   "backend": "tensorflow"
 }

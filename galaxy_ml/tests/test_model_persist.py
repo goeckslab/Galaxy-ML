@@ -317,34 +317,8 @@ def test_find_members():
     ]
     assert got == expect, got
 
-    got = model_persist.find_members('imblearn')
+    got = model_persist.find_members('imblearn.over_sampling')
     expect = [
-        "imblearn.LazyLoader",
-        "imblearn.base.BaseSampler",
-        "imblearn.base.FunctionSampler",
-        "imblearn.base.SamplerMixin",
-        "imblearn.base._identity",
-        "imblearn.combine._smote_enn.SMOTEENN",
-        "imblearn.combine._smote_tomek.SMOTETomek",
-        "imblearn.datasets._imbalance.make_imbalance",
-        "imblearn.datasets._zenodo.fetch_datasets",
-        "imblearn.ensemble._bagging.BalancedBaggingClassifier",
-        "imblearn.ensemble._easy_ensemble.EasyEnsembleClassifier",
-        "imblearn.ensemble._forest.BalancedRandomForestClassifier",
-        "imblearn.ensemble._forest._local_parallel_build_trees",
-        "imblearn.ensemble._weight_boosting.RUSBoostClassifier",
-        "imblearn.exceptions.raise_isinstance_error",
-        "imblearn.keras._generator.BalancedBatchGenerator",
-        "imblearn.keras._generator.balanced_batch_generator",
-        "imblearn.keras._generator.import_keras",
-        "imblearn.metrics._classification.classification_report_imbalanced",
-        "imblearn.metrics._classification.geometric_mean_score",
-        "imblearn.metrics._classification.macro_averaged_mean_absolute_error",
-        "imblearn.metrics._classification.make_index_balanced_accuracy",
-        "imblearn.metrics._classification.sensitivity_score",
-        "imblearn.metrics._classification.sensitivity_specificity_support",
-        "imblearn.metrics._classification.specificity_score",
-        "imblearn.metrics.pairwise.ValueDifferenceMetric",
         "imblearn.over_sampling._adasyn.ADASYN",
         "imblearn.over_sampling._random_over_sampler.RandomOverSampler",
         "imblearn.over_sampling._smote.base.BaseSMOTE",
@@ -354,23 +328,6 @@ def test_find_members():
         "imblearn.over_sampling._smote.cluster.KMeansSMOTE",
         "imblearn.over_sampling._smote.filter.BorderlineSMOTE",
         "imblearn.over_sampling._smote.filter.SVMSMOTE",
-        "imblearn.over_sampling.base.BaseOverSampler",
-        "imblearn.pipeline.Pipeline",
-        "imblearn.pipeline._fit_resample_one",
-        "imblearn.pipeline.make_pipeline",
-        "imblearn.tensorflow._generator.balanced_batch_generator",
-        "imblearn.under_sampling._prototype_generation._cluster_centroids.ClusterCentroids",
-        "imblearn.under_sampling._prototype_selection._condensed_nearest_neighbour.CondensedNearestNeighbour",
-        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.AllKNN",
-        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.EditedNearestNeighbours",
-        "imblearn.under_sampling._prototype_selection._edited_nearest_neighbours.RepeatedEditedNearestNeighbours",
-        "imblearn.under_sampling._prototype_selection._instance_hardness_threshold.InstanceHardnessThreshold",
-        "imblearn.under_sampling._prototype_selection._nearmiss.NearMiss",
-        "imblearn.under_sampling._prototype_selection._neighbourhood_cleaning_rule.NeighbourhoodCleaningRule",
-        "imblearn.under_sampling._prototype_selection._one_sided_selection.OneSidedSelection",
-        "imblearn.under_sampling._prototype_selection._random_under_sampler.RandomUnderSampler",
-        "imblearn.under_sampling._prototype_selection._tomek_links.TomekLinks",
-        "imblearn.under_sampling.base.BaseCleaningSampler",
-        "imblearn.under_sampling.base.BaseUnderSampler"
+        "imblearn.over_sampling.base.BaseOverSampler"
     ]
     assert got == expect, got

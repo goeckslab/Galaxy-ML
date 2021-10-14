@@ -1580,8 +1580,8 @@ def load_model(file_or_group):
     else:
         group = file_or_group
 
-    class_name = group['class_name'][()]
-    params = group['params'][()].decode('utf8')
+    class_name = group['class_name'][()].decode('utf-8')
+    params = group['params'][()].decode('utf-8')
     params = json.loads(params)
 
     klass = getattr(sys.modules[__name__], class_name)

@@ -1,3 +1,16 @@
+### Version 0.9.1
+
+#### Changes
+
+- Updates tensorflow to v2.5.x, scikit-optimize to v0.9.0.
+- Further clean up or reorganize the model persistence module.
+
+#### Bug Fixes
+
+- That bayesSearchCV doesn't work with sklearn v0.24+ now is solved by the upgrade of the library.
+- Tensorflow error with numpy in model configuration tool is now solved.
+
+
 ### Version 0.9.0
 
 #### Changes
