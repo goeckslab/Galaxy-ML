@@ -39,30 +39,40 @@ jobs:
             planemo lint
   tool_test:
     docker:
-      - image: circleci/python:3.7.10
+      - image: circleci/python:3.8.12
     parallelism: 4
     steps:
       - checkout
       - run:
           name: Build Environment
           command: |
+            sudo apt install apt-transport-https \
+                ca-certificates curl gnupg lsb-release
+            curl -fsSL https://download.docker.com/linux/debian/gpg | \
+                sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) \
+                signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+                https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            sudo apt update
+            sudo apt install docker-ce docker-ce-cli containerd.io
             cd ~
             python3 -m venv venv
             . venv/bin/activate
             pip install planemo
-            if [[ ! -d ~/miniconda ]]; then
-                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-                bash miniconda.sh -b -f -p ~/miniconda;
-            else
-                echo "Using cached miniconda";
-            fi
+            # if [[ ! -d ~/miniconda ]]; then
+            #     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+            #     bash miniconda.sh -b -f -p ~/miniconda;
+            # else
+            #     echo "Using cached miniconda";
+            # fi
       - run:
           name: Tool Tests
           command: |
             . ~/venv/bin/activate
             cd galaxy_ml/tools
             TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
-            planemo test ${TESTFILES} --galaxy_branch dev
+            planemo test ${TESTFILES} --galaxy_branch dev --docker
 workflows:
   version: 2
   build_and_test:
