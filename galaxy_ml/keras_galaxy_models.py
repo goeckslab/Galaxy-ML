@@ -1279,7 +1279,6 @@ class KerasGBatchClassifier(KerasGClassifier):
             X, y, sample_weight = train_data
             fit_params['validation_data'] = validation_data
 
-        validation_data = fit_params.get('validation_data', None)
         # make validation data generator
         if validation_data:
             val_steps = fit_params.pop('validation_steps', None)
