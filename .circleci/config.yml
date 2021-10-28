@@ -43,8 +43,6 @@ jobs:
     parallelism: 4
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 19.03.13
       - run:
           name: Build Environment
           command: |
@@ -52,24 +50,19 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install planemo
-            # if [[ ! -d ~/miniconda ]]; then
-            #     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-            #     bash miniconda.sh -b -f -p ~/miniconda;
-            # else
-            #     echo "Using cached miniconda";
-            # fi
-      # - run:
-      #     name: docker test
-      #     command: |
-      #       which docker
-      #       docker pull quay.io/qiagu/galaxy-ml:v0.9.1
+            if [[ ! -d ~/miniconda ]]; then
+                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p ~/miniconda;
+            else
+                echo "Using cached miniconda";
+            fi
       - run:
           name: Tool Tests
           command: |
             . ~/venv/bin/activate
             cd galaxy_ml/tools
             TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
-            planemo test ${TESTFILES} --galaxy_branch dev --docker
+            planemo test ${TESTFILES} --galaxy_branch dev
 workflows:
   version: 2
   build_and_test:
