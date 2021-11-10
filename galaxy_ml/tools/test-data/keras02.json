@@ -76,18 +76,21 @@
             "class_name": "GlorotUniform",
             "config": {
               "seed": null
-            }
+            },
+            "shared_object_id": 3
           },
           "recurrent_initializer": {
             "class_name": "Orthogonal",
             "config": {
               "gain": 1.0,
               "seed": null
-            }
+            },
+            "shared_object_id": 4
           },
           "bias_initializer": {
             "class_name": "Zeros",
-            "config": {}
+            "config": {},
+            "shared_object_id": 5
           },
           "unit_forget_bias": true,
           "kernel_regularizer": null,
@@ -365,6 +368,6 @@
       ]
     ]
   },
-  "keras_version": "2.4.0",
+  "keras_version": "2.5.0",
   "backend": "tensorflow"
 }

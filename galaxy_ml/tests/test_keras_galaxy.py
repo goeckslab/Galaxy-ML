@@ -698,12 +698,14 @@ def test_to_json_keras_g_classifier():
     classifier = KerasGClassifier(config, model_type='sequential')
 
     got = classifier.to_json()
+    got = json.loads(got)
+    got.pop('keras_version')
 
     with open('./tools/test-data/to_json.txt', 'r') as f:
         expect = f.read()
     expect = json.loads(expect)
 
-    assert json.loads(got) == expect, got
+    assert got == expect, got
 
 
 def test_keras_model_to_json():
@@ -1271,7 +1273,7 @@ def test_model_save_and_load():
         with h5py.File(tmp, 'r') as h:
             assert set(h.keys()) == {'class_name', 'params',
                                      'weights', 'attributes'}, h.keys()
-            assert h['class_name'][()] == 'KerasGClassifier'
+            assert h['class_name'][()].decode() == 'KerasGClassifier'
             params = json.loads(h['params'][()].decode('utf8'))
             assert params['loss'] == 'binary_crossentropy'
             assert params['seed'] == 42

@@ -395,7 +395,7 @@ def test_fit_and_score_keras_model_callbacks():
                           fit_params=fit_params)
 
     print(got1['test_scores'])
-    assert 0.55 <= round(got1['test_scores'], 2) <= 0.60, got1
+    assert 0.58 <= round(got1['test_scores'], 2) <= 0.67, got1
 
 
 def test_fit_and_score_keras_model_in_gridsearchcv():

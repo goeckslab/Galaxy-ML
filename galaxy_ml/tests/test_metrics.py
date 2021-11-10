@@ -39,7 +39,7 @@ def test_spearman_correlation_scorer():
         verbose=0, n_jobs=2)
 
     r2_mean = result_val['test_R2'].mean()
-    assert round(r2_mean, 4) == -0.0709, r2_mean
+    assert round(r2_mean, 3) == -0.071, r2_mean
 
     spearman_mean = result_val['test_Spearman'].mean()
     print(spearman_mean)

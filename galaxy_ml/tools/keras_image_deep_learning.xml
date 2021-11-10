@@ -99,10 +99,10 @@
                 <option value="ImageDataFrameBatchGenerator">Images with DataFrame -- ImageDataFrameBatchGenerator</option>
             </param>
             <when value="ImageDataFrameBatchGenerator">
-                <param name="infile_images" type="data" format="h5mlm" multiple="true" label="Images in a compressed file" help="If multple compressed files are provided, each file will be decompressed individually." />
+                <param name="infile_images" type="data" format="zip" multiple="true" label="Images in a compressed file" help="If multiple compressed files are provided, each file will be decompressed individually." />
                 <param name="infile_dataframe" type="data" format="tabular" label="Select the table containing information about all the images" help="Headered." />
                 <param argument="x_col" type="data_column" use_header_names="true" data_ref="infile_dataframe" help="The column containing relative path or filename to the each image" />
-                <param argument="y_col" type="data_column" use_header_names="true" data_ref="infile_dataframe" multiple="true" help="The column containing target data" />
+                <param argument="y_col" type="data_column" use_header_names="true" optional="true" data_ref="infile_dataframe" multiple="true" help="The column containing target data" />
                 <param argument="weight_col" type="data_column" use_header_names="true" data_ref="infile_dataframe" optional="true" help="Optional. The column containing sample weights" />
                 <section name="options" title="Advanced Options" expanded="False">
                     <param argument="target_size" type="text" value="(256, 256)" help="The dimensions to which all images found will be resized" />

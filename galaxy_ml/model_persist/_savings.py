@@ -117,32 +117,31 @@ class ModelToHDF5:
                                  "and h5py.Group object!"
                                  % (str(file_path)))
 
-            file.attrs[_URL] = \
-                str('https://github.com/goeckslab/Galaxy-ML').encode('utf-8')
+            file.attrs[_URL] = 'https://github.com/goeckslab/Galaxy-ML'
 
-            file.attrs[_REPR] = repr(obj).encode('utf-8')
+            file.attrs[_REPR] = repr(obj)
 
-            file.attrs[_PY_VERSION] = str(PY_VERSION).encode('utf8')
+            file.attrs[_PY_VERSION] = PY_VERSION
 
             galaxy_ml_module = Path(__file__).parent.parent.joinpath('__init__.py')
             with open(galaxy_ml_module, 'r') as fh:
                 for line in fh:
                     if line.startswith('__version__'):
                         __version__ = line.split('=')[1].strip()[1:-1]
-                        file.attrs[_GALAXY_ML] = str(__version__).encode('utf8')
+                        file.attrs[_GALAXY_ML] = str(__version__)
                         break
 
             np_module = sys.modules.get('numpy')
             if np_module:
                 file.attrs[_NP_VERSION] = \
-                    str(np_module.__version__).encode('utf8')
+                    str(np_module.__version__)
 
             self.weights = []
             self.keras_models = []
             self.xgboost_models = []
 
             config = {_OBJ: self.save(obj)}
-            file[_CONFIG] = json.dumps(config).encode('utf8')
+            file[_CONFIG] = json.dumps(config).encode('utf-8')
 
             if self.weights:
                 weights_group = file.create_group(_WEIGHTS)
@@ -163,11 +162,11 @@ class ModelToHDF5:
                         model.save_model(path)
                         with open(path, 'r') as f:
                             model_json = f.read()
-                    xgb_group[str(idx)] = model_json.encode('utf8')
+                    xgb_group[str(idx)] = model_json.encode('utf-8')
 
             if store_hyperparameter:
                 h_params = get_search_params(obj)
-                file[_HYPERPARAMETER] = json.dumps(h_params).encode('utf8')
+                file[_HYPERPARAMETER] = json.dumps(h_params).encode('utf-8')
 
         except Exception:
             raise
@@ -427,13 +426,13 @@ class HDF5ToModel:
                                  "h5py.File and h5py.Group object!"
                                  % (str(file_path)))
 
-            if data.attrs[_PY_VERSION].decode('utf8') != PY_VERSION:
-                warnings.warn("Trying to load an object from python %s "
-                              "when using python %s. This might lead to "
+            if data.attrs[_PY_VERSION] != PY_VERSION:
+                warnings.warn("Trying to load an object serilized in python"
+                              " %s with python %s. This might lead to "
                               "breaking code or invalid results. Use at "
                               "your own risk."
-                              % (data[_PY_VERSION].decode('utf8'),
-                                 PY_VERSION.decode('utf8')))
+                              % (data.attrs[_PY_VERSION],
+                                 PY_VERSION))
             if self.sanitize:
                 self.safe_unpickler = _SafePickler(io.StringIO(''))
 
@@ -443,7 +442,7 @@ class HDF5ToModel:
                 self.keras_models = data[_KERAS_MODELS]
             if _XGBOOST_MODELS in data:
                 self.xgboost_models = data[_XGBOOST_MODELS]
-            config = data[_CONFIG][()].decode('utf8')
+            config = data[_CONFIG][()].decode('utf-8')
             config = json.loads(config)
             model = self.load_all(config[_OBJ])
         except Exception:
@@ -507,7 +506,7 @@ class HDF5ToModel:
     dispatch[str] = load_string
 
     """def load_unicode(self, data):
-        obj = data[()].decode('utf8')
+        obj = data[()].encode('utf-8')
         self.memoize(obj)
         return obj
 
