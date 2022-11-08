@@ -2,24 +2,26 @@ pyfaidx
 pytabix
 cython>=0.29.11
 scipy>=1.3.1
-numpy>=1.18.0, <1.21
-joblib>=0.13.2, <1.0
+numpy>=1.21, <1.23
+joblib>=1.0
 asteval>=0.9.14
 pandas>=1.0, <1.3
-scikit-learn>=0.24, <0.25
-xgboost>=1.3, < 1.4
-mlxtend>=0.17, <0.18
+scikit-learn>=1.1, <1.2
+xgboost>=1.6, < 1.8
+mlxtend>=0.21, <0.22
 skrebate>=0.60, <0.70
-imbalanced-learn>=0.8.0, <0.9
-tensorflow>=2.5.0, <2.6
+imbalanced-learn>=0.9, <0.10
+keras>=2.10, <2.11
+tensorflow>=2.10, <2.11
 plotly>=4.10.0, <5.0
 #psutil>=5.6.5
 #requests>=2.22.0
 matplotlib>=3.1.1
 scikit-optimize>=0.9
-h5py>=3.1
+h5py>=3.6, <3.8
 six<=1.15.0
 bleach>=3.3.0
+
 
 # conda packages needed for tools. 
 #pydot>=1.4.1
