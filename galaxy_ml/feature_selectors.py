@@ -53,8 +53,12 @@ class DyRFE(RFE):
     """
     def __init__(self, estimator, n_features_to_select=None, step=1,
                  verbose=0):
-        super(DyRFE, self).__init__(estimator, n_features_to_select,
-                                    step, verbose)
+        super(DyRFE, self).__init__(
+            estimator,
+            n_features_to_select=n_features_to_select,
+            step=step,
+            verbose=verbose,
+        )
 
     def _fit(self, X, y, step_score=None):
 
@@ -144,7 +148,7 @@ class DyRFE(RFE):
         # Compute step score when only n_features_to_select features left
         if step_score:
             self.scores_.append(step_score(self.estimator_, features))
-        self.n_features_ = support_.sum()
+        self.n_features_in_ = support_.sum()
         self.support_ = support_
         self.ranking_ = ranking_
 
@@ -208,10 +212,14 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
     def __init__(self, estimator, step=1, min_features_to_select=1, cv='warn',
                  scoring=None, verbose=0, n_jobs=None):
         super(DyRFECV, self).__init__(
-            estimator, step=step,
+            estimator,
+            step=step,
             min_features_to_select=min_features_to_select,
-            cv=cv, scoring=scoring, verbose=verbose,
-            n_jobs=n_jobs)
+            cv=cv,
+            scoring=scoring,
+            verbose=verbose,
+            n_jobs=n_jobs,
+        )
 
     def fit(self, X, y, groups=None):
         """Fit the RFE model and automatically tune the number of selected
@@ -294,7 +302,7 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
 
         # Set final attributes
         self.support_ = rfe.support_
-        self.n_features_ = rfe.n_features_
+        self.n_features_in_ = rfe.n_features_in_
         self.ranking_ = rfe.ranking_
         self.estimator_ = clone(self.estimator)
         self.estimator_.fit(self.transform(X), y)

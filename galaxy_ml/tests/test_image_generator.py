@@ -95,9 +95,9 @@ def test_image_dataframe_generator():
     assert image_generator2.classes[:10] == [6, 9, 9, 4, 1, 1, 2, 7, 8, 3], \
         image_generator2.classes[:10]
 
-    assert np.squeeze(X_train)[:10].tolist() == [7, 280, 317, 299, 433, 401,
-                                                 171, 155,  82, 197], \
-        np.squeeze(X_train)[:10].tolist()
+    assert np.squeeze(X_train)[:10].tolist() == [
+        7, 280, 376, 299, 433, 308, 171, 155, 82, 197,
+    ], np.squeeze(X_train)[:10].tolist()
 
     assert batch_X.shape == (32, 32, 32, 3), batch_X.shape
     assert np.argmax(batch_y[:10], axis=1).tolist() == \

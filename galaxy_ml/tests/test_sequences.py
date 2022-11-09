@@ -265,7 +265,7 @@ def test_genomic_interval_batch_generator():
     generator1.set_processing_attrs()
 
     features_ = generator1.features_
-    n_features_ = generator1.n_features_
+    n_features_in_ = generator1.n_features_in_
     bin_radius_ = generator1.bin_radius_
     start_radius_ = generator1.start_radius_
     end_radius_ = generator1.end_radius_
@@ -276,7 +276,7 @@ def test_genomic_interval_batch_generator():
 
     # test fit()
     assert features_ == ['Proery_BM|GATA1'], features_
-    assert n_features_ == 1, n_features_
+    assert n_features_in_ == 1, n_features_in_
     assert bin_radius_ == 100, bin_radius_
     assert start_radius_ == 100, start_radius_
     assert end_radius_ == 100, end_radius_

@@ -55,7 +55,7 @@ class IntervalsToArrayIterator(FastaToArrayIterator):
         batch_x = np.zeros((n_samples,
                             generator.seq_length,
                             generator.n_bases), dtype='float32')
-        batch_y = np.zeros((n_samples, generator.n_features_), dtype='int32')
+        batch_y = np.zeros((n_samples, generator.n_features_in_), dtype='int32')
 
         for i in range(n_samples):
             seq_idx = int(self.X[index_array[i]])
@@ -144,7 +144,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         else:
             self.features_ = self.features
 
-        self.n_features_ = len(self.features_)
+        self.n_features_in_ = len(self.features_)
         self.bin_radius_ = self.center_bin_to_predict // 2
         self.start_radius_ = self.bin_radius_
         self.end_radius_ = \
@@ -292,7 +292,7 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         retrieved_sequences = np.zeros(
             (sample_size, self.seq_length, 4), dtype='float32')
         targets = np.zeros(
-            (sample_size, self.n_features_), dtype='int32')
+            (sample_size, self.n_features_in_), dtype='int32')
 
         if by_sample_weight:
             indices, weights = self.get_indices_and_probabilities(X)

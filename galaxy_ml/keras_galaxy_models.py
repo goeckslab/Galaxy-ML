@@ -30,7 +30,6 @@ from tensorflow.keras.optimizers import (
 from tensorflow.keras.utils import (
     Sequence, OrderedEnqueuer, GeneratorEnqueuer, to_categorical)
 from tensorflow.python.keras.saving import hdf5_format
-from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
 from tensorflow.python.keras.utils.data_utils import iter_sequence_infinite
 from tensorflow.python.keras.utils.generic_utils import (has_arg,
                                                          to_list)
@@ -1224,7 +1223,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             if hasattr(self.data_generator_, 'target_path'):
                 # for GenomicIntervalBatchGenerator
                 self.classes_ = np.arange(
-                    max(self.data_generator_.n_features_, 2))
+                    max(self.data_generator_.n_features_in_, 2))
                 self.n_classes_ = len(self.classes_)
 
         if self.classes_.tolist() == [0, 1] and class_weight is None:
@@ -1249,12 +1248,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.model_ = self.model_class_.from_config(
             config,
             custom_objects=dict(tf=tf))
-
-        # enable multiple gpu mode
-        try:
-            self.model_ = multi_gpu_model(self.model_)
-        except Exception:
-            pass
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,

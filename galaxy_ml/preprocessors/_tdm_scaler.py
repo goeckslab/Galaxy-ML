@@ -55,7 +55,7 @@ class TDMScaler(BaseEstimator, TransformerMixin):
         X : {array-like, sparse matrix}
             The data used to scale along the specified axis.
         """
-        check_is_fitted(self, 'iqr_', 'max_')
+        check_is_fitted(self, 'iqr_')
         X = check_array(X, copy=True, estimator=self, dtype=FLOAT_DTYPES,
                         force_all_finite=True)
 

@@ -95,8 +95,8 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
             self.coef_ = self.classifier_.coef_
         if hasattr(self.classifier_, 'n_outputs_'):
             self.n_outputs_ = self.classifier_.n_outputs_
-        if hasattr(self.classifier_, 'n_features_'):
-            self.n_features_ = self.classifier_.n_features_
+        if hasattr(self.classifier_, 'n_features_in_'):
+            self.n_features_in_ = self.classifier_.n_features_in_
         if hasattr(self.classifier_, 'classes_'):
             self.classes_ = self.classifier_.classes_
 
@@ -210,8 +210,8 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
             self.coef_ = self.regressor_.coef_
         if hasattr(self.regressor_, 'n_outputs_'):
             self.n_outputs_ = self.regressor_.n_outputs_
-        if hasattr(self.regressor_, 'n_features_'):
-            self.n_features_ = self.regressor_.n_features_
+        if hasattr(self.regressor_, 'n_features_in_'):
+            self.n_features_in_ = self.regressor_.n_features_in_
 
         return self
 

@@ -332,7 +332,7 @@ def test_fit_and_score():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    expect1 = {'fit_failed': False, 'test_scores': -16.0}
+    expect1 = {'fit_error': None, 'test_scores': -16.0}
     assert expect1 == got1, got1
 
     got2 = _fit_and_score(estimator, X, y, scorer, train, test,

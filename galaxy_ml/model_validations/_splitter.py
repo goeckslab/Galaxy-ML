@@ -27,9 +27,15 @@ class OrderedKFold(_BaseKFold):
         if invalid value is given.
     """
 
-    def __init__(self, n_splits=3, shuffle=False, random_state=None,
-                 n_stratification_bins=None):
-        super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
+    def __init__(
+        self,
+        n_splits=3,
+        shuffle=False,
+        random_state=None,
+        n_stratification_bins=None,
+    ):
+        super(OrderedKFold, self).__init__(
+            n_splits, shuffle=shuffle, random_state=random_state)
         if n_stratification_bins is not None:
             if not shuffle:
                 raise ValueError("The n_stratification_bins is only relevant "
@@ -103,5 +109,9 @@ class RepeatedOrderedKFold(_RepeatedSplits):
     def __init__(self, n_splits=5, n_repeats=5, random_state=None,
                  n_stratification_bins=None):
         super(RepeatedOrderedKFold, self).__init__(
-            OrderedKFold, n_repeats, random_state, n_splits=n_splits,
-            n_stratification_bins=n_stratification_bins)
+            OrderedKFold,
+            n_repeats=n_repeats,
+            random_state=random_state,
+            n_splits=n_splits,
+            n_stratification_bins=n_stratification_bins,
+        )
