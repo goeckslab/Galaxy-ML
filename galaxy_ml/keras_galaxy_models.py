@@ -688,7 +688,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_ = self.model_class_.from_config(
             config,
-            custom_objects=dict(tf=tf))
+            custom_objects=dict(tf=tf),
+        )
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
@@ -880,7 +881,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_ = self.model_class_.from_config(
             config,
-            custom_objects=dict(tf=tf))
+            custom_objects=dict(tf=tf),
+        )
 
         self.model_.load_weights(filepath, by_name=by_name,
                                  skip_mismatch=skip_mismatch,
