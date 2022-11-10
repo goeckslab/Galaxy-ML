@@ -52,7 +52,7 @@ elif attribute in ['best_estimator_', 'init_', 'classifier_', 'regressor_']:
     res = getattr(est_obj, attribute)
     print(repr(res))
     dump_model_to_h5(res, '$outfile')
-elif attribute in ['oob_score_', 'best_score_', 'n_features_']:
+elif attribute in ['oob_score_', 'best_score_', 'n_features_in']:
     res = getattr(est_obj, attribute)
     res = pandas.DataFrame([res], columns=[attribute])
     res.to_csv('$outfile', sep='\t', index=False)
@@ -102,7 +102,7 @@ else:
             <option value="scores_">Feature_selection - scores_ </option>
             <option value="pvalues_">Feature_selection - pvalues_ </option>
             <option value="ranking_">Feature_selection - ranking_ </option>
-            <option value="n_features_">Feature_selection - n_features_ </option>
+            <option value="n_features_in">Feature_selection - n_features_in </option>
             <option value="grid_scores_">Feature_selection - grid_scores_ </option>
         </param>
     </inputs>
