@@ -514,7 +514,8 @@ def clean_params(estimator, n_jobs=None):
                                      name.endswith('__n_jobs')):
             new_p = {name: n_jobs}
             estimator.set_params(**new_p)
-        elif name.endswith('callbacks'):
+        elif name.endswith('callbacks') and isinstance(p, list) and \
+                len(p) > 0 and isinstance(p[0], dict):
             for cb in p:
                 cb_type = cb['callback_selection']['callback_type']
                 if cb_type not in ALLOWED_CALLBACKS:
