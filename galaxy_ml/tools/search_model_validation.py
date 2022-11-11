@@ -485,7 +485,7 @@ def main(inputs, infile_estimator, infile1, infile2,
         params = json.load(param_handler)
 
     # Override the refit parameter
-    params['search_schemes']['options']['refit'] = True \
+    params['options']['refit'] = True \
         if (params['save'] != 'nope' or
             params['outer_split']['split_mode'] == 'nested_cv') else False
 
@@ -500,14 +500,16 @@ def main(inputs, infile_estimator, infile1, infile2,
         setattr(_search, '_fit_and_score', _fit_and_score)
         setattr(_validation, '_fit_and_score', _fit_and_score)
 
-    optimizer = params['search_schemes']['selected_search_scheme']
+    search_algos_and_options = params['search_algos']
+    optimizer = search_algos_and_options.pop('selected_search_algo')
     if optimizer == 'skopt.BayesSearchCV':
         optimizer = BayesSearchCV
     else:
         optimizer = getattr(model_selection, optimizer)
 
     # handle gridsearchcv options
-    options = params['search_schemes']['options']
+    options = params['options']
+    options.update(search_algos_and_options)
 
     if groups:
         header = 'infer' if (options['cv_selector']['groups_selector']
@@ -560,7 +562,7 @@ def main(inputs, infile_estimator, infile1, infile2,
     if 'pre_dispatch' in options and options['pre_dispatch'] == '':
         options['pre_dispatch'] = None
 
-    params_builder = params['search_schemes']['search_params_builder']
+    params_builder = params['search_params_builder']
     param_grid = _eval_search_params(params_builder)
 
     # save the SearchCV object without fit
@@ -712,8 +714,4 @@ if __name__ == '__main__':
     aparser.add_argument("-f", "--fasta_path", dest="fasta_path")
     args = aparser.parse_args()
 
-    main(args.inputs, args.infile_estimator, args.infile1, args.infile2,
-         args.outfile_result, outfile_object=args.outfile_object,
-         groups=args.groups, ref_seq=args.ref_seq,
-         intervals=args.intervals, targets=args.targets,
-         fasta_path=args.fasta_path)
+    main(**vars(args))
