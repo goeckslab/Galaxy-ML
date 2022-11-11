@@ -1,5 +1,5 @@
 <macros>
-  <token name="@KERAS_VERSION@">2.0.0</token>
+  <token name="@KERAS_VERSION@">2.10.0</token>
 
   <xml name="macro_stdio">
     <stdio>

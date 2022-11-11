@@ -149,8 +149,8 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="4" />
-                    <has_text text="0.787" />
-                    <has_text text="-4.554" />
+                    <has_text text="0.794" />
+                    <has_text text="-4.62" />
                 </assert_contents>
             </output>
             <output name="outfile_object" file="train_test_eval_model01" compare="sim_size" delta="5" />
@@ -214,8 +214,8 @@
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="4" />
-                    <has_text text="0.782" />
-                    <has_text text="-4.795" />
+                    <has_text text="0.779" />
+                    <has_text text="-4.5" />
                 </assert_contents>
             </output>
             <output name="outfile_object" file="train_test_eval_model02" compare="sim_size" delta="5" />
