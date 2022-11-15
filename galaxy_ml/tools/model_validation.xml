@@ -34,13 +34,14 @@ from sklearn import (
     model_selection, naive_bayes, neighbors, pipeline, preprocessing,
     svm, linear_model, tree, discriminant_analysis)
 from sklearn.model_selection import _validation
+from sklearn.preprocessing import LabelEncoder
 
 from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.model_persist import load_model_from_h5
 from galaxy_ml.utils import (SafeEval, get_cv, get_scoring,
                              read_columns, get_module,
-                             clean_params)
+                             clean_params, get_main_estimator)
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
@@ -158,6 +159,10 @@ if len(y.shape) == 2 and y.shape[1] == 1:
 estimator.set_params(
     data_batch_generator__features=y.ravel().tolist())
 y = None
+label_encoder = LabelEncoder()
+if get_main_estimator(estimator).__class__.__name__ == "XGBClassifier":
+    y = label_encoder.fit_transform(y)
+    print(label_encoder.classes_)
 #end if
 
 ## handle options

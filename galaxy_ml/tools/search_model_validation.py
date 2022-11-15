@@ -14,6 +14,7 @@ from sklearn import (cluster, decomposition, feature_selection,
 from sklearn.exceptions import FitFailedWarning
 from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
+from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import Pipeline
 from skopt import BayesSearchCV
 
@@ -21,7 +22,7 @@ from distutils.version import LooseVersion as Version
 from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.binarize_target import IRAPSClassifier
 from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
-from galaxy_ml.utils import (SafeEval, get_cv, get_scoring,
+from galaxy_ml.utils import (SafeEval, get_cv, get_main_estimator, get_scoring,
                              read_columns, try_get_attr, get_module,
                              clean_params)
 
@@ -29,7 +30,6 @@ from galaxy_ml.utils import (SafeEval, get_cv, get_scoring,
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 # handle  disk cache
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')
-del os
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path', '_dir',
                   'nthread', 'callbacks')
 
@@ -577,6 +577,11 @@ def main(inputs, infile_estimator, infile1, infile2,
                                   intervals=intervals, targets=targets,
                                   fasta_path=fasta_path)
 
+    label_encoder = LabelEncoder()
+    if get_main_estimator(estimator).__class__.__name__ == "XGBClassifier":
+        y = label_encoder.fit_transform(y)
+        print(label_encoder.classes_)
+
     # cache iraps_core fits could increase search speed significantly
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
     estimator = _set_memory(estimator, memory)
@@ -639,8 +644,6 @@ def main(inputs, infile_estimator, infile1, infile2,
                                        index=False)
             except Exception as e:
                 print(e)
-            finally:
-                del os
 
         keys = list(rval.keys())
         for k in keys:
