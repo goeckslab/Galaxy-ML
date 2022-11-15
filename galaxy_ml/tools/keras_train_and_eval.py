@@ -23,7 +23,6 @@ from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
 CACHE_DIR = os.path.join(os.getcwd(), 'cached')
-del os
 NON_SEARCHABLE = ('n_jobs', 'pre_dispatch', 'memory', '_path', '_dir',
                   'nthread', 'callbacks')
 ALLOWED_CALLBACKS = ('EarlyStopping', 'TerminateOnNaN', 'ReduceLROnPlateau',
