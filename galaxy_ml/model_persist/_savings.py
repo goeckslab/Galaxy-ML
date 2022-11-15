@@ -19,6 +19,7 @@ import types
 import warnings
 
 from pathlib import Path
+from sklearn.utils import estimator_html_repr
 from xgboost import XGBModel, sklearn
 
 from ..keras_galaxy_models import BaseKerasModel, load_model
@@ -29,6 +30,7 @@ from ._safe_pickler import _SafePickler
 # reserved keys
 _URL = '-URL-'
 _REPR = '-repr-'
+_HTTP_REPR = '-http_repr-'
 _PY_VERSION = '-python-'
 _NP_VERSION = '-numpy-'
 _GALAXY_ML = '-Galaxy-ML-'
@@ -120,6 +122,12 @@ class ModelToHDF5:
             file.attrs[_URL] = 'https://github.com/goeckslab/Galaxy-ML'
 
             file.attrs[_REPR] = repr(obj)
+
+            try:
+                file.attrs[_HTTP_REPR] = estimator_html_repr(obj)
+            except Exception as e:
+                print(e)
+                file.attrs[_HTTP_REPR] = ''
 
             file.attrs[_PY_VERSION] = PY_VERSION
 
