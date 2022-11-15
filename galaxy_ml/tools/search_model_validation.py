@@ -1,30 +1,39 @@
 import argparse
-import imblearn
-import joblib
 import json
-import numpy as np
 import os
-import pandas as pd
-import skrebate
 import sys
 import warnings
+from distutils.version import LooseVersion as Version
+
+from galaxy_ml import __version__ as galaxy_ml_version
+from galaxy_ml.binarize_target import IRAPSClassifier
+from galaxy_ml.model_persist import dump_model_to_h5, load_model_from_h5
+from galaxy_ml.utils import (
+    SafeEval, clean_params, get_cv, get_main_estimator, get_module,
+    get_scoring, read_columns, try_get_attr,
+)
+
+import imblearn
+
+import joblib
+
+import numpy as np
+
+import pandas as pd
+
 from scipy.io import mmread
+
 from sklearn import (cluster, decomposition, feature_selection,
                      kernel_approximation, model_selection, preprocessing)
 from sklearn.exceptions import FitFailedWarning
-from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.model_selection import _search, _validation
-from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection._validation import _score, cross_validate
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder
+
 from skopt import BayesSearchCV
 
-from distutils.version import LooseVersion as Version
-from galaxy_ml import __version__ as galaxy_ml_version
-from galaxy_ml.binarize_target import IRAPSClassifier
-from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
-from galaxy_ml.utils import (SafeEval, get_cv, get_main_estimator, get_scoring,
-                             read_columns, try_get_attr, get_module,
-                             clean_params)
+import skrebate
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
@@ -269,12 +278,13 @@ def _handle_X_y(estimator, params, infile1, infile2, loaded_df={},
         loaded_df[df_key] = infile2
 
     y = read_columns(
-            infile2,
-            c=c,
-            c_option=column_option,
-            sep='\t',
-            header=header,
-            parse_dates=True)
+        infile2,
+        c=c,
+        c_option=column_option,
+        sep='\t',
+        header=header,
+        parse_dates=True,
+    )
     if len(y.shape) == 2 and y.shape[1] == 1:
         y = y.ravel()
     if input_type == 'refseq_and_interval':
@@ -485,17 +495,19 @@ def main(inputs, infile_estimator, infile1, infile2,
         params = json.load(param_handler)
 
     # Override the refit parameter
-    params['options']['refit'] = True \
-        if (params['save'] != 'nope' or
-            params['outer_split']['split_mode'] == 'nested_cv') else False
+    params['options']['refit'] = True if (
+        params['save'] != 'nope'
+        or params['outer_split']['split_mode'] == 'nested_cv'
+    ) else False
 
     estimator = load_model_from_h5(infile_estimator)
 
     estimator = clean_params(estimator)
 
     if estimator.__class__.__name__ == 'KerasGBatchClassifier':
-        _fit_and_score = try_get_attr('galaxy_ml.model_validations',
-                                      '_fit_and_score')
+        _fit_and_score = try_get_attr(
+            'galaxy_ml.model_validations', '_fit_and_score',
+        )
 
         setattr(_search, '_fit_and_score', _fit_and_score)
         setattr(_validation, '_fit_and_score', _fit_and_score)
@@ -531,12 +543,13 @@ def main(inputs, infile_estimator, infile1, infile2,
         loaded_df[df_key] = groups
 
         groups = read_columns(
-                groups,
-                c=c,
-                c_option=column_option,
-                sep='\t',
-                header=header,
-                parse_dates=True)
+            groups,
+            c=c,
+            c_option=column_option,
+            sep='\t',
+            header=header,
+            parse_dates=True,
+        )
         groups = groups.ravel()
         options['cv_selector']['groups_selector'] = groups
 

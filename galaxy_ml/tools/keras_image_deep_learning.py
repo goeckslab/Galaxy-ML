@@ -1,19 +1,22 @@
 import argparse
 import json
-import numpy as np
-import pandas as pd
 import warnings
-
 from itertools import chain
-from sklearn.metrics._scorer import _check_multimetric_scoring
-from sklearn.utils import indexable, _safe_indexing
+
+from galaxy_ml.keras_galaxy_models import (
+    KerasGBatchClassifier, _predict_generator)
+from galaxy_ml.model_persist import dump_model_to_h5, load_model_from_h5
 from galaxy_ml.model_validations import train_test_split
-from galaxy_ml.keras_galaxy_models import (_predict_generator,
-                                           KerasGBatchClassifier)
 from galaxy_ml.preprocessors import ImageDataFrameBatchGenerator
-from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
 from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
                              get_scoring, read_columns)
+
+import numpy as np
+
+import pandas as pd
+
+from sklearn.metrics._scorer import _check_multimetric_scoring
+from sklearn.utils import _safe_indexing, indexable
 
 
 WORKING_DIR = __import__('os').getcwd()
@@ -101,7 +104,7 @@ def _handle_image_generator_params(params, image_df):
     headers = image_df.columns
     options['x_col'] = headers[params['x_col'][0] - 1]
 
-    y_col = list(map(lambda x: x-1, params['y_col']))
+    y_col = list(map(lambda x: x - 1, params['y_col']))
     if len(y_col) == 1:
         options['y_col'] = headers[y_col[0]]
     else:
@@ -282,12 +285,13 @@ def main(inputs, infile_estimator, infile_dataframe,
             groups = data_frame
 
         groups = read_columns(
-                groups,
-                c=c,
-                c_option=column_option,
-                sep='\t',
-                header=header,
-                parse_dates=True)
+            groups,
+            c=c,
+            c_option=column_option,
+            sep='\t',
+            header=header,
+            parse_dates=True,
+        )
         groups = groups.ravel()
 
     exp_scheme = params['experiment_schemes']['selected_exp_scheme']

@@ -1,24 +1,31 @@
 import argparse
-import joblib
 import json
-import numpy as np
 import os
-import pandas as pd
 import warnings
 from itertools import chain
+
+from galaxy_ml.keras_galaxy_models import (
+    KerasGBatchClassifier, _predict_generator,
+)
+from galaxy_ml.model_persist import dump_model_to_h5, load_model_from_h5
+from galaxy_ml.model_validations import train_test_split
+from galaxy_ml.utils import (
+    SafeEval, clean_params, gen_compute_scores, get_main_estimator,
+    get_module, get_scoring, read_columns,
+)
+
+import joblib
+
+import numpy as np
+
+import pandas as pd
+
 from scipy.io import mmread
-from sklearn.pipeline import Pipeline
+
 from sklearn.metrics._scorer import _check_multimetric_scoring
 from sklearn.model_selection._validation import _score
-from sklearn.utils import indexable, _safe_indexing
-
-from galaxy_ml.model_validations import train_test_split
-from galaxy_ml.keras_galaxy_models import (_predict_generator,
-                                           KerasGBatchClassifier)
-from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
-from galaxy_ml.utils import (SafeEval, clean_params, gen_compute_scores,
-                             get_main_estimator, get_scoring, get_module,
-                             read_columns)
+from sklearn.pipeline import Pipeline
+from sklearn.utils import _safe_indexing, indexable
 
 
 N_JOBS = int(os.environ.get('GALAXY_SLOTS', 1))
@@ -298,12 +305,13 @@ def main(inputs, infile_estimator, infile1, infile2,
         loaded_df[df_key] = infile2
 
     y = read_columns(
-            infile2,
-            c=c,
-            c_option=column_option,
-            sep='\t',
-            header=header,
-            parse_dates=True)
+        infile2,
+        c=c,
+        c_option=column_option,
+        sep='\t',
+        header=header,
+        parse_dates=True,
+    )
     if len(y.shape) == 2 and y.shape[1] == 1:
         y = y.ravel()
     if input_type == 'refseq_and_interval':
@@ -332,12 +340,13 @@ def main(inputs, infile_estimator, infile1, infile2,
             groups = loaded_df[df_key]
 
         groups = read_columns(
-                groups,
-                c=c,
-                c_option=column_option,
-                sep='\t',
-                header=header,
-                parse_dates=True)
+            groups,
+            c=c,
+            c_option=column_option,
+            sep='\t',
+            header=header,
+            parse_dates=True,
+        )
         groups = groups.ravel()
 
     # del loaded_df

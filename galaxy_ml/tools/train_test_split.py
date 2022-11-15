@@ -1,12 +1,13 @@
 import argparse
 import json
-import pandas as pd
 import warnings
+from distutils.version import LooseVersion as Version
 
+from galaxy_ml import __version__ as galaxy_ml_version
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.utils import get_cv, read_columns
-from galaxy_ml import __version__ as galaxy_ml_version
-from distutils.version import LooseVersion as Version
+
+import pandas as pd
 
 
 def _get_single_cv_split(params, array, infile_labels=None,
@@ -43,8 +44,10 @@ def _get_single_cv_split(params, array, infile_labels=None,
         else:
             c = None
 
-        groups = read_columns(infile_groups, c=c, c_option=column_option,
-                              sep='\t', header=header, parse_dates=True)
+        groups = read_columns(
+            infile_groups, c=c, c_option=column_option, sep='\t',
+            header=header, parse_dates=True,
+        )
         groups = groups.ravel()
 
         params['mode_selection']['cv_selector']['groups_selector'] = groups

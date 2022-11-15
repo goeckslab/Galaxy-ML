@@ -147,12 +147,12 @@ else:
     infile2 = pd.read_csv(infile2, sep='\t', header=header, parse_dates=True)
     loaded_df[df_key] = infile2
 y = read_columns(
-        infile2,
-        c = c,
-        c_option = column_option,
-        sep='\t',
-        header=header,
-        parse_dates=True)
+    infile2,
+    c = c,
+    c_option = column_option,
+    sep='\t',
+    header=header,
+    parse_dates=True)
 if len(y.shape) == 2 and y.shape[1] == 1:
     y = y.ravel()
 #if $input_options.selected_input == 'refseq_and_interval'

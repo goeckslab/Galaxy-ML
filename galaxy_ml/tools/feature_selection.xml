@@ -81,13 +81,14 @@ if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_na
 else:
     c = None
 X, input_df = read_columns(
-        '$input_options.infile1',
-        c = c,
-        c_option = column_option,
-        return_df = True,
-        sep='\t',
-        header=header,
-        parse_dates=True)
+    '$input_options.infile1',
+    c = c,
+    c_option = column_option,
+    return_df = True,
+    sep='\t',
+    header=header,
+    parse_dates=True,
+)
 X = X.astype(float)
 #elif $input_options.selected_input == 'seq_fasta'
 fasta_file = '$input_options.fasta_file'
@@ -119,12 +120,13 @@ if column_option in ['by_index_number', 'all_but_by_index_number', 'by_header_na
 else:
     c = None
 y = read_columns(
-        '$input_options.infile2',
-        c = c,
-        c_option = column_option,
-        sep='\t',
-        header=header,
-        parse_dates=True)
+    '$input_options.infile2',
+    c = c,
+    c_option = column_option,
+    sep='\t',
+    header=header,
+    parse_dates=True,
+)
 y = y.ravel()
 
 ## Create feature selector

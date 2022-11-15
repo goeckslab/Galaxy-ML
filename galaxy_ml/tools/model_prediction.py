@@ -1,15 +1,18 @@
 import argparse
 import json
-import numpy as np
-import pandas as pd
 import warnings
 
-from scipy.io import mmread
-from sklearn.pipeline import Pipeline
-
 from galaxy_ml.model_persist import load_model_from_h5
-from galaxy_ml.utils import (clean_params, read_columns, get_module,
-                             try_get_attr)
+from galaxy_ml.utils import (
+    clean_params, get_module, read_columns, try_get_attr)
+
+import numpy as np
+
+import pandas as pd
+
+from scipy.io import mmread
+
+from sklearn.pipeline import Pipeline
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
