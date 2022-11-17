@@ -1,27 +1,33 @@
 import json
-import numpy as np
 import os
-import pandas as pd
 import pickle
 import re
 import tempfile
 import time
 
 import galaxy_ml
-
-from nose.tools import nottest
-from sklearn.ensemble import (
-    GradientBoostingClassifier,
-    RandomForestClassifier
-)
-from sklearn.model_selection import StratifiedShuffleSplit
-from xgboost import XGBClassifier
-from galaxy_ml.keras_galaxy_models import KerasGClassifier
 from galaxy_ml import model_persist
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
+
 from imblearn.over_sampling import SMOTEN
 from imblearn.pipeline import make_pipeline
+
+from nose.tools import nottest
+
+import numpy as np
+
+import pandas as pd
+
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
+from sklearn.model_selection import StratifiedShuffleSplit
+
+from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.models import Sequential
+
+from xgboost import XGBClassifier
 
 
 df = pd.read_csv('./tools/test-data/pima-indians-diabetes.csv', sep=',')
@@ -255,7 +261,7 @@ def test_keras_dump_and_load():
 def test_imblearn_dump_and_load():
     smt = SMOTEN(random_state=42)
     rfc = RandomForestClassifier(random_state=10)
-    
+
     pipe = make_pipeline(smt, rfc)
 
     pipe.fit(X_train, y_train)
@@ -292,13 +298,18 @@ def test_safe_load_model():
         safe_unpickler = model_persist._SafePickler(fh)
 
     assert RandomForestClassifier == \
-        safe_unpickler.find_class('sklearn.ensemble._forest',
-                                  'RandomForestClassifier')
+        safe_unpickler.find_class(
+            'sklearn.ensemble._forest',
+            'RandomForestClassifier',
+        )
 
     test_folder = './tools/test-data'
     for name in os.listdir(test_folder):
-        if re.match('^(?!.*(json|\.h5|\.h5mlm)).*(pipeline|model|regressor)\d+.*$',
-                    name, flags=re.I):
+        if re.match(
+            r'^(?!.*(json|\.h5|\.h5mlm)).*(pipeline|model|regressor)\d+.*$',
+            name,
+            flags=re.I,
+        ):
             if name in ('gbr_model01_py3', 'rfr_model01'):
                 continue
             model_path = os.path.join(test_folder, name)

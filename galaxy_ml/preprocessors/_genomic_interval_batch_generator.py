@@ -1,9 +1,10 @@
 import numpy as np
 
-from . import FastaToArrayIterator
-from ..externals import selene_sdk
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
+
+from . import FastaToArrayIterator
+from ..externals import selene_sdk
 
 
 class IntervalsToArrayIterator(FastaToArrayIterator):
@@ -52,10 +53,14 @@ class IntervalsToArrayIterator(FastaToArrayIterator):
         generator = self.generator
         index_array = np.asarray(index_array)
         n_samples = index_array.shape[0]
-        batch_x = np.zeros((n_samples,
-                            generator.seq_length,
-                            generator.n_bases), dtype='float32')
-        batch_y = np.zeros((n_samples, generator.n_features_in_), dtype='int32')
+        batch_x = np.zeros(
+            (n_samples, generator.seq_length, generator.n_bases),
+            dtype='float32',
+        )
+        batch_y = np.zeros(
+            (n_samples, generator.n_features_in_),
+            dtype='int32',
+        )
 
         for i in range(n_samples):
             seq_idx = int(self.X[index_array[i]])
@@ -233,8 +238,10 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
         interval_length = self.interval_lengths_[idx]
         chrom = interval_info[0]
         if shuffle:
-            position = int(interval_info[1] +
-                           self.rng_.uniform(0, 1) * interval_length)
+            position = int(
+                interval_info[1]
+                + self.rng_.uniform(0, 1) * interval_length
+            )
         else:
             position = int(interval_info[1] + 0.5 * interval_length)
 
@@ -252,9 +259,11 @@ class GenomicIntervalBatchGenerator(BaseEstimator):
                 chrom, window_start, window_end, strand)
 
         if retrieved_seq.shape[0] == 0:
-            print("Full sequence centered at region \"{0}\" position "
-                  "{1} could not be retrieved. Sampling again.".format(
-                            chrom, position))
+            print(
+                "Full sequence centered at region \"{0}\" position "
+                "{1} could not be retrieved. Sampling again."
+                .format(chrom, position)
+            )
             return None
         elif np.sum(retrieved_seq) / float(retrieved_seq.shape[0]) < 0.60:
             print("Over 30% of the bases in the sequence centered "

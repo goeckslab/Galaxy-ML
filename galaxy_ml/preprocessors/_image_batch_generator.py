@@ -17,17 +17,25 @@ But,
 5) `ImageDataFrameBatchGenerator` is sklearn api - compatible.
 """
 
-import numpy as np
 import os
 import warnings
 
-from keras_preprocessing.image import Iterator, DataFrameIterator
-from keras_preprocessing.image import ImageDataGenerator
-from keras_preprocessing.image.utils import (array_to_img,
-                                             img_to_array,
-                                             load_img,
-                                             validate_filename)
-from tensorflow.keras.utils import Sequence
+from keras.utils import Sequence
+
+from keras_preprocessing.image import (
+    DataFrameIterator,
+    ImageDataGenerator,
+    Iterator
+)
+from keras_preprocessing.image.utils import (
+    array_to_img,
+    img_to_array,
+    load_img,
+    validate_filename,
+)
+
+import numpy as np
+
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state
 
@@ -336,8 +344,10 @@ class ImageDataFrameBatchGenerator(ImageDataGenerator, BaseEstimator):
         self.zoom_range = zoom_range
 
         if brightness_range is not None:
-            if (not isinstance(brightness_range, (tuple, list)) or
-                    len(brightness_range) != 2):
+            if (
+                not isinstance(brightness_range, (tuple, list))
+                or len(brightness_range) != 2
+            ):
                 raise ValueError(
                     '`brightness_range should be tuple or list of two floats. '
                     'Received: %s' % (brightness_range,))

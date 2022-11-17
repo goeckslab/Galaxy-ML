@@ -1,9 +1,9 @@
 import numpy as np
 
-from sklearn.preprocessing._data import _handle_zeros_in_scale
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing._data import _handle_zeros_in_scale
 from sklearn.utils import check_array
-from sklearn.utils.validation import check_is_fitted, FLOAT_DTYPES
+from sklearn.utils.validation import FLOAT_DTYPES, check_is_fitted
 
 
 class TDMScaler(BaseEstimator, TransformerMixin):

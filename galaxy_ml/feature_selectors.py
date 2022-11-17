@@ -3,23 +3,25 @@ DyRFE
 DyRFECV
 check_feature_importances
 """
-import numpy as np
+from imblearn import combine, over_sampling, under_sampling
+from imblearn.pipeline import Pipeline as imbPipeline
 
 from joblib import Parallel, delayed, effective_n_jobs
-from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline
-from sklearn import (cluster, compose, decomposition, ensemble,
-                     feature_extraction, feature_selection,
-                     gaussian_process, kernel_approximation,
-                     metrics, model_selection, naive_bayes,
-                     neighbors, pipeline, preprocessing,
-                     svm, linear_model, tree, discriminant_analysis)
 
+import numpy as np
+
+from sklearn import (
+    cluster, compose, decomposition, discriminant_analysis,
+    ensemble, feature_extraction, feature_selection,
+    gaussian_process, kernel_approximation, linear_model,
+    metrics, model_selection, naive_bayes, neighbors,
+    pipeline, preprocessing, svm, tree,
+)
 from sklearn.base import BaseEstimator
 from sklearn.base import MetaEstimatorMixin, clone, is_classifier
-from sklearn.feature_selection._rfe import _rfe_single_fit, RFE, RFECV
-from sklearn.model_selection import check_cv
+from sklearn.feature_selection._rfe import RFE, RFECV, _rfe_single_fit
 from sklearn.metrics._scorer import check_scoring
+from sklearn.model_selection import check_cv
 from sklearn.utils import check_X_y, safe_sqr
 
 

@@ -1,9 +1,9 @@
 import numpy as np
 
-from sklearn.base import (BaseEstimator, clone, RegressorMixin,
-                          TransformerMixin)
-from sklearn.utils.validation import (check_array, check_is_fitted,
-                                      column_or_1d)
+from sklearn.base import (
+    BaseEstimator, RegressorMixin, TransformerMixin, clone)
+from sklearn.utils.validation import (
+    check_array, check_is_fitted, column_or_1d)
 
 
 class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):

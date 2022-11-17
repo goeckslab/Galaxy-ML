@@ -1,25 +1,34 @@
 import ast
 import collections
-import imblearn
-import numpy as np
-import pandas
 import pickle
-import scipy
-import sklearn
-import skrebate
 import sys
 import time
 import warnings
-import xgboost
+from pathlib import Path
 
 from asteval import Interpreter, make_symbol_table
-from pathlib import Path
+
+import imblearn
+
+import numpy as np
+
+import pandas
+
+import scipy
 from scipy.io import mmread
+
+import sklearn
 from sklearn import (
-    cluster, compose, decomposition, ensemble, feature_extraction,
-    feature_selection, gaussian_process, kernel_approximation, metrics,
-    model_selection, naive_bayes, neighbors, pipeline, preprocessing,
-    svm, linear_model, tree, discriminant_analysis)
+    cluster, compose, decomposition, discriminant_analysis,
+    ensemble, feature_extraction, feature_selection,
+    gaussian_process, kernel_approximation, linear_model,
+    metrics, model_selection, naive_bayes, neighbors, pipeline,
+    preprocessing, svm, tree,
+)
+
+import skrebate
+
+import xgboost
 
 
 N_JOBS = int(__import__('os').environ.get('GALAXY_SLOTS', 1))
@@ -388,20 +397,25 @@ def get_cv(cv_json):
     if groups is not None and isinstance(groups, collections.Mapping):
         infile_g = groups['infile_g']
         header = 'infer' if groups['header_g'] else None
-        column_option = (groups['column_selector_options_g']
-                         ['selected_column_selector_option_g'])
-        if column_option in ['by_index_number', 'all_but_by_index_number',
-                             'by_header_name', 'all_but_by_header_name']:
+        column_option = (
+            groups['column_selector_options_g']
+            ['selected_column_selector_option_g']
+        )
+        if column_option in [
+            'by_index_number', 'all_but_by_index_number',
+            'by_header_name', 'all_but_by_header_name',
+        ]:
             c = groups['column_selector_options_g']['col_g']
         else:
             c = None
         groups = read_columns(
-                infile_g,
-                c=c,
-                c_option=column_option,
-                sep='\t',
-                header=header,
-                parse_dates=True)
+            infile_g,
+            c=c,
+            c_option=column_option,
+            sep='\t',
+            header=header,
+            parse_dates=True,
+        )
         groups = groups.ravel()
 
     for k, v in cv_json.items():
@@ -478,11 +492,11 @@ def get_search_params(estimator):
                     '_path')
         exact_keywords = ('steps')
         if k.endswith(keywords) or k in exact_keywords:
-            results.append(['*', k, k+": "+repr(v)])
+            results.append(['*', k, k + ": " + repr(v)])
         elif type(v) is dict:
-            results.append(['@', k, k+": "+repr(v)[:100]])
+            results.append(['@', k, k + ": " + repr(v)[:100]])
         else:
-            results.append(['@', k, k+": "+repr(v)])
+            results.append(['@', k, k + ": " + repr(v)])
     results.append(
         ["", "Note:",
          "@, params eligible for search in searchcv tool."])
@@ -510,8 +524,10 @@ def clean_params(estimator, n_jobs=None):
                 or name.endswith(('_path', '_dir')):
             new_p = {name: None}
             estimator.set_params(**new_p)
-        elif n_jobs is not None and (name == 'n_jobs' or
-                                     name.endswith('__n_jobs')):
+        elif (
+            n_jobs is not None
+            and (name == 'n_jobs' or name.endswith('__n_jobs'))
+        ):
             new_p = {name: n_jobs}
             estimator.set_params(**new_p)
         elif name.endswith('callbacks') and isinstance(p, list) and \

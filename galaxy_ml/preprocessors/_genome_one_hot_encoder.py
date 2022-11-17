@@ -1,7 +1,9 @@
 import numpy as np
+
 import pyfaidx
 
 from sklearn.base import BaseEstimator, TransformerMixin
+
 from ..externals import selene_sdk
 
 

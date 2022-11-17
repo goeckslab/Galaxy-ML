@@ -1,8 +1,10 @@
+from keras.utils import Sequence
+
+from keras_preprocessing.image import Iterator
+
 import numpy as np
 
 from sklearn.base import BaseEstimator
-from keras_preprocessing.image import Iterator
-from tensorflow.keras.utils import Sequence
 from sklearn.utils.validation import indexable
 
 
@@ -46,8 +48,10 @@ class FastaToArrayIterator(FastaIterator):
     seed : int
         Random seed for data shuffling
     """
-    def __init__(self, X, generator, y=None, batch_size=32,
-                 shuffle=True, sample_weight=None, seed=None):
+    def __init__(
+        self, X, generator, y=None, batch_size=32,
+        shuffle=True, sample_weight=None, seed=None,
+    ):
         X, y, sample_weight = indexable(X, y, sample_weight)
         self.X = X
         self.generator = generator
@@ -55,7 +59,8 @@ class FastaToArrayIterator(FastaIterator):
         self.sample_weight = sample_weight
 
         super(FastaToArrayIterator, self).__init__(
-              X.shape[0], batch_size, shuffle, seed)
+            X.shape[0], batch_size, shuffle, seed
+        )
 
     def _get_batches_of_transformed_samples(self, index_array):
         generator = self.generator

@@ -1,9 +1,12 @@
-import numpy as np
+
 import numbers
 import time
 import warnings
+from traceback import format_exc
 
 from joblib import logger
+
+import numpy as np
 
 from sklearn.base import clone
 from sklearn.exceptions import FitFailedWarning
@@ -11,7 +14,6 @@ from sklearn.model_selection._validation import _fit_and_score\
     as _sk_fit_and_score
 from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _check_fit_params, _num_samples
-from traceback import format_exc
 
 
 def _fit_and_score(estimator, X, y, scorer, train, test, verbose,

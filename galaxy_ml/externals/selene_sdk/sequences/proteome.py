@@ -6,11 +6,12 @@ one-hot encodings.
 
 """
 import numpy as np
+
 import pyfaidx
 
 from .sequence import Sequence
-from .sequence import sequence_to_encoding
 from .sequence import encoding_to_sequence
+from .sequence import sequence_to_encoding
 
 
 def _get_sequence_from_coords(len_prots, proteome_sequence,
@@ -182,8 +183,11 @@ class Proteome(Sequence):
             the queried coordinates.
 
         """
-        if (start > self.len_prots[prot] or end > (self.len_prots[prot] + 1)
-                or start < 0):
+        if (
+            start > self.len_prots[prot]
+            or end > (self.len_prots[prot] + 1)
+            or start < 0
+        ):
             return False
         return True
 

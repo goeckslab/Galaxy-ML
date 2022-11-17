@@ -7,14 +7,17 @@ through use of a novel gene expression signature generation algorithm.
 npj Syst Biol Appl 3, 8 (2017) doi:10.1038/s41540-017-0011-6
 """
 
+import warnings
+from abc import ABCMeta
+
+from joblib import Parallel, delayed
 
 import numpy as np
-import warnings
+
+from scipy.stats import ttest_ind
+
 import six
 
-from abc import ABCMeta
-from joblib import Parallel, delayed
-from scipy.stats import ttest_ind
 from sklearn.base import BaseEstimator, RegressorMixin, clone
 from sklearn.feature_selection._univariate_selection import _BaseFilter
 from sklearn.utils import as_float_array, check_X_y, check_random_state
@@ -153,10 +156,11 @@ class IRAPSCore(six.with_metaclass(ABCMeta, BaseEstimator)):
                             backend=self.parallel_backend)
 
         res = parallel(delayed(_stochastic_sampling)(
-                X, y, index,
-                positive_thres=self.positive_thres,
-                negative_thres=self.negative_thres)
-                for index in iter_index())
+            X, y, index,
+            positive_thres=self.positive_thres,
+            negative_thres=self.negative_thres)
+            for index in iter_index()
+        )
 
         # remove bads
         res = [_ for _ in res if _]

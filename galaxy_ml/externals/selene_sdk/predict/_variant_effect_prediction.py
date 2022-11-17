@@ -123,9 +123,11 @@ def _process_alts(all_alts,
             sequence = reference_sequence.get_sequence_from_coords(
                 chrom, start_pos, end_pos, strand=strand)
             remove_ref_start = start_radius - ref_len // 2 - 1
-            sequence = (sequence[:remove_ref_start] +
-                        a +
-                        sequence[remove_ref_start + ref_len:])
+            sequence = (
+                sequence[:remove_ref_start]
+                + a
+                + sequence[remove_ref_start + ref_len:]
+            )
         else:  # insertion or deletion
             seq_lhs = reference_sequence.get_sequence_from_coords(
                 chrom,

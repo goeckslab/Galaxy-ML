@@ -2,11 +2,13 @@
 This module provides the `PerformanceMetrics` class and supporting
 functionality for tracking and computing model performance.
 """
-from collections import defaultdict, namedtuple
+
 import logging
 import os
+from collections import defaultdict, namedtuple
 
 import numpy as np
+
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_auc_score
@@ -190,9 +192,12 @@ def compute_score(prediction, target, metric_fn,
     feature_scores = np.ones(target.shape[1]) * np.nan
     for index, feature_preds in enumerate(prediction.T):
         feature_targets = target[:, index]
-        if len(np.unique(feature_targets)) > 0 and \
-                (np.count_nonzero(feature_targets) >
-                 report_gt_feature_n_positives):
+        if (
+            len(np.unique(feature_targets)) > 0
+            and (
+                np.count_nonzero(feature_targets)
+                > report_gt_feature_n_positives)
+        ):
             try:
                 feature_scores[index] = metric_fn(
                     feature_targets, feature_preds)
