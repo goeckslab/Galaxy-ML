@@ -11,8 +11,8 @@
   <xml name="python_requirements">
     <requirements>
       <container type="docker">quay.io/goeckslab/galaxy-ml:@GALAXY_ML_VERSION@</container>
-      <requirement type="package" version="3.9">python</requirement>
-      <requirement type="package" version="@GALAXY_ML_VERSION@">Galaxy-ML</requirement>
+      <!-- <requirement type="package" version="3.9">python</requirement>
+      <requirement type="package" version="@GALAXY_ML_VERSION@">Galaxy-ML</requirement> -->
       <yield />
     </requirements>
   </xml>
