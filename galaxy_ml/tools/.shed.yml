@@ -9,4 +9,4 @@ auto_tool_repositories:
   description_template: "Wrapper for Galaxy-ML tool: {{ tool_name }}"
 suite:
   name: suite_galaxy_ml
-  description: Galaxy-Ml wraps a suite of tools that conduct state-of-the-art machine learnings.  
+  description: Galaxy-Ml wraps a suite of tools that conduct state-of-the-art machine learnings.

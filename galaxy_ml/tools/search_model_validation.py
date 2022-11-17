@@ -593,7 +593,6 @@ def main(inputs, infile_estimator, infile1, infile2,
     label_encoder = LabelEncoder()
     if get_main_estimator(estimator).__class__.__name__ == "XGBClassifier":
         y = label_encoder.fit_transform(y)
-        print(label_encoder.classes_)
 
     # cache iraps_core fits could increase search speed significantly
     memory = joblib.Memory(location=CACHE_DIR, verbose=0)
@@ -711,7 +710,6 @@ def main(inputs, infile_estimator, infile1, infile2,
                           "nested gridsearch or `refit` is False!")
             return
 
-        print("Saving best estimator: %s " % repr(best_estimator_))
         dump_model_to_h5(best_estimator_, outfile_object)
 
 
