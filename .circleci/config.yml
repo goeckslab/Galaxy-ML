@@ -34,7 +34,7 @@ jobs:
             cd ~
             python3 -m venv venv
             . venv/bin/activate
-            pip install planemo
+            pip install planemo  galaxy-tool-util<22.1
             cd project/galaxy_ml/tools
             planemo lint
   tool_test:
