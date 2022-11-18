@@ -37,36 +37,36 @@ jobs:
             pip install planemo
             cd project/galaxy_ml/tools
             planemo lint
-  # tool_test:
-  #   docker:
-  #     - image: circleci/python:3.9
-  #   parallelism: 4
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Build Environment
-  #         command: |
-  #           cd ~
-  #           python3 -m venv venv
-  #           . venv/bin/activate
-  #           pip install planemo
-  #           if [[ ! -d ~/miniconda3 ]]; then
-  #               wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
-  #               bash miniconda.sh -b -f -p ~/miniconda3;
-  #           else
-  #               echo "Using cached miniconda";
-  #           fi
-  #     - run:
-  #         name: Tool Tests
-  #         command: |
-  #           . ~/venv/bin/activate
-  #           cd galaxy_ml/tools
-  #           TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
-  #           planemo test ${TESTFILES}
+  tool_test:
+    docker:
+      - image: circleci/python:3.9
+    parallelism: 4
+    steps:
+      - checkout
+      - run:
+          name: Build Environment
+          command: |
+            cd ~
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install planemo
+            if [[ ! -d ~/miniconda3 ]]; then
+                wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
+                bash miniconda.sh -b -f -p ~/miniconda3;
+            else
+                echo "Using cached miniconda";
+            fi
+      - run:
+          name: Tool Tests
+          command: |
+            . ~/venv/bin/activate
+            cd galaxy_ml/tools
+            TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
+            planemo test ${TESTFILES}
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
       - tool_lint
-      # - tool_test
+      - tool_test
