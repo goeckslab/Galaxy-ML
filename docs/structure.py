@@ -1,17 +1,18 @@
 import os
 import sys
 
-galaxy_ml_dir = os.path.dirname(os.path.dirname(__file__))
-
-sys.path.append(galaxy_ml_dir)
-
+from galaxy_ml import binarize_target
+from galaxy_ml import feature_selectors
 from galaxy_ml import keras_galaxy_models
 from galaxy_ml import model_persist
 from galaxy_ml import model_validations
 from galaxy_ml import preprocessors
 from galaxy_ml import utils
-from galaxy_ml import binarize_target
-from galaxy_ml import feature_selectors
+
+
+galaxy_ml_dir = os.path.dirname(os.path.dirname(__file__))
+
+sys.path.append(galaxy_ml_dir)
 
 
 PAGES = [

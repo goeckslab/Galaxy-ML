@@ -1,4 +1,7 @@
 import subprocess
+from distutils.core import setup
+from os.path import dirname, join, realpath
+
 try:
     import Cython
 except ImportError:
@@ -11,13 +14,13 @@ except ImportError:
                    shell=True, check=True)
     import numpy as np
 
-from os.path import realpath, dirname, join
-from setuptools import find_packages
-from distutils.core import setup
-from Cython.Distutils.extension import Extension
-from Cython.Distutils import build_ext
 from Cython.Build import cythonize
+from Cython.Distutils import build_ext
+from Cython.Distutils.extension import Extension
+
 import galaxy_ml
+
+from setuptools import find_packages
 
 
 VERSION = galaxy_ml.__version__
@@ -62,31 +65,35 @@ https://goeckslab.github.io/Galaxy-ML/
 
 """
 
-setup(name='Galaxy-ML',
-      version=VERSION,
-      description='Galaxy Machine Learning Library',
-      long_description=long_description,
-      long_description_content_type="text/markdown",
-      url='https://github.com/goeckslab/Galaxy-ML/',
-      packages=find_packages(exclude=['docs', 'tests*', 'test-data*', 'tools*']),
-      package_data={
-          '': ['README.md',
-               'requirements.txt']},
-      include_package_data=True,
-      install_requires=install_reqs,
-      extras_require={'docs': ['mkdocs']},
-      platforms='any',
-      ext_modules=cythonize(ext_modules),
-      cmdclass=cmdclass,
-      classifiers=[
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'License :: OSI Approved :: MIT License',
-          'Operating System :: Unix',
-          'Operating System :: MacOS',
-          'Topic :: Scientific/Engineering',
-          'Topic :: Scientific/Engineering :: Bio-Informatics',
-          'Topic :: Scientific/Engineering :: Artificial Intelligence',
-      ])
+setup(
+    name='Galaxy-ML',
+    version=VERSION,
+    description='Galaxy Machine Learning Library',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url='https://github.com/goeckslab/Galaxy-ML/',
+    packages=find_packages(
+        exclude=['docs', 'tests*', 'test-data*', 'tools*']
+    ),
+    package_data={
+        '': ['README.md', 'requirements.txt'],
+    },
+    include_package_data=True,
+    install_requires=install_reqs,
+    extras_require={'docs': ['mkdocs']},
+    platforms='any',
+    ext_modules=cythonize(ext_modules),
+    cmdclass=cmdclass,
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: Unix',
+        'Operating System :: MacOS',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    ],
+)

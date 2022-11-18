@@ -26,7 +26,6 @@ from keras.models import Model, Sequential
 from keras.optimizers import (
     Adadelta, Adagrad, Adam, Adamax, Ftrl, Nadam, RMSprop, SGD,
 )
-from tensorflow.python.keras.saving import hdf5_format
 from keras.utils import (
     GeneratorEnqueuer, OrderedEnqueuer, Sequence, to_categorical,
 )
@@ -48,6 +47,7 @@ from sklearn.utils.multiclass import (
 from sklearn.utils.validation import check_is_fitted, check_random_state
 
 import tensorflow as tf
+from tensorflow.python.keras.saving import hdf5_format
 
 from . import utils
 from .externals.selene_sdk.utils import compute_score
