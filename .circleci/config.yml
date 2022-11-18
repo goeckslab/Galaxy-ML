@@ -15,7 +15,7 @@ jobs:
       - run:
           name: Flake8
           command: |
-            flake8 . --statistics --exit-zero
+            flake8 . --statistics --ignore=F401,F821,I100,W503
       - run:
           name: Run API Tests
           command: |

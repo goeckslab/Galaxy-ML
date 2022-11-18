@@ -2,6 +2,8 @@ import subprocess
 from distutils.core import setup
 from os.path import dirname, join, realpath
 
+from setuptools import find_packages
+
 try:
     import Cython
 except ImportError:
@@ -19,8 +21,6 @@ from Cython.Distutils import build_ext
 from Cython.Distutils.extension import Extension
 
 import galaxy_ml
-
-from setuptools import find_packages
 
 
 VERSION = galaxy_ml.__version__
