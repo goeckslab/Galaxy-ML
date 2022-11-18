@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import GenomeOneHotEncoder
+from ._genome_one_hot_encoder import GenomeOneHotEncoder
 from ..externals import selene_sdk
 
 

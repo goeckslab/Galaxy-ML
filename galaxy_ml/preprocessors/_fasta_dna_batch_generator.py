@@ -4,7 +4,7 @@ import pyfaidx
 
 from sklearn.base import BaseEstimator
 
-from . import FastaToArrayIterator
+from ._fasta_iterator import FastaToArrayIterator
 from ..externals import selene_sdk
 
 

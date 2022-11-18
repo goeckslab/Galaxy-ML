@@ -26,7 +26,7 @@ from keras.models import Model, Sequential
 from keras.optimizers import (
     Adadelta, Adagrad, Adam, Adamax, Ftrl, Nadam, RMSprop, SGD,
 )
-from keras.saving import hdf5_format
+from tensorflow.python.keras.saving import hdf5_format
 from keras.utils import (
     GeneratorEnqueuer, OrderedEnqueuer, Sequence, to_categorical,
 )

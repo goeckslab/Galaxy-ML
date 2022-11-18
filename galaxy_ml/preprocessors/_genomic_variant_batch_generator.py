@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator
 
 import tabix
 
-from . import FastaToArrayIterator
+from ._fasta_iterator import FastaToArrayIterator
 from ..externals import selene_sdk
 
 

@@ -1,4 +1,4 @@
-from . import FastaDNABatchGenerator
+from ._fasta_dna_batch_generator import FastaDNABatchGenerator
 
 
 class FastaProteinBatchGenerator(FastaDNABatchGenerator):
