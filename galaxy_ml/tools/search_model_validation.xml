@@ -155,7 +155,7 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="13" />
-                    <has_text text="0.7938837807353147" />
+                    <has_text text="0.7938837807" />
                     <has_text text="{'selectkbest__k': 9, 'svr__C': 1}" />
                 </assert_contents>
             </output>

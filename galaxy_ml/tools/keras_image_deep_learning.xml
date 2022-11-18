@@ -257,7 +257,7 @@
                     <has_text text="2.29" />
                 </assert_contents>
             </output>
-            <output name="outfile_object" file="image_dl_model01" compare="sim_size" delta="100" />
+            <output name="outfile_object" file="image_dl_model01" compare="sim_size" delta="1000" />
             <output name="outfile_y_true">
                 <assert_contents>
                     <has_n_columns n="10" />
