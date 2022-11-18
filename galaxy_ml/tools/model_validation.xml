@@ -349,7 +349,16 @@ rval.to_csv(path_or_buf='$outfile', sep='\t', header=True, index=False)
             <param name="col1" value="1,2,3,4,5" />
             <param name="infile2" value="regression_train.tabular" ftype="tabular" />
             <param name="col2" value="6" />
-            <output name="outfile" file="mv_result02.tabular" lines_diff="14" />
+            <output name="outfile">
+                <assert_contents>
+                    <has_n_columns n="1" />
+                    <has_text text="1.5781414" />
+                    <has_text text="-1.19994559787" />
+                    <has_text text="-0.7187446" />
+                    <has_text text="0.324693926" />
+                    <has_text text="1.25823227" />
+                </assert_contents>
+            </output>
         </test>
         <test>
             <param name="infile_estimator" value="pipeline05" />
