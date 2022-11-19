@@ -302,7 +302,7 @@ def build_keras_model(inputs, outfile, model_json, batch_mode=False):
         if not isinstance(train_metrics, list):      # for older galaxy
             train_metrics = train_metrics.split(',')
         if train_metrics[-1] == 'none':
-            train_metrics = train_metrics[:-1]
+            train_metrics.pop()
         options['metrics'] = train_metrics
 
         options.update(inputs['mode_selection']['fit_params'])

@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
     steps:
       - checkout
       - run:
@@ -25,7 +25,7 @@ jobs:
           path: test-reports
   tool_lint:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
     steps:
       - checkout
       - run:
@@ -34,12 +34,12 @@ jobs:
             cd ~
             python3 -m venv venv
             . venv/bin/activate
-            pip install planemo  galaxy-tool-util<22.1
+            pip install planemo
             cd project/galaxy_ml/tools
             planemo lint
   tool_test:
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
     parallelism: 4
     steps:
       - checkout
