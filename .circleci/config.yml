@@ -8,14 +8,13 @@ jobs:
       - run:
           name: Build Dependencies
           command: |
-            sudo python3 -m pip install -r requirements.txt
-            sudo pip install flake8 nose pytest | cat; test ${PIPESTATUS[0]} -eq 0
-            sudo python setup.py build_ext --inplace
+            pip install -e .
+            pip install flake8 nose pytest | cat; test ${PIPESTATUS[0]} -eq 0
             mkdir test-reports | cat
       - run:
           name: Flake8
           command: |
-            flake8 . --statistics --ignore=F401,F821,I100,W503
+            flake8 . --statistics --show-source --ignore=F401,F821,I100,W503 -v
       - run:
           name: Run API Tests
           command: |
@@ -31,11 +30,8 @@ jobs:
       - run:
           name: Tool Linter
           command: |
-            cd ~
-            python3 -m venv venv
-            . venv/bin/activate
             pip install planemo
-            cd project/galaxy_ml/tools
+            cd galaxy_ml/tools
             planemo lint
   tool_test:
     docker:
@@ -46,9 +42,6 @@ jobs:
       - run:
           name: Build Environment
           command: |
-            cd ~
-            python3 -m venv venv
-            . venv/bin/activate
             pip install planemo
             if [[ ! -d ~/miniconda3 ]]; then
                 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh &&
@@ -59,7 +52,6 @@ jobs:
       - run:
           name: Tool Tests
           command: |
-            . ~/venv/bin/activate
             cd galaxy_ml/tools
             TESTFILES=$(ls -I "*macros.xml" | grep .xml | circleci tests split)
             planemo test ${TESTFILES}
