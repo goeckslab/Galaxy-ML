@@ -88,7 +88,7 @@ python setup.py install
 
 ##### Using source code inplace
 ```
-python setup.py build_ext --inplace
+python install -e .
 ```
 
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
@@ -98,10 +98,9 @@ To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/
 Before running the tests, run the following commands:
 
 ```
-conda create --name galaxy_ml python=3.6
+conda create --name galaxy_ml python=3.9
 conda activate galaxy_ml
-pip install -r requirements.txt
-python setup.py build_ext --inplace
+pip install -e .
 pip install nose nose-htmloutput pytest
 cd galaxy_ml
 ```
