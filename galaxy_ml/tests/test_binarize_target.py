@@ -1,24 +1,32 @@
 # test for irpas_classifier
 
-import pandas as pd
 import pickle
 import tempfile
 import time
 import warnings
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_validate
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics._scorer import r2_scorer
-from galaxy_ml.model_validations import OrderedKFold
+
 from galaxy_ml.binarize_target import (
-    IRAPSCore, IRAPSClassifier, BinarizeTargetClassifier,
-    BinarizeTargetRegressor, binarize_auc_scorer,
-    binarize_average_precision_scorer, BINARIZE_SCORERS)
-from galaxy_ml.model_persist import load_model_from_h5, dump_model_to_h5
+    BINARIZE_SCORERS,
+    BinarizeTargetClassifier,
+    BinarizeTargetRegressor,
+    IRAPSClassifier,
+    IRAPSCore,
+    binarize_auc_scorer,
+    binarize_average_precision_scorer,
+)
+from galaxy_ml.model_persist import dump_model_to_h5, load_model_from_h5
+from galaxy_ml.model_validations import OrderedKFold
+
+import pandas as pd
+
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics._scorer import r2_scorer
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_validate
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
 
 warnings.simplefilter('ignore')

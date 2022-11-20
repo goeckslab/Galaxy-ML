@@ -13,11 +13,12 @@ row of genome coordinates for a feature).
 """
 import types
 
-import tabix
 import numpy as np
 
-from .target import Target
+import tabix
+
 from ._genomic_features import _fast_get_feature_data
+from .target import Target
 
 
 def _any_positive_rows(rows, start, end, thresholds):

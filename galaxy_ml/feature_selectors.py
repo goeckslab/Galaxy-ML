@@ -3,23 +3,25 @@ DyRFE
 DyRFECV
 check_feature_importances
 """
-import numpy as np
+from imblearn import combine, over_sampling, under_sampling
+from imblearn.pipeline import Pipeline as imbPipeline
 
 from joblib import Parallel, delayed, effective_n_jobs
-from imblearn import under_sampling, over_sampling, combine
-from imblearn.pipeline import Pipeline as imbPipeline
-from sklearn import (cluster, compose, decomposition, ensemble,
-                     feature_extraction, feature_selection,
-                     gaussian_process, kernel_approximation,
-                     metrics, model_selection, naive_bayes,
-                     neighbors, pipeline, preprocessing,
-                     svm, linear_model, tree, discriminant_analysis)
 
+import numpy as np
+
+from sklearn import (
+    cluster, compose, decomposition, discriminant_analysis,
+    ensemble, feature_extraction, feature_selection,
+    gaussian_process, kernel_approximation, linear_model,
+    metrics, model_selection, naive_bayes, neighbors,
+    pipeline, preprocessing, svm, tree,
+)
 from sklearn.base import BaseEstimator
 from sklearn.base import MetaEstimatorMixin, clone, is_classifier
-from sklearn.feature_selection._rfe import _rfe_single_fit, RFE, RFECV
-from sklearn.model_selection import check_cv
+from sklearn.feature_selection._rfe import RFE, RFECV, _rfe_single_fit
 from sklearn.metrics._scorer import check_scoring
+from sklearn.model_selection import check_cv
 from sklearn.utils import check_X_y, safe_sqr
 
 
@@ -53,8 +55,12 @@ class DyRFE(RFE):
     """
     def __init__(self, estimator, n_features_to_select=None, step=1,
                  verbose=0):
-        super(DyRFE, self).__init__(estimator, n_features_to_select,
-                                    step, verbose)
+        super(DyRFE, self).__init__(
+            estimator,
+            n_features_to_select=n_features_to_select,
+            step=step,
+            verbose=verbose,
+        )
 
     def _fit(self, X, y, step_score=None):
 
@@ -144,7 +150,7 @@ class DyRFE(RFE):
         # Compute step score when only n_features_to_select features left
         if step_score:
             self.scores_.append(step_score(self.estimator_, features))
-        self.n_features_ = support_.sum()
+        self.n_features_in_ = support_.sum()
         self.support_ = support_
         self.ranking_ = ranking_
 
@@ -208,10 +214,14 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
     def __init__(self, estimator, step=1, min_features_to_select=1, cv='warn',
                  scoring=None, verbose=0, n_jobs=None):
         super(DyRFECV, self).__init__(
-            estimator, step=step,
+            estimator,
+            step=step,
             min_features_to_select=min_features_to_select,
-            cv=cv, scoring=scoring, verbose=verbose,
-            n_jobs=n_jobs)
+            cv=cv,
+            scoring=scoring,
+            verbose=verbose,
+            n_jobs=n_jobs,
+        )
 
     def fit(self, X, y, groups=None):
         """Fit the RFE model and automatically tune the number of selected
@@ -294,7 +304,7 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
 
         # Set final attributes
         self.support_ = rfe.support_
-        self.n_features_ = rfe.n_features_
+        self.n_features_in_ = rfe.n_features_in_
         self.ranking_ = rfe.ranking_
         self.estimator_ = clone(self.estimator)
         self.estimator_.fit(self.transform(X), y)

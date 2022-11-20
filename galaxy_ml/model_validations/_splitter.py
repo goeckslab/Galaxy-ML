@@ -1,9 +1,10 @@
-import numpy as np
 import numbers
 
+import numpy as np
+
 from sklearn.model_selection._split import _BaseKFold, _RepeatedSplits
-from sklearn.utils.validation import _num_samples
 from sklearn.utils import check_random_state
+from sklearn.utils.validation import _num_samples
 
 
 class OrderedKFold(_BaseKFold):
@@ -19,22 +20,28 @@ class OrderedKFold(_BaseKFold):
     random_state : None or int
         Only relevant when shuffle is True.
     n_stratification_bins : None or positive integer
-        Only relevant when shuffle is True. The number of bins into which samples
-        are categorized for stratification. Valid in [2, `n_samples // n_splits`].
-        Default value is None, which is same as `n_samples // n_splits`. The
-        higher the value is, the distribution of target values is more
-        approximately the ame across all split folds. `ValueError` will be raised,
-        if invalid value is given.
+        Only relevant when shuffle is True. The number of bins into which
+        samples are categorized for stratification. Valid in
+        [2, `n_samples // n_splits`]. Default value is None, which is same
+        as `n_samples // n_splits`. The higher the value is, the distribution
+        of target values is more approximately the ame across all split folds.
+        `ValueError` will be raised, if invalid value is given.
     """
 
-    def __init__(self, n_splits=3, shuffle=False, random_state=None,
-                 n_stratification_bins=None):
-        super(OrderedKFold, self).__init__(n_splits, shuffle, random_state)
+    def __init__(
+        self,
+        n_splits=3,
+        shuffle=False,
+        random_state=None,
+        n_stratification_bins=None,
+    ):
+        super(OrderedKFold, self).__init__(
+            n_splits, shuffle=shuffle, random_state=random_state)
         if n_stratification_bins is not None:
             if not shuffle:
                 raise ValueError("The n_stratification_bins is only relevant "
-                                 "when shuffle is True. Set to None if shuffle "
-                                 "is not needed!")
+                                 "when shuffle is True. Set to None if shuffle"
+                                 " is not needed!")
             if not isinstance(n_stratification_bins, numbers.Integral) or \
                     n_stratification_bins < 2:
                 raise ValueError("The number of stratification bins must be "
@@ -93,15 +100,19 @@ class RepeatedOrderedKFold(_RepeatedSplits):
         Number of times cross-validator to be repeated.
     random_state: int, RandomState instance or None. Optional
     n_stratification_bins : None or positive integer
-        Only relevant when shuffle is True. The number of bins into which samples
-        are categorized for stratification. Valid in [2, `n_samples // n_splits`].
-        Default value is None, which is same as `n_samples // n_splits`. The
-        higher the value is, the distribution of target values is more
-        approximately the ame across all split folds. `ValueError` will be raised,
-        if invalid value is given.
+        Only relevant when shuffle is True. The number of bins into which
+        samples are categorized for stratification. Valid in
+        [2, `n_samples // n_splits`]. Default value is None, which is same as
+        `n_samples // n_splits`. The higher the value is, the distribution of
+        target values is more approximately the ame across all split folds.
+        `ValueError` will be raised, if invalid value is given.
     """
     def __init__(self, n_splits=5, n_repeats=5, random_state=None,
                  n_stratification_bins=None):
         super(RepeatedOrderedKFold, self).__init__(
-            OrderedKFold, n_repeats, random_state, n_splits=n_splits,
-            n_stratification_bins=n_stratification_bins)
+            OrderedKFold,
+            n_repeats=n_repeats,
+            random_state=random_state,
+            n_splits=n_splits,
+            n_stratification_bins=n_stratification_bins,
+        )

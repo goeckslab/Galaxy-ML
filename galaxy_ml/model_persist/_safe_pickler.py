@@ -1,12 +1,15 @@
-import _compat_pickle
+
 import inspect
 import json
-import pkgutil
 import pickle
-import sklearn
+import pkgutil
 import sys
-
 from pathlib import Path
+
+import _compat_pickle
+
+import sklearn
+
 from ..utils import try_get_attr
 
 
@@ -125,8 +128,9 @@ def gen_pickle_whitelist():
         'exceptions', 'externals', 'clone', 'get_config',
         'set_config', 'config_context', 'show_versions',
         'datasets')
-    for submodule in (set(sklearn.__all__ + ['_loss'])
-                      - set(sk_submodule_excludes)):
+    for submodule in (
+        set(sklearn.__all__ + ['_loss']) - set(sk_submodule_excludes)
+    ):
         rval['SK_NAMES'].extend(
             find_members('sklearn.' + submodule))
 

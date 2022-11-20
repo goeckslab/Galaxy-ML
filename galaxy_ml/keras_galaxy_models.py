@@ -8,42 +8,49 @@ Email: guqiang01@gmail.com
 
 import collections
 import copy
-import h5py
 import json
-import numpy as np
 import random
-import tensorflow as tf
+import sys
 import warnings
-import six
 from abc import ABCMeta
 from pathlib import Path
-from tensorflow import keras
-import sys
 
-from tensorflow.keras.callbacks import (
-    Callback, CSVLogger, EarlyStopping, LearningRateScheduler,
-    TensorBoard, RemoteMonitor, ModelCheckpoint, TerminateOnNaN
+import h5py
+
+import keras
+from keras.callbacks import (
+    CSVLogger, Callback, EarlyStopping, LearningRateScheduler,
+    ModelCheckpoint, RemoteMonitor, TensorBoard, TerminateOnNaN,
 )
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.optimizers import (
-    Adadelta, Adagrad, Adam, Adamax, Nadam, SGD, RMSprop, Ftrl)
-from tensorflow.keras.utils import (
-    Sequence, OrderedEnqueuer, GeneratorEnqueuer, to_categorical)
-from tensorflow.python.keras.saving import hdf5_format
-from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
-from tensorflow.python.keras.utils.data_utils import iter_sequence_infinite
-from tensorflow.python.keras.utils.generic_utils import (has_arg,
-                                                         to_list)
-from sklearn.base import (BaseEstimator, ClassifierMixin,
-                          RegressorMixin, clone, is_classifier)
+from keras.models import Model, Sequential
+from keras.optimizers import (
+    Adadelta, Adagrad, Adam, Adamax, Ftrl, Nadam, RMSprop, SGD,
+)
+from keras.utils import (
+    GeneratorEnqueuer, OrderedEnqueuer, Sequence, to_categorical,
+)
+from keras.utils.data_utils import iter_sequence_infinite
+from keras.utils.generic_utils import (
+    has_arg, to_list)
+
+import numpy as np
+
+import six
+
+from sklearn.base import (
+    BaseEstimator, ClassifierMixin, RegressorMixin, clone, is_classifier)
 from sklearn.metrics import SCORERS
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
-from sklearn.utils import check_array, check_X_y
-from sklearn.utils.multiclass import (check_classification_targets,
-                                      type_of_target)
+from sklearn.utils import check_X_y, check_array
+from sklearn.utils.multiclass import (
+    check_classification_targets, type_of_target)
 from sklearn.utils.validation import check_is_fitted, check_random_state
-from .externals.selene_sdk.utils import compute_score
+
+import tensorflow as tf
+from tensorflow.python.keras.saving import hdf5_format
+
 from . import utils
+from .externals.selene_sdk.utils import compute_score
 
 
 __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
@@ -165,8 +172,10 @@ class MetricCallback(Callback, BaseEstimator):
         else:
             score, _ = compute_score(preds, y_val, scorer._score_func)
 
-        print('\r%s_val: %s' % (self.scorer, str(round(score, 4))),
-              end=100*' '+'\n')
+        print(
+            "\r%s_val: %s" % (self.scorer, str(round(score, 4))),
+            end=100 * " " + "\n",
+        )
         return
 
     def on_batch_begin(self, batch, logs={}):
@@ -422,21 +431,23 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
     seed : None or int, default None
         backend random seed
     """
-    def __init__(self, config, model_type='sequential',
-                 optimizer='rmsprop', loss=None, metrics=[],
-                 loss_weights=None, run_eagerly=None,
-                 steps_per_execution=None, learning_rate=None,
-                 momentum=None, nesterov=None, epsilon=None,
-                 rho=None, centered=None,  amsgrad=None,
-                 beta_1=None, beta_2=None, learning_rate_power=None,
-                 initial_accumulator_value=None, beta=None,
-                 l1_regularization_strength=None,
-                 l2_regularization_strength=None,
-                 l2_shrinkage_regularization_strength=None,
-                 epochs=1, batch_size=None, callbacks=None,
-                 validation_split=0.1, steps_per_epoch=None,
-                 validation_steps=None, verbose=1, seed=None,
-                 **fit_params):
+    def __init__(
+        self, config, model_type='sequential',
+        optimizer='rmsprop', loss=None, metrics=[],
+        loss_weights=None, run_eagerly=None,
+        steps_per_execution=None, learning_rate=None,
+        momentum=None, nesterov=None, epsilon=None,
+        rho=None, centered=None, amsgrad=None,
+        beta_1=None, beta_2=None, learning_rate_power=None,
+        initial_accumulator_value=None, beta=None,
+        l1_regularization_strength=None,
+        l2_regularization_strength=None,
+        l2_shrinkage_regularization_strength=None,
+        epochs=1, batch_size=None, callbacks=None,
+        validation_split=0.1, steps_per_epoch=None,
+        validation_steps=None, verbose=1, seed=None,
+        **fit_params,
+    ):
         self.config = config
         self.model_type = model_type
         self.optimizer = optimizer
@@ -689,7 +700,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_ = self.model_class_.from_config(
             config,
-            custom_objects=dict(tf=tf))
+            custom_objects=dict(tf=tf),
+        )
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
@@ -881,7 +893,8 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
 
         self.model_ = self.model_class_.from_config(
             config,
-            custom_objects=dict(tf=tf))
+            custom_objects=dict(tf=tf),
+        )
 
         self.model_.load_weights(filepath, by_name=by_name,
                                  skip_mismatch=skip_mismatch,
@@ -1149,22 +1162,24 @@ class KerasGBatchClassifier(KerasGClassifier):
         If float, 0.2, corresponds to class_weight
         {0: 1/0.2, 1: 1}
     """
-    def __init__(self, config, data_batch_generator=None,
-                 model_type='sequential', optimizer='rmsprop',
-                 loss='binary_crossentropy', metrics=[],
-                 loss_weights=None, run_eagerly=None,
-                 steps_per_execution=None, learning_rate=None,
-                 momentum=None, nesterov=None, epsilon=None, rho=None,
-                 centered=None, amsgrad=None, beta_1=None, beta_2=None,
-                 learning_rate_power=None, initial_accumulator_value=None,
-                 beta=None, l1_regularization_strength=None,
-                 l2_regularization_strength=None,
-                 l2_shrinkage_regularization_strength=None,
-                 epochs=1, batch_size=None, callbacks=None,
-                 validation_split=0., steps_per_epoch=None,
-                 validation_steps=None, verbose=1, seed=None,
-                 n_jobs=1, prediction_steps=None,
-                 class_positive_factor=1, **fit_params):
+    def __init__(
+        self, config, data_batch_generator=None,
+        model_type='sequential', optimizer='rmsprop',
+        loss='binary_crossentropy', metrics=[],
+        loss_weights=None, run_eagerly=None,
+        steps_per_execution=None, learning_rate=None,
+        momentum=None, nesterov=None, epsilon=None, rho=None,
+        centered=None, amsgrad=None, beta_1=None, beta_2=None,
+        learning_rate_power=None, initial_accumulator_value=None,
+        beta=None, l1_regularization_strength=None,
+        l2_regularization_strength=None,
+        l2_shrinkage_regularization_strength=None,
+        epochs=1, batch_size=None, callbacks=None,
+        validation_split=0., steps_per_epoch=None,
+        validation_steps=None, verbose=1, seed=None,
+        n_jobs=1, prediction_steps=None,
+        class_positive_factor=1, **fit_params
+    ):
         super(KerasGBatchClassifier, self).__init__(
             config, model_type=model_type, optimizer=optimizer,
             loss=loss, metrics=metrics, loss_weights=loss_weights,
@@ -1224,14 +1239,15 @@ class KerasGBatchClassifier(KerasGClassifier):
             if hasattr(self.data_generator_, 'target_path'):
                 # for GenomicIntervalBatchGenerator
                 self.classes_ = np.arange(
-                    max(self.data_generator_.n_features_, 2))
+                    max(self.data_generator_.n_features_in_, 2)
+                )
                 self.n_classes_ = len(self.classes_)
 
         if self.classes_.tolist() == [0, 1] and class_weight is None:
             if self.class_positive_factor > 1:
                 class_weight = {0: 1, 1: self.class_positive_factor}
             elif self.class_positive_factor < 1.0:
-                class_weight = {0: 1/self.class_positive_factor, 1: 1}
+                class_weight = {0: 1 / self.class_positive_factor, 1: 1}
 
         if class_weight is not None:
             kwargs['class_weight'] = class_weight
@@ -1249,12 +1265,6 @@ class KerasGBatchClassifier(KerasGClassifier):
         self.model_ = self.model_class_.from_config(
             config,
             custom_objects=dict(tf=tf))
-
-        # enable multiple gpu mode
-        try:
-            self.model_ = multi_gpu_model(self.model_)
-        except Exception:
-            pass
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
@@ -1526,10 +1536,11 @@ def _predict_generator(model, generator, steps=None,
                 elif len(generator_output) == 3:
                     x, y, _ = generator_output
                 else:
-                    raise ValueError('Output of generator should be '
-                                     'a tuple `(x, y, sample_weight)` '
-                                     'or `(x, y)`. Found: ' +
-                                     str(generator_output))
+                    raise ValueError(
+                        "Output of generator should be a tuple "
+                        "`(x, y, sample_weight)` or `(x, y)`. Found: "
+                        + str(generator_output)
+                    )
             else:
                 # Assumes a generator that only
                 # yields inputs (not targets and sample weights).

@@ -215,10 +215,8 @@
 This tool wrapps Stacking Regression, also called Super Learning, in which different base algorithms train
 on the original dataset and predict results respectively, a second level of `metalearner` fits on the previous
 prediction results to ensemble a strong learner.
-Refer to `http://docs.h2o.ai/h2o/latest-stable/h2o-docs/data-science/stacked-ensembles.html#introduction`_.
+Refer to https://h2o-release.s3.amazonaws.com/h2o/rel-ueno/2/docs-website/h2o-docs/data-science/stacked-ensembles.html.
 
-.. _`http://docs.h2o.ai/h2o/latest-stable/h2o-docs/data-science/stacked-ensembles.html#introduction`:
- http://docs.h2o.ai/h2o/latest-stable/h2o-docs/data-science/stacked-ensembles.html#introduction
 
         ]]>
     </help>

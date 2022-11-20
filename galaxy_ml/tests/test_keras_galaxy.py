@@ -1,42 +1,48 @@
 import glob
-import h5py
 import json
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import pandas as pd
 import tempfile
-import tensorflow as tf
 import warnings
 
-from tensorflow import keras
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras import layers
-from tensorflow.keras.layers import (
-    Dense, Activation, Conv1D, Conv2D, Flatten,
-    MaxPool1D, MaxPooling2D, Dropout, Reshape)
-from tensorflow.keras.utils import to_categorical
-from sklearn.base import clone
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import SCORERS
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import StratifiedKFold, KFold
-from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.model_selection import ShuffleSplit
-from sklearn.model_selection import _search
-
 from galaxy_ml.keras_galaxy_models import (
-    _get_params_from_dict, _param_to_dict, _update_dict,
-    check_params, load_model, KerasLayers, MetricCallback,
-    KerasGClassifier, KerasGRegressor,
-    KerasGBatchClassifier, _predict_generator)
+    KerasGBatchClassifier, KerasGClassifier, KerasGRegressor,
+    KerasLayers, MetricCallback, _get_params_from_dict, _param_to_dict,
+    _predict_generator, _update_dict, check_params, load_model,
+)
+from galaxy_ml.model_validations import _fit_and_score
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
 from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
-from galaxy_ml.model_validations import _fit_and_score
+
+import h5py
+
+from keras import layers
+from keras.datasets import mnist
+from keras.layers import (
+    Activation, Conv1D, Conv2D, Dense, Dropout, Flatten,
+    MaxPool1D, MaxPooling2D, Reshape,
+)
+from keras.models import Model, Sequential
+from keras.utils import to_categorical
+
+import matplotlib.pyplot as plt
 
 from nose.tools import nottest
+
+import numpy as np
+
+import pandas as pd
+
+from sklearn.base import clone
+from sklearn.metrics import SCORERS
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import (
+    GridSearchCV, KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
+    _search,
+)
+
+import tensorflow as tf
+from tensorflow import keras
 
 
 warnings.simplefilter('ignore')
@@ -99,8 +105,9 @@ d = {
                 'kernel_initializer': {
                     'class_name': 'GlorotUniform',
                     'config': {
-                        'seed': None}
+                        'seed': None,
                     },
+                },
                 'bias_initializer': {
                     'class_name': 'Zeros',
                     'config': {}
@@ -142,8 +149,9 @@ d = {
                 'kernel_initializer': {
                     'class_name': 'GlorotUniform',
                     'config': {
-                        'seed': None}
+                        'seed': None,
                     },
+                },
                 'bias_initializer': {
                     'class_name': 'Zeros',
                     'config': {}
@@ -202,11 +210,17 @@ def test_param_to_dict():
     key = list(param.keys())[0]
     got = _param_to_dict(key, param[key])
 
-    expect = {'layers_0_Dense': {
-                'config': {
-                    'kernel_initializer': {
-                        'config': {
-                            'seed': None}}}}}
+    expect = {
+        'layers_0_Dense': {
+            'config': {
+                'kernel_initializer': {
+                    'config': {
+                        'seed': None,
+                    },
+                },
+            },
+        },
+    }
     assert got == expect, got
 
 
@@ -214,10 +228,15 @@ def test_update_dict():
     config = model.get_config()
     layers = config['layers']
     d = layers[0]
-    u = {'config': {
+    u = {
+        'config': {
             'kernel_initializer': {
                 'config': {
-                    'seed': 42}}}}
+                    'seed': 42,
+                },
+            },
+        },
+    }
     got = _update_dict(d, u)
 
     expect = {
@@ -569,9 +588,10 @@ def test_funtional_model_get_params():
     params = classifier.get_params()
     got = {}
     for key, value in params.items():
-        if key.startswith('layers_1_Conv2D__')\
-            or (not key.endswith('config')
-                and not key.startswith('layers')):
+        if key.startswith('layers_1_Conv2D__') or (
+            not key.endswith('config')
+            and not key.startswith('layers')
+        ):
             got[key] = value
     expect = {
         'amsgrad': None,
@@ -862,9 +882,11 @@ def test_keras_fasta_batch_classifier():
                                        verbose=0)
 
     params = classifier.get_params()
-    got = {key: value for key, value in params.items()
-           if not key.startswith(('config', 'layers'))
-           and not key.endswith('generator')}
+    got = {
+        key: value for key, value in params.items()
+        if not key.startswith(('config', 'layers'))
+        and not key.endswith('generator')
+    }
 
     expect = {
         'amsgrad': None, 'batch_size': 32, 'beta': None,

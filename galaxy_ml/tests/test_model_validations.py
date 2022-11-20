@@ -1,27 +1,34 @@
 """Tests for `model_validations` module.
 """
 import warnings
-import pytest
-import pandas as pd
+
+from galaxy_ml.keras_galaxy_models import KerasGClassifier
+from galaxy_ml.model_validations import (
+    OrderedKFold, RepeatedOrderedKFold, train_test_split
+)
+
+from keras.callbacks import EarlyStopping
+from keras.layers import Dense
+from keras.models import Sequential
+
+# from nose.tools import nottest
+
 import numpy as np
 
-from galaxy_ml.model_validations import (
-    train_test_split, OrderedKFold, RepeatedOrderedKFold)
-from galaxy_ml.keras_galaxy_models import KerasGClassifier
+import pandas as pd
 
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+import pytest
+
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
+
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection._validation import _fit_and_score
-from sklearn.model_selection import KFold, GridSearchCV
-from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import SCORERS
+from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection._validation import _fit_and_score
 from sklearn.utils._mocking import MockDataFrame
 from sklearn.utils._testing import assert_array_equal
 from sklearn.utils._testing import ignore_warnings
-# from nose.tools import nottest
 
 
 warnings.simplefilter('ignore')
@@ -108,12 +115,15 @@ def test_train_test_split():
     y = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
     for test_size, exp_test_size in zip([1, 2, 0.25, 0.5, 0.75],
                                         [3, 6, 3, 6, 9]):
-        train, test = train_test_split(y, test_size=test_size,
-                                       shuffle='group',
-                                       labels=y,
-                                       random_state=0)
+        train, test = train_test_split(
+            y,
+            test_size=test_size,
+            shuffle='group',
+            labels=y,
+            random_state=0,
+        )
         assert len(test) == exp_test_size
-        assert np.unique(test).size == exp_test_size//3
+        assert np.unique(test).size == exp_test_size // 3
         assert len(test) + len(train) == len(y)
         assert np.unique(train).size + np.unique(test).size == 4
 
@@ -332,7 +342,7 @@ def test_fit_and_score():
                           verbose=0, parameters=parameters,
                           fit_params=fit_params)
 
-    expect1 = {'fit_failed': False, 'test_scores': -16.0}
+    expect1 = {'fit_error': None, 'test_scores': -16.0}
     assert expect1 == got1, got1
 
     got2 = _fit_and_score(estimator, X, y, scorer, train, test,

@@ -1,10 +1,12 @@
-import numpy as np
 
 from itertools import chain
-from sklearn.model_selection import train_test_split as sk_train_test_split
+
+import numpy as np
+
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import train_test_split as sk_train_test_split
 from sklearn.model_selection._split import _validate_shuffle_split
-from sklearn.utils import indexable, _safe_indexing
+from sklearn.utils import _safe_indexing, indexable
 from sklearn.utils.validation import check_array
 
 

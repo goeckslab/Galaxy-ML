@@ -1,8 +1,10 @@
 import numpy as np
+
 import pyfaidx
 
-from . import FastaToArrayIterator
 from sklearn.base import BaseEstimator
+
+from ._fasta_iterator import FastaToArrayIterator
 from ..externals import selene_sdk
 
 

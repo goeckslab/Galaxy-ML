@@ -107,25 +107,25 @@
                 <section name="options" title="Advanced Options" expanded="False">
                     <param argument="target_size" type="text" value="(256, 256)" help="The dimensions to which all images found will be resized" />
                     <param argument="color_mode" type="select" help="Whether the images will be converted to have 1 or 3 color channels.">
-                        <option value="grayscale" />
-                        <option value="rgb" selected="true" />
-                        <option value="rgba" />
+                        <option value="grayscale">grayscale</option>
+                        <option value="rgb" selected="true">rgb</option>
+                        <option value="rgba">rgba</option>
                     </param>
                     <param argument="classes" type="text" value="" optional="true" help="Optional. Comma-separated string. For example: cat,dog. If None, all classes in `y_col` will be used." />
                     <param argument="class_mode" type="select">
-                        <option value="binary" />
-                        <option value="categorical" selected="true" />
-                        <option value="multi_output" />
+                        <option value="binary">binary</option>
+                        <option value="categorical" selected="true">categorical</option>
+                        <option value="multi_output">multi_output</option>
                     </param>
                     <param argument="shuffle" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="true" help="whether to shuffle the data" />
                     <param argument="seed" type="integer" value="" optional="true" help="random seed for shuffling and transformations" />
                     <param argument='interpolation' type="select" help="Interpolation method used to resample the image if the target size is different from that of the loaded image.">
-                        <option value="nearest" selected="true" />
-                        <option value="bilinear" />
-                        <option value="bicubic" />
-                        <option value="lanczos" />
-                        <option value="box" />
-                        <option value="hamming" />
+                        <option value="nearest" selected="true">nearest</option>
+                        <option value="bilinear">bilinear</option>
+                        <option value="bicubic">bicubic</option>
+                        <option value="lanczos">lanczos</option>
+                        <option value="box">box</option>
+                        <option value="hamming">hamming</option>
                     </param>
                     <param argument="fit_sample_size" type="integer" value="1000" optional="true" help="Number of training images used in `datagen.fit`. Relevant only when `featurewise_center` or `featurewise_std_normalization` or `zca_whitening` are set are set to True." />
                     <param argument="featurewise_center" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Set input mean to 0 over the dataset, feature-wise." />
@@ -153,8 +153,8 @@
                     <param argument="vertical_flip" type="boolean" optional="true" truevalue="booltrue" falsevalue="boolfalse" checked="false" help="Randomly flip inputs vertically." />
                     <param argument="rescale" type="float" value="" optional="true" help="Rescaling factor." />
                     <param argument="data_format" type="select">
-                        <option value="channels_first" />
-                        <option value="channels_last" selected="true" />
+                        <option value="channels_first">channels_first</option>
+                        <option value="channels_last" selected="true">channels_last</option>
                     </param>
                     <param argument="interpolation_order" type="integer" value="1" optional="true" />
                 </section>
@@ -257,7 +257,7 @@
                     <has_text text="2.29" />
                 </assert_contents>
             </output>
-            <output name="outfile_object" file="image_dl_model01" compare="sim_size" delta="100" />
+            <output name="outfile_object" file="image_dl_model01" compare="sim_size" delta="1000" />
             <output name="outfile_y_true">
                 <assert_contents>
                     <has_n_columns n="10" />

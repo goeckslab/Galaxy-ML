@@ -1,10 +1,11 @@
-FROM ubuntu:20.04
+FROM python:3.9-slim
 
-ENV VERSION=0.9.1
+ENV VERSION=v0.10.0
 RUN apt-get update && \
-    apt-get install -y git python3.7 python3-pip unzip wget && \
-    ln -s /usr/bin/python3 /usr/bin/python
+    apt-get install -y gcc git libz-dev unzip wget && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y graphviz
 
-RUN pip install Galaxy-ML==$VERSION pydot
+RUN pip install 'git+https://github.com/goeckslab/Galaxy-ML.git'@$VERSION pydot && \
+    pip cache purge
 
-RUN  DEBIAN_FRONTEND="noninteractive" apt-get install -y graphviz
+RUN apt-get purge -y gcc libz-dev && apt-get -y autoremove && apt-get clean

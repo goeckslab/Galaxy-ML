@@ -1,8 +1,10 @@
 import numpy as np
-from ..utils import get_main_estimator
+
 from sklearn import metrics
-from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics._scorer import _BaseScorer
+from sklearn.utils.multiclass import type_of_target
+
+from ..utils import get_main_estimator
 
 
 class _BinarizeTargetThresholdScorer(_BaseScorer):
@@ -32,7 +34,7 @@ class _BinarizeTargetThresholdScorer(_BaseScorer):
                 y_pred = np.vstack([p for p in y_pred]).T
             elif y_type == "binary" and "pos_label" in self._kwargs:
                 self._check_pos_label(
-                    self._kwargs["pos_label"], clf.classes_
+                    self._kwargs["pos_label"], clf.classes_,
                 )
                 if self._kwargs["pos_label"] == clf.classes_[0]:
                     # The implicit positive class of the binary classifier
@@ -49,12 +51,12 @@ class _BinarizeTargetThresholdScorer(_BaseScorer):
                 y_pred = np.vstack([p[:, -1] for p in y_pred]).T
 
         if sample_weight is not None:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 sample_weight=sample_weight,
-                                                 **self._kwargs)
+            return self._sign * self._score_func(
+                y_trans, y_pred, sample_weight=sample_weight,
+                **self._kwargs)
         else:
-            return self._sign * self._score_func(y_trans, y_pred,
-                                                 **self._kwargs)
+            return self._sign * self._score_func(
+                y_trans, y_pred, **self._kwargs)
 
     def _factory_args(self):
         return ", needs_threshold=True"
@@ -62,11 +64,11 @@ class _BinarizeTargetThresholdScorer(_BaseScorer):
 
 # roc_auc
 binarize_auc_scorer =\
-        _BinarizeTargetThresholdScorer(metrics.roc_auc_score, 1, {})
+    _BinarizeTargetThresholdScorer(metrics.roc_auc_score, 1, {})
 
 # average_precision_scorer
 binarize_average_precision_scorer =\
-        _BinarizeTargetThresholdScorer(metrics.average_precision_score, 1, {})
+    _BinarizeTargetThresholdScorer(metrics.average_precision_score, 1, {})
 
 # roc_auc_scorer
 # iraps_auc_scorer = binarize_auc_scorer
@@ -108,12 +110,11 @@ class _BinarizeTargetPredictScorer(_BaseScorer):
 
 # accuracy_scorer
 binarize_accuracy_scorer =\
-        _BinarizeTargetPredictScorer(metrics.accuracy_score, 1, {})
+    _BinarizeTargetPredictScorer(metrics.accuracy_score, 1, {})
 
 # balanced_accuracy_scorer
 binarize_balanced_accuracy_scorer =\
-        _BinarizeTargetPredictScorer(
-            metrics.balanced_accuracy_score, 1, {})
+    _BinarizeTargetPredictScorer(metrics.balanced_accuracy_score, 1, {})
 
 BINARIZE_SCORERS = dict(
     roc_auc=binarize_auc_scorer,

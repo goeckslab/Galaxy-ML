@@ -1,13 +1,15 @@
 import argparse
 import json
-import six
 import warnings
-
 from ast import literal_eval
-from tensorflow import keras
-from tensorflow.keras.models import Sequential, Model
+
 from galaxy_ml.model_persist import dump_model_to_h5
-from galaxy_ml.utils import try_get_attr, SafeEval
+from galaxy_ml.utils import SafeEval, try_get_attr
+
+import six
+
+from tensorflow import keras
+from tensorflow.keras.models import Model, Sequential
 
 
 safe_eval = SafeEval()
@@ -176,11 +178,11 @@ def get_functional_model(config):
         # merge layers
         if 'merging_layers' in options:
             idxs = literal_eval(options.pop('merging_layers'))
-            merging_layers = [all_layers[i-1] for i in idxs]
+            merging_layers = [all_layers[i - 1] for i in idxs]
             new_layer = klass(**options)(merging_layers)
         # non-input layers
         elif inbound_nodes is not None:
-            new_layer = klass(**options)(all_layers[inbound_nodes-1])
+            new_layer = klass(**options)(all_layers[inbound_nodes - 1])
         # input layers
         else:
             new_layer = klass(**options)
@@ -188,10 +190,10 @@ def get_functional_model(config):
         all_layers.append(new_layer)
 
     input_indexes = _handle_shape(config['input_layers'])
-    input_layers = [all_layers[i-1] for i in input_indexes]
+    input_layers = [all_layers[i - 1] for i in input_indexes]
 
     output_indexes = _handle_shape(config['output_layers'])
-    output_layers = [all_layers[i-1] for i in output_indexes]
+    output_layers = [all_layers[i - 1] for i in output_indexes]
 
     return Model(inputs=input_layers, outputs=output_layers)
 
@@ -300,7 +302,7 @@ def build_keras_model(inputs, outfile, model_json, batch_mode=False):
         if not isinstance(train_metrics, list):      # for older galaxy
             train_metrics = train_metrics.split(',')
         if train_metrics[-1] == 'none':
-            train_metrics = train_metrics[:-1]
+            train_metrics.pop()
         options['metrics'] = train_metrics
 
         options.update(inputs['mode_selection']['fit_params'])

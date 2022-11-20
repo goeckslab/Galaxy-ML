@@ -1,19 +1,18 @@
-import numpy as np
 import warnings
-
-from sklearn.base import clone
 
 from galaxy_ml.externals.selene_sdk.sequences._sequence import\
     _fast_sequence_to_encoding
-from galaxy_ml.preprocessors import GenomeOneHotEncoder
-from galaxy_ml.preprocessors import FastaIterator, FastaToArrayIterator
-from galaxy_ml.preprocessors import FastaDNABatchGenerator
-from galaxy_ml.preprocessors import FastaProteinBatchGenerator
-from galaxy_ml.preprocessors import ProteinOneHotEncoder
-from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
-from galaxy_ml.preprocessors import GenomicVariantBatchGenerator
+from galaxy_ml.preprocessors import (
+    FastaDNABatchGenerator, FastaIterator, FastaProteinBatchGenerator,
+    FastaToArrayIterator, GenomeOneHotEncoder, GenomicIntervalBatchGenerator,
+    GenomicVariantBatchGenerator, ProteinOneHotEncoder,
+)
 
 from nose.tools import nottest
+
+import numpy as np
+
+from sklearn.base import clone
 
 try:
     import pyfaidx
@@ -32,9 +31,9 @@ warnings.simplefilter('ignore')
 sequence_path = './tools/test-data/regulatory_mutations.fa'
 
 BASE_TO_INDEX = {
-        'A': 0, 'C': 1, 'G': 2, 'T': 3,
-        'a': 0, 'c': 1, 'g': 2, 't': 3,
-    }
+    'A': 0, 'C': 1, 'G': 2, 'T': 3,
+    'a': 0, 'c': 1, 'g': 2, 't': 3,
+}
 
 
 def test_fast_sequence_to_encoding():
@@ -132,9 +131,9 @@ def test_fasta_to_array_iterator_transform():
         X, generator, y=y, seed=42)
 
     arr0 = generator.apply_transform(0)
-    expect2 = np.array([[0., 1., 0., 0.],
-                        [0., 0., 1., 0.],
-                        [0., 1., 0., 0.]])
+    # expect2 = np.array([[0., 1., 0., 0.],
+    #                     [0., 0., 1., 0.],
+    #                     [0., 1., 0., 0.]])
     assert arr0.shape == (1000, 4), arr0.shape
 
     index_array = [1, 3, 4]
@@ -142,7 +141,7 @@ def test_fasta_to_array_iterator_transform():
         _get_batches_of_transformed_samples(index_array)
 
     assert batch_X.shape == (3, 1000, 4), batch_X.shape
-    assert np.array_equal(batch_y,  np.array([0, 1, 0])), batch_y
+    assert np.array_equal(batch_y, np.array([0, 1, 0])), batch_y
 
 
 def test_fasta_dna_batch_generator():
@@ -173,7 +172,7 @@ def test_fasta_dna_batch_generator():
     assert got1.tolist() == [0., 0., 0., 1.], got1
     assert got2.tolist() == [0., 0., 1., 0.], got2
     assert got3.tolist() == [0., 1., 0., 0.], got3
-    assert np.array_equal(batch_y,  np.array([1, 0, 1])), batch_y
+    assert np.array_equal(batch_y, np.array([1, 0, 1])), batch_y
 
     # test sample method
     retrived_seq_encodings, _ = generator.sample(X, sample_size=3)
@@ -204,7 +203,7 @@ def test_fasta_protein_batch_generator():
     assert params == expect1, params
     assert generator.n_bases == 20, generator.n_bases
 
-    cloned_generator = clone(generator)
+    assert clone(generator), "Clone generator failed!"
     generator.close()
 
 
@@ -265,7 +264,7 @@ def test_genomic_interval_batch_generator():
     generator1.set_processing_attrs()
 
     features_ = generator1.features_
-    n_features_ = generator1.n_features_
+    n_features_in_ = generator1.n_features_in_
     bin_radius_ = generator1.bin_radius_
     start_radius_ = generator1.start_radius_
     end_radius_ = generator1.end_radius_
@@ -276,7 +275,7 @@ def test_genomic_interval_batch_generator():
 
     # test fit()
     assert features_ == ['Proery_BM|GATA1'], features_
-    assert n_features_ == 1, n_features_
+    assert n_features_in_ == 1, n_features_in_
     assert bin_radius_ == 100, bin_radius_
     assert start_radius_ == 100, start_radius_
     assert end_radius_ == 100, end_radius_

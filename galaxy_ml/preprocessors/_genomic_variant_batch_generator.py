@@ -1,10 +1,14 @@
-import numpy as np
+
 import warnings
+
+import numpy as np
+
+from sklearn.base import BaseEstimator
+
 import tabix
 
-from . import FastaToArrayIterator
+from ._fasta_iterator import FastaToArrayIterator
 from ..externals import selene_sdk
-from sklearn.base import BaseEstimator
 
 
 class GenomicVariantBatchGenerator(BaseEstimator):
@@ -154,22 +158,26 @@ class GenomicVariantBatchGenerator(BaseEstimator):
             sequence = self.reference_genome_.get_sequence_from_coords(
                 chrom, start, end, strand=strand)
             remove_ref_start = self.start_radius_ - ref_len // 2 - 1
-            sequence = (sequence[:remove_ref_start] +
-                        alt +
-                        sequence[remove_ref_start + ref_len:])
+            sequence = (
+                sequence[:remove_ref_start]
+                + alt
+                + sequence[remove_ref_start + ref_len:]
+            )
         else:  # insertion or deletion
             seq_lhs = self.reference_genome_.get_sequence_from_coords(
                 chrom,
                 pos - 1 - self.start_radius_ + alt_len // 2,
                 pos - 1,
                 strand=strand,
-                pad=True)
+                pad=True,
+            )
             seq_rhs = self.reference_genome_.get_sequence_from_coords(
                 chrom,
                 pos - 1 + ref_len,
                 pos - 1 + ref_len + self.end_radius_ - (alt_len + 1) // 2,
                 strand=strand,
-                pad=True)
+                pad=True,
+            )
             sequence = seq_lhs + alt + seq_rhs
         alt_encoding = self.reference_genome_.sequence_to_encoding(
             sequence)

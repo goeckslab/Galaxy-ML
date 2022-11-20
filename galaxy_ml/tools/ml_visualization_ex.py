@@ -1,22 +1,29 @@
 import argparse
 import json
+import os
+import warnings
+
+from galaxy_ml.model_persist import load_model_from_h5
+from galaxy_ml.utils import SafeEval, read_columns
+
 import matplotlib
 import matplotlib.pyplot as plt
+
 import numpy as np
-import os
+
 import pandas as pd
+
 import plotly
 import plotly.graph_objs as go
-import warnings
+
+from sklearn.feature_selection._base import SelectorMixin
+from sklearn.metrics import (
+    auc, average_precision_score, precision_recall_curve, roc_curve,
+)
+from sklearn.pipeline import Pipeline
 
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.utils import plot_model
-from sklearn.feature_selection._base import SelectorMixin
-from sklearn.metrics import precision_recall_curve, average_precision_score
-from sklearn.metrics import roc_curve, auc
-from sklearn.pipeline import Pipeline
-from galaxy_ml.model_persist import load_model_from_h5
-from galaxy_ml.utils import read_columns, SafeEval
 
 
 safe_eval = SafeEval()
@@ -335,11 +342,10 @@ def main(inputs, infile_estimator=None, infile1=None,
         else:
             c = None
 
-        _, input_df = read_columns(infile1, c=c,
-                                   c_option=column_option,
-                                   return_df=True,
-                                   sep='\t', header='infer',
-                                   parse_dates=True)
+        _, input_df = read_columns(
+            infile1, c=c, c_option=column_option, return_df=True,
+            sep='\t', header='infer', parse_dates=True,
+        )
 
         feature_names = input_df.columns.values
 

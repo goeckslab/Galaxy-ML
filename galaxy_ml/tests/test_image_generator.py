@@ -1,10 +1,12 @@
-import pandas as pd
-import numpy as np
-
 from galaxy_ml.model_validations import train_test_split
 from galaxy_ml.preprocessors import ImageDataFrameBatchGenerator
 from galaxy_ml.preprocessors._image_batch_generator import \
     clean_image_dataframe
+
+import numpy as np
+
+import pandas as pd
+
 from sklearn.base import clone
 
 
@@ -18,8 +20,8 @@ x_col = 'id'
 y_col = 'label'
 class_mode = 'categorical'
 
-df = clean_image_dataframe(df, directory, x_col=x_col, y_col=y_col,
-                           class_mode=class_mode)
+df = clean_image_dataframe(
+    df, directory, x_col=x_col, y_col=y_col, class_mode=class_mode)
 
 
 def test_image_dataframe_generator_get_params():
@@ -35,7 +37,8 @@ def test_image_dataframe_generator_get_params():
         width_shift_range=0.2,
         height_shift_range=0.2,
         horizontal_flip=True,
-        fit_sample_size=None)
+        fit_sample_size=None,
+    )
 
     got = batch_generator.get_params()
     got.pop('dataframe')
@@ -74,7 +77,8 @@ def test_image_dataframe_generator():
         width_shift_range=0.2,
         height_shift_range=0.2,
         horizontal_flip=True,
-        fit_sample_size=None)
+        fit_sample_size=None,
+    )
 
     image_generator2 = clone(image_generator)
     image_generator2.set_processing_attrs()
@@ -82,22 +86,24 @@ def test_image_dataframe_generator():
     X = np.arange(df.shape[0])[:, np.newaxis]
     y = image_generator2.labels
 
-    X_train, X_test = train_test_split(X, test_size=0.2, random_state=42,
-                                       shuffle='stratified', labels=y)
+    X_train, X_test = train_test_split(
+        X, test_size=0.2, random_state=42,
+        shuffle='stratified', labels=y)
 
     image_gen = image_generator2.flow(X_train, batch_size=32)
 
     batch_X, batch_y = next(image_gen)
 
-    assert image_generator2.class_indices == \
-        {'airplane': 0, 'automobile': 1, 'bird': 2, 'cat': 3, 'deer': 4,
-         'dog': 5, 'frog': 6, 'horse': 7, 'ship': 8, 'truck': 9}
+    assert image_generator2.class_indices == {
+        'airplane': 0, 'automobile': 1, 'bird': 2, 'cat': 3, 'deer': 4,
+        'dog': 5, 'frog': 6, 'horse': 7, 'ship': 8, 'truck': 9
+    }
     assert image_generator2.classes[:10] == [6, 9, 9, 4, 1, 1, 2, 7, 8, 3], \
         image_generator2.classes[:10]
 
-    assert np.squeeze(X_train)[:10].tolist() == [7, 280, 317, 299, 433, 401,
-                                                 171, 155,  82, 197], \
-        np.squeeze(X_train)[:10].tolist()
+    assert np.squeeze(X_train)[:10].tolist() == [
+        7, 280, 376, 299, 433, 308, 171, 155, 82, 197,
+    ], np.squeeze(X_train)[:10].tolist()
 
     assert batch_X.shape == (32, 32, 32, 3), batch_X.shape
     assert np.argmax(batch_y[:10], axis=1).tolist() == \

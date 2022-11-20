@@ -1,3 +1,19 @@
+### Version 0.10.0
+
+#### Changes
+
+- Updates scikit-learn to 1.1.x, tensorflow to v2.10.x, xgboost to 1.7.x.
+- Add github workflow to test tools using docker container as dependencies.
+- Restructure search algos in searchCV tool.
+- Serialize html repr for models.
+- Test utils and tools in python 3.9.
+
+#### Bug Fixes
+
+- Fix some tool lint errors
+- Fix lots of flake8 errors but ignoring F401,F821, I100 and W503.
+
+
 ### Version 0.9.1
 
 #### Changes

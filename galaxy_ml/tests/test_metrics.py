@@ -1,18 +1,21 @@
-import pandas as pd
 import warnings
 
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics._scorer import r2_scorer
-from sklearn.model_selection import cross_validate
 from galaxy_ml.metrics import (spearman_correlation_score,
                                spearman_correlation_scorer)
 from galaxy_ml.model_validations import OrderedKFold
 
+import pandas as pd
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics._scorer import r2_scorer
+from sklearn.model_selection import cross_validate
+
 
 warnings.simplefilter('ignore')
 
-Olaparib_1017 = pd.read_csv('./tools/test-data/Olaparib_1017.tsv.gz',
-                            sep='\t', index_col=0)
+Olaparib_1017 = pd.read_csv(
+    './tools/test-data/Olaparib_1017.tsv.gz',
+    sep='\t', index_col=0)
 X, y = Olaparib_1017.iloc[:, 6:].values, Olaparib_1017.iloc[:, 5].values
 
 
@@ -29,7 +32,7 @@ def test_spearman_correlation_scorer():
     cv = OrderedKFold(5)
     scoring = dict(
         R2=r2_scorer,
-        Spearman=spearman_correlation_scorer
+        Spearman=spearman_correlation_scorer,
     )
 
     estimator = LinearRegression()

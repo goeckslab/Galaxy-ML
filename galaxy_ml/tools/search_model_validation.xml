@@ -40,7 +40,7 @@
         #end if
         python '$__tool_directory__/search_model_validation.py'
             --inputs '$inputs'
-            --estimator '$search_schemes.infile_estimator'
+            --estimator '$infile_estimator'
             #if $input_options.selected_input == 'seq_fasta'
             --fasta_path '$input_options.fasta_path'
             #elif $input_options.selected_input == 'refseq_and_interval'
@@ -60,8 +60,8 @@
             #if $save == 'save_no_fit'
             --outfile_object '$outfile_object_no_fit'
             #end if
-            #if $search_schemes.options.cv_selector.selected_cv in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']
-            --groups '$search_schemes.options.cv_selector.groups_selector.infile_g'
+            #if $options.cv_selector.selected_cv in ['GroupKFold', 'GroupShuffleSplit', 'LeaveOneGroupOut', 'LeavePGroupsOut']
+            --groups '$options.cv_selector.groups_selector.infile_g'
             #end if
 
         ]]>
@@ -70,44 +70,36 @@
         <inputs name="inputs" />
     </configfiles>
     <inputs>
-        <conditional name="search_schemes">
-            <param name="selected_search_scheme" type="select" label="Select a model selection search scheme">
+        <conditional name="search_algos">
+            <param name="selected_search_algo" type="select" label="Select a hyperparameter search algorithm">
                 <option value="GridSearchCV" selected="true">GridSearchCV - Exhaustive search over specified parameter values for an estimator </option>
                 <option value="RandomizedSearchCV">RandomizedSearchCV - Randomized search on hyper parameters for an estimator</option>
                 <option value="skopt.BayesSearchCV">BayesSearchCV - Bayesian optimization over hyper parameters</option>
             </param>
             <when value="GridSearchCV">
-                <expand macro="search_cv_estimator" />
-                <section name="options" title="Advanced Options for SearchCV" expanded="false">
-                    <expand macro="search_cv_options" />
-                </section>
             </when>
             <when value="RandomizedSearchCV">
-                <expand macro="search_cv_estimator" />
-                <section name="options" title="Advanced Options for SearchCV" expanded="false">
-                    <expand macro="search_cv_options" />
-                    <param argument="n_iter" type="integer" value="10" label="Number of parameter settings that are sampled" />
-                    <expand macro="random_state" />
-                </section>
+                <param argument="n_iter" type="integer" value="10" label="Number of parameter settings that are sampled" />
+                <expand macro="random_state" />
             </when>
             <when value="skopt.BayesSearchCV">
-                <expand macro="search_cv_estimator" />
-                <section name="options" title="Advanced Options for SearchCV" expanded="false">
-                    <expand macro="search_cv_options" />
-                    <param argument="optimizer_kwargs" type="text" value="" optional="true" help="dict, optional Dict of arguments passed to :class:Optimizer. For example, {'base_estimator': 'RF'} would use a Random Forest surrogate instead of the default Gaussian Process.">
-                        <sanitizer>
-                            <valid initial="default">
-                                <add value="{" />
-                                <add value="}" />
-                            </valid>
-                        </sanitizer>
-                    </param>
-                    <param argument="n_iter" type="integer" value="50" label="Number of parameter settings that are sampled" />
-                    <param argument="n_points" type="integer" value="1" label="Number of parameter settings to sample in parallel" help="Maximum parallel equals n_points times cv jobs." />
-                    <expand macro="random_state" />
-                </section>
+                <param argument="optimizer_kwargs" type="text" value="" optional="true" help="dict, optional Dict of arguments passed to :class:Optimizer. For example, {'base_estimator': 'RF'} would use a Random Forest surrogate instead of the default Gaussian Process.">
+                    <sanitizer>
+                        <valid initial="default">
+                            <add value="{" />
+                            <add value="}" />
+                        </valid>
+                    </sanitizer>
+                </param>
+                <param argument="n_iter" type="integer" value="50" label="Number of parameter settings that are sampled" />
+                <param argument="n_points" type="integer" value="1" label="Number of parameter settings to sample in parallel" help="Maximum parallel equals n_points times cv jobs." />
+                <expand macro="random_state" />
             </when>
         </conditional>
+        <expand macro="search_cv_estimator" />
+        <section name="options" title="Advanced Options for SearchCV" expanded="false">
+            <expand macro="search_cv_options" />
+        </section>
         <expand macro="sl_mixed_input_plus_sequence" />
         <conditional name="outer_split">
             <param name="split_mode" type="select" label="Whether to hold a portion of samples for test exclusively, nested CV?">
@@ -133,7 +125,7 @@
             <filter>save == 'save_estimator' and outer_split['split_mode'] == 'no'</filter>
         </data>
         <collection type="list" name="outfile_in_splits" label="cv_results_ from splits on ${on_string}">
-            <filter>not search_schemes['is_deep_learning'] and save == 'save_estimator' and outer_split['split_mode'] == 'nested_cv'</filter>
+            <filter>not is_deep_learning and save == 'save_estimator' and outer_split['split_mode'] == 'nested_cv'</filter>
             <discover_datasets format="tabular" pattern="__name__" directory="cv_results_in_folds" />
         </collection>
         <data format="h5mlm" name="outfile_object_no_fit" label="Unfitted SearchCV on ${on_string}">
@@ -142,7 +134,7 @@
     </outputs>
     <tests>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]" />
@@ -163,13 +155,13 @@
             <output name="outfile_result">
                 <assert_contents>
                     <has_n_columns n="13" />
-                    <has_text text="0.7938837807353147" />
+                    <has_text text="0.7938837807" />
                     <has_text text="{'selectkbest__k': 9, 'svr__C': 1}" />
                 </assert_contents>
             </output>
         </test>
         <test expect_failure="true">
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]" />
@@ -188,7 +180,7 @@
             <param name="selected_column_selector_option2" value="all_columns" />
         </test>
         <test>
-            <param name="selected_search_scheme" value="RandomizedSearchCV" />
+            <param name="selected_search_algo" value="RandomizedSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]" />
@@ -226,7 +218,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="RandomizedSearchCV" />
+            <param name="selected_search_algo" value="RandomizedSearchCV" />
             <param name="infile_estimator" value="pipeline03" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="np_arange(50, 1001, 50)" />
@@ -248,7 +240,7 @@
             <param name="infile1" value="regression_X.tabular" ftype="tabular" />
             <param name="header1" value="true" />
             <param name="selected_column_selector_option" value="all_columns" />
-            <param name="infile2" value="regression_y.tabular" ftype="tabular" />
+            <param name="infile2" value="classifier_y.tabular" ftype="tabular" />
             <param name="header2" value="true" />
             <param name="selected_column_selector_option2" value="all_columns" />
             <output name="outfile_result" >
@@ -259,7 +251,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline04" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="list(range(100, 1001, 100))" />
@@ -284,7 +276,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]" />
@@ -300,7 +292,7 @@
             <output name="outfile_object" file="searchCV01" compare="sim_size" delta="10" />
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline06" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 200, 1000]" />
@@ -325,7 +317,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline07" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 200]" />
@@ -355,7 +347,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline08" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100, 200]" />
@@ -383,7 +375,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[1, 10, 100, 1000]" />
@@ -403,7 +395,7 @@
             <output name="outfile_object" file="searchCV02" compare="sim_size" delta="10" />
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline03" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 200, 1000]" />
@@ -421,18 +413,18 @@
             <param name="infile1" value="regression_X.tabular" ftype="tabular" />
             <param name="header1" value="true" />
             <param name="selected_column_selector_option" value="all_columns" />
-            <param name="infile2" value="regression_y.tabular" ftype="tabular" />
+            <param name="infile2" value="classifier_y.tabular" ftype="tabular" />
             <param name="header2" value="true" />
             <param name="selected_column_selector_option2" value="all_columns" />
             <output name="outfile_result" >
                 <assert_contents>
                     <has_n_columns n="13" />
-                    <has_text text="0.09207630131543175" />
+                    <has_text text="0.7927378" />
                 </assert_contents>
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline02" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[0.01, 0.001]" />
@@ -452,7 +444,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline05" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 50, 100]" />
@@ -473,7 +465,7 @@
             <output name="outfile_object" file="searchCV03" compare="sim_size" delta="10" />
         </test>
         <test expect_failure="true">
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline01" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="open('~/.ssh/authorized_keys', 'r').read()" />
@@ -487,7 +479,7 @@
             <param name="selected_column_selector_option2" value="all_columns" />
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline10" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value=": [sklearn_tree.DecisionTreeRegressor(random_state=0), sklearn_tree.ExtraTreeRegressor(random_state=0)]" />
@@ -511,7 +503,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline09" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value=": [sklearn_feature_selection.SelectKBest(),
@@ -536,7 +528,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline09" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value=": [None,'sk_prep_all', 7, 13, skrebate_ReliefF(n_features_to_select=12)]" />
@@ -560,7 +552,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline11" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[3,4,5]" />
@@ -593,7 +585,7 @@
             </output>
         </test>
         <test>
-            <param name="selected_search_scheme" value="GridSearchCV" />
+            <param name="selected_search_algo" value="GridSearchCV" />
             <param name="infile_estimator" value="pipeline12" ftype="h5mlm" />
             <repeat name="param_set">
                 <param name="sp_list" value="[10, 100, 200]" />
@@ -618,16 +610,16 @@
             </output>
         </test>
         <test>
-            <conditional name="search_schemes">
-                <param name="selected_search_scheme" value="GridSearchCV" />
-                <param name="infile_estimator" value="pipeline05" ftype="h5mlm" />
-                <section name="search_params_builder">
-                    <repeat name="param_set">
-                        <param name="sp_list" value="[10, 50, 100, 300]" />
-                        <param name="sp_name" value="n_estimators" />
-                    </repeat>
-                </section>
+            <conditional name="search_algos">
+                <param name="selected_search_algo" value="GridSearchCV" />
             </conditional>
+            <param name="infile_estimator" value="pipeline05" ftype="h5mlm" />
+            <section name="search_params_builder">
+                <repeat name="param_set">
+                    <param name="sp_list" value="[10, 50, 100, 300]" />
+                    <param name="sp_name" value="n_estimators" />
+                </repeat>
+            </section>
             <param name="infile1" value="regression_X.tabular" ftype="tabular" />
             <param name="header1" value="true" />
             <param name="selected_column_selector_option" value="all_columns" />

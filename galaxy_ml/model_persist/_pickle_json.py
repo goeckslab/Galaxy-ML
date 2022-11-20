@@ -14,10 +14,13 @@ Functions:
 """
 
 import sys
-import six
-import warnings
 import types
+import warnings
+
 import numpy
+
+import six
+
 
 # reserved keys
 _PY_VERSION = '-cpython-'

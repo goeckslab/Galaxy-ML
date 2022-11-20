@@ -6,22 +6,26 @@ encodings.
 
 """
 import numpy as np
+
 import pyfaidx
+
 import tabix
 
 from .sequence import Sequence
-from .sequence import sequence_to_encoding
 from .sequence import encoding_to_sequence
+from .sequence import sequence_to_encoding
 
 
-def _get_sequence_from_coords(len_chrs,
-                              genome_sequence,
-                              chrom,
-                              start,
-                              end,
-                              strand='+',
-                              pad=False,
-                              blacklist_tabix=None):
+def _get_sequence_from_coords(
+    len_chrs,
+    genome_sequence,
+    chrom,
+    start,
+    end,
+    strand='+',
+    pad=False,
+    blacklist_tabix=None
+):
     """
     Gets the genomic sequence at the input coordinates.
 
@@ -89,9 +93,11 @@ def _get_sequence_from_coords(len_chrs,
     if start < 0:
         start_pad = -1 * start
         start = 0
-    return (Genome.UNK_BASE * start_pad +
-            genome_sequence(chrom, start, end, strand) +
-            Genome.UNK_BASE * end_pad)
+    return (
+        Genome.UNK_BASE * start_pad
+        + genome_sequence(chrom, start, end, strand)
+        + Genome.UNK_BASE * end_pad
+    )
 
 
 class Genome(Sequence):
@@ -252,17 +258,22 @@ class Genome(Sequence):
         """
         if chrom not in self.len_chrs:
             return False
-        if (start > self.len_chrs[chrom] or end > (self.len_chrs[chrom] + 1)
-                or start < 0):
+        if (
+            start > self.len_chrs[chrom]
+            or end > (self.len_chrs[chrom] + 1)
+            or start < 0
+        ):
             return False
         return True
 
-    def get_sequence_from_coords(self,
-                                 chrom,
-                                 start,
-                                 end,
-                                 strand='+',
-                                 pad=False):
+    def get_sequence_from_coords(
+        self,
+        chrom,
+        start,
+        end,
+        strand='+',
+        pad=False
+    ):
         """
         Gets the queried chromosome's sequence at the input coordinates.
 

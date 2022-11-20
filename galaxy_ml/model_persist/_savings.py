@@ -8,27 +8,34 @@ Classes:
     HDF5ToModel
 
 """
-import _compat_pickle
-import h5py
+
 import io
 import json
-import numpy
 import sys
 import tempfile
 import types
 import warnings
-
 from pathlib import Path
+
+import _compat_pickle
+
+import h5py
+
+import numpy
+
+from sklearn.utils import estimator_html_repr
+
 from xgboost import XGBModel, sklearn
 
+from ._safe_pickler import _SafePickler
 from ..keras_galaxy_models import BaseKerasModel, load_model
 from ..utils import get_search_params
-from ._safe_pickler import _SafePickler
 
 
 # reserved keys
 _URL = '-URL-'
 _REPR = '-repr-'
+_HTTP_REPR = '-http_repr-'
 _PY_VERSION = '-python-'
 _NP_VERSION = '-numpy-'
 _GALAXY_ML = '-Galaxy-ML-'
@@ -121,9 +128,16 @@ class ModelToHDF5:
 
             file.attrs[_REPR] = repr(obj)
 
+            try:
+                file.attrs[_HTTP_REPR] = estimator_html_repr(obj)
+            except Exception as e:
+                print(e)
+                file.attrs[_HTTP_REPR] = ''
+
             file.attrs[_PY_VERSION] = PY_VERSION
 
-            galaxy_ml_module = Path(__file__).parent.parent.joinpath('__init__.py')
+            galaxy_ml_module = \
+                Path(__file__).parent.parent.joinpath('__init__.py')
             with open(galaxy_ml_module, 'r') as fh:
                 for line in fh:
                     if line.startswith('__version__'):
@@ -218,10 +232,10 @@ class ModelToHDF5:
                 "Can't reduce %r object: %r" % (type(obj).__name__, obj))
         if not isinstance(rv, tuple):
             raise HPicklerError(
-               "%s must return a tuple, but got %s" % (reduce, type(rv)))
+                "%s must return a tuple, but got %s" % (reduce, type(rv)))
 
-        l = len(rv)
-        if not (2 <= l <= 5):
+        ln = len(rv)
+        if not (2 <= ln <= 5):
             raise HPicklerError("Tuple returned by %s must have "
                                 "two to five elements" % reduce)
 
@@ -237,17 +251,17 @@ class ModelToHDF5:
         assert (type(args) is tuple)
         rval[_ARGS] = {_TUPLE: save(list(args))}
 
-        if l >= 3:
+        if ln >= 3:
             state = rv[2]
             if state:
                 rval[_STATE] = save(state)
 
-        if l >= 4:
+        if ln >= 4:
             listitems = rv[3]
             if listitems:
                 rval[_LISTITEMS] = save(list(listitems))
 
-        if l == 5:
+        if ln == 5:
             dictitems = rv[4]
             if dictitems:
                 rval[_DICTITEMS] = save(list(dictitems))

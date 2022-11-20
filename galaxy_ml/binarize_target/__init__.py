@@ -1,7 +1,7 @@
 from ._binarize_estimators import (BinarizeTargetClassifier,
                                    BinarizeTargetRegressor,
                                    BinarizeTargetTransformer)
-from ._iraps_classifier import IRAPSCore, IRAPSClassifier
+from ._iraps_classifier import IRAPSClassifier, IRAPSCore
 from ._scorers import (BINARIZE_SCORERS, _BinarizeTargetPredictScorer,
                        _BinarizeTargetThresholdScorer,
                        binarize_accuracy_scorer, binarize_auc_scorer,
