@@ -125,7 +125,8 @@ def main(inputs, infile_array, outfile_train, outfile_test,
     if params['mode_selection']['selected_mode'] == 'train_test_split':
         options = params['mode_selection']['options']
         shuffle_selection = options.pop('shuffle_selection')
-        options['shuffle'] = shuffle_selection['shuffle']
+        options['shuffle'] = None if shuffle_selection['shuffle'] == 'None' \
+            else shuffle_selection['shuffle']
         if infile_labels:
             header = 'infer' if shuffle_selection['header1'] else None
             col_index = shuffle_selection['col'][0] - 1
