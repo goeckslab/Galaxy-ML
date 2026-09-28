@@ -44,9 +44,3 @@ skipping the upload and does not build or publish it. It does not overwrite
 files or complete a partially uploaded release. PyPI errors other than a
 missing version stop the workflow. Concurrent runs for the same tag are
 serialized; an upload race with an external publisher fails visibly.
-
-The version check can be tested without publishing or network access:
-
-```sh
-python .github/tests/test_publish.py
-```
