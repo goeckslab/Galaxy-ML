@@ -19,14 +19,25 @@ from sklearn import (
 )
 from sklearn.base import BaseEstimator
 from sklearn.base import MetaEstimatorMixin, clone, is_classifier
-from sklearn.feature_selection._rfe import RFE, RFECV, _rfe_single_fit
+from sklearn.feature_selection._rfe import RFE, RFECV
 from sklearn.metrics._scorer import check_scoring
 from sklearn.model_selection import check_cv
 from sklearn.utils import check_X_y, safe_sqr
+from sklearn.utils.metaestimators import _safe_split
 
 
 __all__ = ('DyRFE', 'DyRFECV', '_MyPipeline', '_MyimbPipeline',
            'check_feature_importances')
+
+
+def _dynamic_rfe_score(rfe, estimator, X, y, train, test, scorer):
+    X_train, y_train = _safe_split(estimator, X, y, train)
+    X_test, y_test = _safe_split(estimator, X, y, test, train)
+    rfe = clone(rfe)
+    rfe._fit(
+        X_train, y_train,
+        lambda fitted, features: scorer(fitted, X_test[:, features], y_test))
+    return rfe.scores_
 
 
 class DyRFE(RFE):
@@ -53,6 +64,11 @@ class DyRFE(RFE):
         Controls verbosity of output.
 
     """
+    _parameter_constraints = {
+        **RFE._parameter_constraints,
+        "step": [*RFE._parameter_constraints["step"], list],
+    }
+
     def __init__(self, estimator, n_features_to_select=None, step=1,
                  verbose=0):
         super(DyRFE, self).__init__(
@@ -62,13 +78,13 @@ class DyRFE(RFE):
             verbose=verbose,
         )
 
-    def _fit(self, X, y, step_score=None):
+    def _fit(self, X, y, step_score=None, **fit_params):
 
         if type(self.step) is not list:
-            return super(DyRFE, self)._fit(X, y, step_score)
+            return super(DyRFE, self)._fit(X, y, step_score, **fit_params)
 
         # dynamic step
-        X, y = check_X_y(X, y, "csc")
+        X, y = check_X_y(X, y, accept_sparse="csc")
         # Initialization
         n_features = X.shape[1]
         if self.n_features_to_select is None:
@@ -85,8 +101,8 @@ class DyRFE(RFE):
             if s <= 0:
                 raise ValueError("Step must be >0")
 
-        support_ = np.ones(n_features, dtype=np.bool)
-        ranking_ = np.ones(n_features, dtype=np.int)
+        support_ = np.ones(n_features, dtype=bool)
+        ranking_ = np.ones(n_features, dtype=int)
 
         if step_score:
             self.scores_ = []
@@ -107,7 +123,7 @@ class DyRFE(RFE):
             if self.verbose > 0:
                 print("Fitting estimator with %d features." % np.sum(support_))
 
-            estimator.fit(X[:, features], y)
+            estimator.fit(X[:, features], y, **fit_params)
 
             # Get coefs
             if hasattr(estimator, 'coef_'):
@@ -145,12 +161,13 @@ class DyRFE(RFE):
         # Set final attributes
         features = np.arange(n_features)[support_]
         self.estimator_ = clone(self.estimator)
-        self.estimator_.fit(X[:, features], y)
+        self.estimator_.fit(X[:, features], y, **fit_params)
 
         # Compute step score when only n_features_to_select features left
         if step_score:
             self.scores_.append(step_score(self.estimator_, features))
-        self.n_features_in_ = support_.sum()
+        self.n_features_in_ = n_features
+        self.n_features_ = support_.sum()
         self.support_ = support_
         self.ranking_ = ranking_
 
@@ -211,7 +228,7 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
         ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
         for more details.
     """
-    def __init__(self, estimator, step=1, min_features_to_select=1, cv='warn',
+    def __init__(self, estimator, step=1, min_features_to_select=1, cv=None,
                  scoring=None, verbose=0, n_jobs=None):
         super(DyRFECV, self).__init__(
             estimator,
@@ -239,12 +256,12 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
             train/test set.
         """
         if type(self.step) is not list:
-            return super(DyRFECV, self).fit(X, y, groups)
+            return super(DyRFECV, self).fit(X, y, groups=groups)
 
-        X, y = check_X_y(X, y, "csr")
+        X, y = check_X_y(X, y, accept_sparse="csr")
 
         # Initialization
-        cv = check_cv(self.cv, y, is_classifier(self.estimator))
+        cv = check_cv(self.cv, y, classifier=is_classifier(self.estimator))
         scorer = check_scoring(self.estimator, scoring=self.scoring)
         n_features = X.shape[1]
 
@@ -276,10 +293,10 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
         # addition of n_jobs parameter in version 0.18.
 
         if effective_n_jobs(self.n_jobs) == 1:
-            parallel, func = list, _rfe_single_fit
+            parallel, func = list, _dynamic_rfe_score
         else:
             parallel = Parallel(n_jobs=self.n_jobs)
-            func = delayed(_rfe_single_fit)
+            func = delayed(_dynamic_rfe_score)
 
         scores = parallel(
             func(rfe, self.estimator, X, y, train, test, scorer)
@@ -305,6 +322,7 @@ class DyRFECV(RFECV, MetaEstimatorMixin):
         # Set final attributes
         self.support_ = rfe.support_
         self.n_features_in_ = rfe.n_features_in_
+        self.n_features_ = rfe.n_features_
         self.ranking_ = rfe.ranking_
         self.estimator_ = clone(self.estimator)
         self.estimator_.fit(self.transform(X), y)

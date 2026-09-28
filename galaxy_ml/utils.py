@@ -1,5 +1,6 @@
 import ast
 import collections
+import collections.abc
 import pickle
 import sys
 import time
@@ -300,7 +301,7 @@ class SafeEval(Interpreter):
                 'skrebate_SURFstar': getattr(skrebate, 'SURFstar'),
                 'skrebate_MultiSURF': getattr(skrebate, 'MultiSURF'),
                 'skrebate_MultiSURFstar': getattr(skrebate, 'MultiSURFstar'),
-                'skrebate_TuRF': getattr(skrebate, 'TuRF'),
+                'skrebate_TURF': getattr(skrebate, 'TURF'),
                 'xgboost_XGBClassifier': getattr(xgboost, 'XGBClassifier'),
                 'xgboost_XGBRegressor': getattr(xgboost, 'XGBRegressor'),
                 'imblearn_over_sampling': getattr(imblearn, 'over_sampling'),
@@ -394,7 +395,7 @@ def get_cv(cv_json):
 
     groups = cv_json.pop('groups_selector', None)
     # if groups is array, return it
-    if groups is not None and isinstance(groups, collections.Mapping):
+    if groups is not None and isinstance(groups, collections.abc.Mapping):
         infile_g = groups['infile_g']
         header = 'infer' if groups['header_g'] else None
         column_option = (
@@ -568,7 +569,8 @@ def get_scoring(scoring_json):
     if primary_scoring == 'default':
         return None
 
-    all_scorers = metrics.SCORERS
+    all_scorers = {name: metrics.get_scorer(name)
+                   for name in metrics.get_scorer_names()}
     all_scorers['binarize_auc_scorer'] =\
         try_get_attr('galaxy_ml.binarize_target',
                      'binarize_auc_scorer')

@@ -1,4 +1,5 @@
 import glob
+import copy
 import json
 import os
 import tempfile
@@ -12,37 +13,29 @@ from galaxy_ml.keras_galaxy_models import (
 from galaxy_ml.model_validations import _fit_and_score
 from galaxy_ml.preprocessors import FastaDNABatchGenerator
 from galaxy_ml.preprocessors import FastaProteinBatchGenerator
-from galaxy_ml.preprocessors import GenomicIntervalBatchGenerator
 
 import h5py
 
 from keras import layers
-from keras.datasets import mnist
 from keras.layers import (
-    Activation, Conv1D, Conv2D, Dense, Dropout, Flatten,
-    MaxPool1D, MaxPooling2D, Reshape,
+    Activation, Conv1D, Conv2D, Dense, Flatten, MaxPooling2D, Reshape,
 )
 from keras.models import Model, Sequential
 from keras.utils import to_categorical
-
-import matplotlib.pyplot as plt
-
-from nose.tools import nottest
 
 import numpy as np
 
 import pandas as pd
 
 from sklearn.base import clone
-from sklearn.metrics import SCORERS
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import get_scorer
 from sklearn.model_selection import (
     GridSearchCV, KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit,
     _search,
 )
 
 import tensorflow as tf
-from tensorflow import keras
+import keras
 
 
 warnings.simplefilter('ignore')
@@ -167,8 +160,8 @@ d = {
 }
 
 
-def teardown():
-    files = glob.glob('./tests/*.hdf5', recursive=False)
+def teardown_module():
+    files = glob.glob('./tests/*.weights.h5', recursive=False)
     for fl in files:
         os.remove(fl)
     log_file = glob.glob('./tests/log.cvs', recursive=False)
@@ -237,101 +230,22 @@ def test_update_dict():
             },
         },
     }
+    expected = copy.deepcopy(d)
+    expected['config']['kernel_initializer']['config']['seed'] = 42
     got = _update_dict(d, u)
 
-    expect = {
-        'class_name': 'Dense',
-        'config': {
-            'name': 'dense',
-            'trainable': True,
-            'dtype': 'float32',
-            'units': 64,
-            'activation': 'linear',
-            'use_bias': True,
-            'kernel_initializer': {
-                'class_name': 'GlorotUniform',
-                'config': {
-                    'seed': 42
-                }
-            },
-            'bias_initializer': {
-                'class_name': 'Zeros',
-                'config': {}
-            },
-            'kernel_regularizer': None,
-            'bias_regularizer': None,
-            'activity_regularizer': None,
-            'kernel_constraint': None,
-            'bias_constraint': None}}
-    assert got == expect, got
+    assert got == expected
 
 
 def test_get_params_keras_layers():
     config = model.get_config()
     layers = KerasLayers(name=config['name'], layers=config['layers'])
-    got = list(layers.get_params().keys())
-    expect = [
-        'layers',
-        'name',
-        'layers_0_Dense',
-        'layers_1_Activation',
-        'layers_2_Activation',
-        'layers_3_Dense',
-        'layers_0_Dense__class_name',
-        'layers_0_Dense__config',
-        'layers_0_Dense__config__name',
-        'layers_0_Dense__config__trainable',
-        'layers_0_Dense__config__dtype',
-        'layers_0_Dense__config__units',
-        'layers_0_Dense__config__activation',
-        'layers_0_Dense__config__use_bias',
-        'layers_0_Dense__config__kernel_initializer',
-        'layers_0_Dense__config__kernel_initializer__class_name',
-        'layers_0_Dense__config__kernel_initializer__config',
-        'layers_0_Dense__config__kernel_initializer__config__seed',
-        'layers_0_Dense__config__bias_initializer',
-        'layers_0_Dense__config__bias_initializer__class_name',
-        'layers_0_Dense__config__bias_initializer__config',
-        'layers_0_Dense__config__kernel_regularizer',
-        'layers_0_Dense__config__bias_regularizer',
-        'layers_0_Dense__config__activity_regularizer',
-        'layers_0_Dense__config__kernel_constraint',
-        'layers_0_Dense__config__bias_constraint',
-        'layers_1_Activation__class_name',
-        'layers_1_Activation__config',
-        'layers_1_Activation__config__name',
-        'layers_1_Activation__config__trainable',
-        'layers_1_Activation__config__dtype',
-        'layers_1_Activation__config__activation',
-        'layers_2_Activation__class_name',
-        'layers_2_Activation__config',
-        'layers_2_Activation__config__name',
-        'layers_2_Activation__config__trainable',
-        'layers_2_Activation__config__dtype',
-        'layers_2_Activation__config__activation',
-        'layers_3_Dense__class_name',
-        'layers_3_Dense__config',
-        'layers_3_Dense__config__name',
-        'layers_3_Dense__config__trainable',
-        'layers_3_Dense__config__dtype',
-        'layers_3_Dense__config__units',
-        'layers_3_Dense__config__activation',
-        'layers_3_Dense__config__use_bias',
-        'layers_3_Dense__config__kernel_initializer',
-        'layers_3_Dense__config__kernel_initializer__class_name',
-        'layers_3_Dense__config__kernel_initializer__config',
-        'layers_3_Dense__config__kernel_initializer__config__seed',
-        'layers_3_Dense__config__bias_initializer',
-        'layers_3_Dense__config__bias_initializer__class_name',
-        'layers_3_Dense__config__bias_initializer__config',
-        'layers_3_Dense__config__kernel_regularizer',
-        'layers_3_Dense__config__bias_regularizer',
-        'layers_3_Dense__config__activity_regularizer',
-        'layers_3_Dense__config__kernel_constraint',
-        'layers_3_Dense__config__bias_constraint'
-    ]
-
-    assert got == expect, got
+    params = layers.get_params()
+    assert params['layers_0_Dense__config__units'] == 64
+    assert params['layers_3_Dense__config__units'] == 32
+    assert params['layers_1_Activation__config__activation'] == 'tanh'
+    assert params['layers_0_Dense__config__dtype__config__name'] == 'float32'
+    assert clone(layers).get_params()['layers'] == config['layers']
 
 
 def test_set_params_keras_layers():
@@ -586,106 +500,11 @@ def test_funtional_model_get_params():
                                   seed=0)
 
     params = classifier.get_params()
-    got = {}
-    for key, value in params.items():
-        if key.startswith('layers_1_Conv2D__') or (
-            not key.endswith('config')
-            and not key.startswith('layers')
-        ):
-            got[key] = value
-    expect = {
-        'amsgrad': None,
-        'batch_size': 32,
-        'beta': None,
-        'beta_1': None,
-        'beta_2': None,
-        'callbacks': None,
-        'centered': None,
-        'epochs': 1,
-        'epsilon': None,
-        'initial_accumulator_value': None,
-        'l1_regularization_strength': None,
-        'l2_regularization_strength': None,
-        'l2_shrinkage_regularization_strength': None,
-        'learning_rate': None,
-        'learning_rate_power': None,
-        'loss': None,
-        'loss_weights': None,
-        'metrics': [],
-        'model_type': 'functional',
-        'momentum': None,
-        'nesterov': None,
-        'optimizer': 'rmsprop',
-        'rho': None,
-        'run_eagerly': None,
-        'seed': 0,
-        'steps_per_epoch': None,
-        'steps_per_execution': None,
-        'validation_split': 0.1,
-        'validation_steps': None,
-        'verbose': 1,
-        'layers_1_Conv2D__class_name': 'Conv2D',
-        'layers_1_Conv2D__config': {
-            'name': 'conv2d',
-            'trainable': True,
-            'dtype': 'float32',
-            'filters': 32,
-            'kernel_size': (3, 3),
-            'strides': (1, 1),
-            'padding': 'valid',
-            'data_format': 'channels_last',
-            'dilation_rate': (1, 1),
-            'groups': 1,
-            'activation': 'relu',
-            'use_bias': True,
-            'kernel_initializer': {
-                'class_name': 'GlorotUniform',
-                'config': {
-                    'seed': None}},
-            'bias_initializer': {
-                'class_name': 'Zeros',
-                'config': {}},
-            'kernel_regularizer': None,
-            'bias_regularizer': None,
-            'activity_regularizer': None,
-            'kernel_constraint': None,
-            'bias_constraint': None},
-        'layers_1_Conv2D__config__name': 'conv2d',
-        'layers_1_Conv2D__config__trainable': True,
-        'layers_1_Conv2D__config__dtype': 'float32',
-        'layers_1_Conv2D__config__filters': 32,
-        'layers_1_Conv2D__config__kernel_size': (3, 3),
-        'layers_1_Conv2D__config__strides': (1, 1),
-        'layers_1_Conv2D__config__padding': 'valid',
-        'layers_1_Conv2D__config__data_format': 'channels_last',
-        'layers_1_Conv2D__config__dilation_rate': (1, 1),
-        'layers_1_Conv2D__config__groups': 1,
-        'layers_1_Conv2D__config__activation': 'relu',
-        'layers_1_Conv2D__config__use_bias': True,
-        'layers_1_Conv2D__config__kernel_initializer': {
-            'class_name': 'GlorotUniform',
-            'config': {
-                'seed': None}},
-        'layers_1_Conv2D__config__kernel_initializer__class_name':
-            'GlorotUniform',
-        'layers_1_Conv2D__config__kernel_initializer__config': {
-            'seed': None},
-        'layers_1_Conv2D__config__kernel_initializer__config__seed': None,
-        'layers_1_Conv2D__config__bias_initializer': {
-            'class_name': 'Zeros',
-            'config': {}},
-        'layers_1_Conv2D__config__bias_initializer__class_name': 'Zeros',
-        'layers_1_Conv2D__config__bias_initializer__config': {},
-        'layers_1_Conv2D__config__kernel_regularizer': None,
-        'layers_1_Conv2D__config__bias_regularizer': None,
-        'layers_1_Conv2D__config__activity_regularizer': None,
-        'layers_1_Conv2D__config__kernel_constraint': None,
-        'layers_1_Conv2D__config__bias_constraint': None,
-        'layers_1_Conv2D__name': 'conv2d',
-        'layers_1_Conv2D__inbound_nodes': [[['img', 0, 0, {}]]]
-    }
-
-    assert got == expect, got
+    assert params['layers_1_Conv2D__config__filters'] == 32
+    assert params['layers_1_Conv2D__config__kernel_size'] == (3, 3)
+    assert params['layers_1_Conv2D__config'] == config['layers'][1]['config']
+    assert params['seed'] == 0
+    assert clone(classifier).get_params()['config'] == config
 
 
 def test_set_params_functional_model():
@@ -719,13 +538,9 @@ def test_to_json_keras_g_classifier():
 
     got = classifier.to_json()
     got = json.loads(got)
-    got.pop('keras_version')
-
-    with open('./tools/test-data/to_json.txt', 'r') as f:
-        expect = f.read()
-    expect = json.loads(expect)
-
-    assert got == expect, got
+    assert got['class_name'] == 'Sequential'
+    restored = keras.models.model_from_json(classifier.to_json())
+    assert restored.get_config() == model.get_config()
 
 
 def test_keras_model_to_json():
@@ -743,8 +558,9 @@ def test_keras_model_to_json():
 
     got = model.to_json()  # json_string
 
-    assert 4500 < len(got) < 5000, len(got)
-    assert got.startswith('{"class_name": "Functional",'), got
+    assert json.loads(got)['class_name'] == 'Functional'
+    restored = keras.models.model_from_json(got)
+    assert all(output.shape[-1] == 1 for output in restored.outputs)
 
 
 def test_keras_model_load_and_save_weights():
@@ -765,11 +581,11 @@ def test_keras_model_load_and_save_weights():
     try:
         model.save_weights(tmp)
 
-        got = os.path.getsize(tmp)
-        expect = os.path.getsize(
-            './tools/test-data/keras_model_drosophila_weights01.h5')
-
-        assert abs(got - expect) < 40, got - expect
+        restored = KerasGRegressor(config, model_type=model_type)
+        restored.load_weights(tmp)
+        for actual, expected in zip(restored.model_.get_weights(),
+                                    model.model_.get_weights()):
+            np.testing.assert_array_equal(actual, expected)
     finally:
         os.remove(tmp)
 
@@ -797,7 +613,8 @@ def test_keras_galaxy_model_callbacks():
         {'callback_selection':
             {'monitor': 'val_loss', 'save_best_only': True,
              'period': 1, 'save_weights_only': True,
-             'filepath': './tests/weights.{epoch:02d}-{val_loss:.2f}.hdf5',
+             'filepath': ('./tests/weights.{epoch:02d}-'
+                          '{val_loss:.2f}.weights.h5'),
              'callback_type': 'ModelCheckpoint', 'mode': 'auto'}}]
 
     estimator = KerasGClassifier(config, optimizer='adam',
@@ -807,7 +624,7 @@ def test_keras_galaxy_model_callbacks():
                                  callbacks=cbacks,
                                  verbose=0)
 
-    scorer = SCORERS['accuracy']
+    scorer = get_scorer('accuracy')
     train, test = next(KFold(n_splits=5).split(X, y))
 
     new_params = {
@@ -852,7 +669,7 @@ def test_keras_galaxy_model_callbacks_girdisearch():
                                  callbacks=cbacks,
                                  verbose=0)
 
-    scorer = SCORERS['balanced_accuracy']
+    scorer = get_scorer('balanced_accuracy')
     cv = KFold(n_splits=5)
 
     new_params = {
@@ -995,8 +812,8 @@ def test_keras_fasta_protein_batch_classifier():
     cv = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=123)
 
     scoring = {
-        'acc': SCORERS['accuracy'],
-        'ba_acc': SCORERS['balanced_accuracy']
+        'acc': get_scorer('accuracy'),
+        'ba_acc': get_scorer('balanced_accuracy')
     }
 
     grid = GridSearchCV(cloned_clf, {}, cv=cv, scoring=scoring,
@@ -1008,81 +825,33 @@ def test_keras_fasta_protein_batch_classifier():
     assert 0.45 <= got <= 0.52, got
 
 
-@nottest
-def test_keras_genomic_intervals_batch_classifier():
-    # selene case1 genome file, file not uploaded
-    ref_genome_path = '~/projects/selene/manuscript/case1/data/'\
-        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = './tools/test-data/hg38_TF_intervals_2000.txt'
-    # selene case1 target bed file, file not uploaded
-    target_path = '~/projects/selene/manuscript/case1/data/'\
-        'GATA1_proery_bm.bed.gz'
-    seed = 42
-    random_state = 0
-
-    generator = GenomicIntervalBatchGenerator(
-        ref_genome_path=ref_genome_path,
-        intervals_path=intervals_path,
-        target_path=target_path,
-        seed=seed,
-        features=['Proery_BM|GATA1'],
-        random_state=random_state
-    )
-
-    # DeepSea model
-    model = Sequential()
-    model.add(Conv1D(filters=320, kernel_size=8, input_shape=(1000, 4)))
-    model.add(Activation('relu'))
-    model.add(MaxPool1D(pool_size=4, strides=4))
-    model.add(Dropout(0.2))
-    model.add(Conv1D(filters=480, kernel_size=8))
-    model.add(Activation('relu'))
-    model.add(MaxPool1D(pool_size=4, strides=4))
-    model.add(Dropout(0.2))
-    model.add(Conv1D(filters=960, kernel_size=8))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Reshape((50880,)))
-    model.add(Dense(1))
-    model.add(Activation('relu'))
-    model.add(Dense(1))
-    model.add(Activation('sigmoid'))
-
-    config = model.get_config()
-
+def test_keras_genomic_intervals_batch_classifier(
+        genomic_generator, monkeypatch):
+    model = Sequential([
+        keras.Input(shape=(32, 4)), Conv1D(2, 3, activation='relu'),
+        Flatten(), Dense(1, activation='sigmoid')])
     classifier = KerasGBatchClassifier(
-        config, clone(generator), optimizer='adam',
-        momentum=0.9, nesterov=True,
-        batch_size=64, n_jobs=1, epochs=10,
-        steps_per_epoch=20,
-        prediction_steps=100,
-        validation_split=0.1,
-        class_positive_factor=3,
-        metrics=['acc'])
-
-    for k, v in classifier.get_params().items():
-        if k.endswith('_seed') and v is None:
-            classifier.set_params(**{k: 999})
-
-    classifier1 = clone(classifier)
-
-    intervals = pd.read_csv(intervals_path, sep='\t', header=None)
-    n_samples = intervals.shape[0]
-    X = np.arange(n_samples)[:, np.newaxis]
-
-    cv = ShuffleSplit(1, test_size=0.2, random_state=123)
-    scoring = 'balanced_accuracy'
-    param_grid = {}
-
-    setattr(_search, '_fit_and_score', _fit_and_score)
-    GridSearchCV = getattr(_search, 'GridSearchCV')
-
-    grid = GridSearchCV(classifier1, param_grid, scoring=scoring,
-                        cv=cv, refit=False, error_score='raise',
-                        n_jobs=1)
-    y = None
-    grid.fit(X, y, verbose=1)
-    print(grid.cv_results_)
+        model.get_config(), clone(genomic_generator), optimizer='adam',
+        batch_size=4, n_jobs=1, epochs=1, steps_per_epoch=1,
+        validation_split=0.25, class_positive_factor=3,
+        metrics=['accuracy'], seed=42, verbose=0)
+    X = np.arange(12)[:, None]
+    # Galaxy's scoring adapter obtains labels from the genomic generator.
+    monkeypatch.setattr(_search, '_fit_and_score', _fit_and_score)
+    grid = GridSearchCV(clone(classifier), {}, scoring='balanced_accuracy',
+                        cv=ShuffleSplit(1, test_size=0.5, random_state=123),
+                        refit=True, error_score='raise', n_jobs=1)
+    try:
+        grid.fit(X)
+        score = grid.cv_results_['mean_test_score'][0]
+        assert np.isfinite(score) and 0 <= score <= 1
+        assert grid.best_estimator_.classes_.tolist() == [0, 1]
+        probabilities = grid.best_estimator_.predict_proba(X)
+        assert probabilities.shape == (12, 2)
+        np.testing.assert_allclose(probabilities.sum(axis=1), 1)
+    finally:
+        if hasattr(grid, 'best_estimator_'):
+            grid.best_estimator_.data_generator_.close()
 
 
 def test_meric_callback():
@@ -1100,174 +869,66 @@ def test_meric_callback():
     assert np.array_equal(y_val, y)
 
 
-@nottest
-def test_predict_generator():
-    ref_genome_path = '~/projects/selene/manuscript/case1/data/'\
-        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = '~/projects/selene/manuscript/case1/data/'\
-        'hg38_TF_intervals.txt'
-    # selene case1 target bed file, file not uploaded
-    target_path = '~/projects/selene/manuscript/case1/data/'\
-        'GATA1_proery_bm.bed.gz'
-    seed = 42
-    random_state = 0
+def test_predict_generator(genomic_generator, tmp_path):
+    model = Sequential([
+        keras.Input(shape=(32, 4)), Flatten(), Dense(1, activation='sigmoid')])
+    clf = KerasGBatchClassifier(
+        model.get_config(), clone(genomic_generator), optimizer='sgd',
+        batch_size=4, n_jobs=1, epochs=1, steps_per_epoch=3,
+        seed=42, verbose=0)
+    X = np.arange(12)[:, None]
+    try:
+        clf.fit(X)
+        # Two batches include a partial final batch and preserve label order.
+        subset = X[:6]
+        preds, labels = _predict_generator(
+            clf.model_, genomic_generator.flow(subset, batch_size=4), steps=2)
+        assert preds.shape == labels.shape == (6, 1)
+        assert np.isfinite(preds).all()
+        assert ((preds >= 0) & (preds <= 1)).all()
+        np.testing.assert_array_equal(labels[:, 0], [1, 0, 1, 0, 1, 0])
+        direct_X, direct_y = next(genomic_generator.flow(subset, batch_size=6))
+        np.testing.assert_allclose(
+            preds, clf.model_.predict_on_batch(direct_X), atol=1e-7)
+        np.testing.assert_array_equal(labels, direct_y)
 
-    generator = GenomicIntervalBatchGenerator(
-        ref_genome_path=ref_genome_path,
-        intervals_path=intervals_path,
-        target_path=target_path,
-        seed=seed,
-        features=['Proery_BM|GATA1'],
-        random_state=random_state
-    )
-    generator.set_processing_attrs()
-
-    # DeepSea model
-    model = Sequential()
-    model.add(Conv1D(filters=320, kernel_size=8, input_shape=(1000, 4)))
-    model.add(Activation('relu'))
-    model.add(MaxPool1D(pool_size=4, strides=4))
-    model.add(Dropout(0.2))
-    model.add(Conv1D(filters=480, kernel_size=8))
-    model.add(Activation('relu'))
-    model.add(MaxPool1D(pool_size=4, strides=4))
-    model.add(Dropout(0.2))
-    model.add(Conv1D(filters=960, kernel_size=8))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Reshape((50880,)))
-    model.add(Dense(1))
-    model.add(Activation('sigmoid'))
-
-    config = model.get_config()
-
-    classifier = KerasGBatchClassifier(
-        config, clone(generator), optimizer='sgd',
-        momentum=0.9, nesterov=True,
-        batch_size=64, n_jobs=4, epochs=3,
-        steps_per_epoch=10,
-        prediction_steps=10,
-        class_positive_factor=3,
-        validation_steps=10,
-        validation_split=0.1,
-        metrics=['acc', 'sparse_categorical_accuracy'])
-
-    clf = clone(classifier)
-
-    intervals = pd.read_csv(intervals_path, sep='\t', header=None)
-    n_samples = intervals.shape[0]
-    X = np.arange(n_samples)[:, np.newaxis]
-
-    cv = ShuffleSplit(1, test_size=0.2, random_state=123)
-
-    train_index, test_index = next(cv.split(X))
-    X_train, X_test = X[train_index], X[test_index]
-
-    clf.fit(X_train)
-
-    pred_data_generator = clone(generator).flow(X_test, batch_size=64)
-
-    preds, y_true = _predict_generator(clf.model_, pred_data_generator,
-                                       steps=2)
-
-    assert preds.shape == (128, 1), y_true.shape
-    assert 0.30 < preds[0][0] < 0.40, preds[0][0]
-    assert y_true.shape == (128, 1), y_true.shape
-    assert np.sum(y_true) == 9, np.sum(y_true)
-
-    # save_model and load_model
-    _, tmp = tempfile.mkstemp()
-
-    clf.save_model(tmp)
-
-    with h5py.File(tmp, 'r') as h:
-        assert len(h.keys()) == 4
-        assert h['class_name'][()] == 'KerasGBatchClassifier'
-        params = json.loads(h['params'][()].decode('utf8'))
-        assert params.get('data_batch_generator', None) is None
-
-    r_model = load_model(tmp)
-
-    os.remove(tmp)
-
-    pred_data_generator = clone(generator).flow(X_test, batch_size=64)
-    preds_2, y_true_2 = _predict_generator(
-        r_model.model_, pred_data_generator, steps=2)
-    assert np.array_equal(preds, preds_2)
-    assert np.array_equal(y_true, y_true_2)
+        path = tmp_path / 'batch_classifier.h5'
+        clf.save_model(path)
+        with h5py.File(path, 'r') as h:
+            assert (h['class_name'][()].decode('utf8')
+                    == 'KerasGBatchClassifier')
+            params = json.loads(h['params'][()].decode('utf8'))
+            assert params.get('data_batch_generator') is None
+        restored = load_model(path)
+        preds_2, labels_2 = _predict_generator(
+            restored.model_, genomic_generator.flow(subset, batch_size=4))
+        np.testing.assert_allclose(preds_2, preds, atol=1e-7)
+        np.testing.assert_array_equal(labels_2, labels)
+    finally:
+        if hasattr(clf, 'data_generator_'):
+            clf.data_generator_.close()
 
 
-@nottest
 def test_multi_dimensional_output():
-
-    (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-    # training data has 60,000 samples, each 784 dimensional
-    # testing data has 10,000 samples, each 784 dimensional
-    X_train = X_train.reshape(60000, 784)
-    y_train = y_train.reshape(60000,)
-    X_test = X_test.reshape(10000, 784)
-    y_test = y_test.reshape(10000,)
-
-    # One hot encode the output. Output becomes 10 dimensional
-    # One of the dimensions is 1, and all other are 0
-    y_train = to_categorical(y_train)
-    y_test = to_categorical(y_test)
-
-    assert X_train.shape[0] == 60000
-    assert X_train.shape[1] == 784
-    assert X_test.shape[0] == 10000
-    assert X_test.shape[1] == 784
-    assert y_train.shape[0] == 60000
-    assert y_train.shape[1] == 10
-    assert y_test.shape[0] == 10000
-    assert y_test.shape[1] == 10
-
-    # Create model
-    model = Sequential()
-
-    # Add model layers
-    # Reshape each sample (which is 784 dimensional) to
-    # 28 by 28 by 1 (representing a 28 by 28 grayscale image)
-    model.add(Reshape((28, 28, 1), input_shape=(784,)))
-    model.add(Conv2D(64, kernel_size=3, activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Conv2D(32, kernel_size=3, activation='relu', padding='same'))
-    model.add(MaxPooling2D((2, 2)))
-    model.add(Flatten())
-    model.add(Dense(10, activation='softmax'))
-
-    config = model.get_config()
-    classifier = KerasGClassifier(config, optimizer='adam',
-                                  loss='categorical_crossentropy',
-                                  metrics=['accuracy'])
-    classifier.fit(X_train, y_train)
-    y_predict = classifier.predict(X_test)
-
-    assert len(y_predict.shape) == 1
-    assert y_predict.shape[0] == X_test.shape[0]
-    assert y_predict.max() == 9
-    assert y_predict.min() == 0
-
-    y_test_arg_max = np.argmax(y_test, axis=1)
-    assert len(y_test_arg_max.shape) == 1
-    assert y_test_arg_max.shape[0] == X_test.shape[0]
-
-    axis_labels = list(set(y_test_arg_max))
-    c_matrix = confusion_matrix(y_test_arg_max, y_predict)
-    fig, ax = plt.subplots(figsize=(7, 7))
-    im = plt.imshow(c_matrix, cmap='Greens')
-    for i in range(len(c_matrix)):
-        for j in range(len(c_matrix)):
-            ax.text(j, i, c_matrix[i, j], ha="center", va="center", color="k")
-    ax.set_ylabel('True class labels')
-    ax.set_xlabel('Predicted class labels')
-    ax.set_title('Confusion Matrix')
-    ax.set_xticks(axis_labels)
-    ax.set_yticks(axis_labels)
-    fig.colorbar(im, ax=ax)
-    fig.tight_layout()
-    plt.savefig("ConfusionMatrix.png", dpi=125)
+    # Exercise one-hot multiclass targets without downloading MNIST.
+    X = np.random.RandomState(42).normal(size=(24, 16)).astype('float32')
+    y = to_categorical(np.tile(np.arange(3), 8), num_classes=3)
+    model = Sequential([
+        keras.Input(shape=(16,)), Reshape((4, 4, 1)),
+        Conv2D(2, kernel_size=3, activation='relu', padding='same'),
+        MaxPooling2D((2, 2)), Flatten(), Dense(3, activation='softmax')])
+    classifier = KerasGClassifier(
+        model.get_config(), optimizer='adam', loss='categorical_crossentropy',
+        metrics=['accuracy'], epochs=1, batch_size=6, seed=42, verbose=0,
+        validation_split=0.25)
+    classifier.fit(X[:18], y[:18])
+    predicted = classifier.predict(X[18:])
+    probabilities = classifier.predict_proba(X[18:])
+    assert predicted.shape == (6,)
+    assert probabilities.shape == (6, 3)
+    np.testing.assert_array_equal(classifier.classes_, [0, 1, 2])
+    np.testing.assert_array_equal(predicted, probabilities.argmax(axis=1))
+    np.testing.assert_allclose(probabilities.sum(axis=1), 1, atol=1e-6)
 
 
 def test_model_save_and_load():

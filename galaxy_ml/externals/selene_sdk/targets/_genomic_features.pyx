@@ -4,7 +4,7 @@ import numpy as np
 cimport cython
 cimport numpy as np
 
-ctypedef np.int_t DTYPE_t
+ctypedef np.intp_t DTYPE_t
 ctypedef np.float32_t FDTYPE_t
 
 @cython.boundscheck(False)
@@ -18,9 +18,9 @@ def _fast_get_feature_data(int start,
     cdef int query_length = end - start
     cdef int feature_start, feature_end, index_start, index_end, index_feat
     cdef np.ndarray[DTYPE_t, ndim=2] encoding = np.zeros(
-        (query_length, n_features), dtype=np.int)
+        (query_length, n_features), dtype=np.intp)
     cdef np.ndarray[DTYPE_t, ndim=1] targets = np.zeros(
-        n_features, dtype=np.int)
+        n_features, dtype=np.intp)
     cdef list row
 
     if rows is None:

@@ -6,7 +6,7 @@ from sklearn.utils import check_array
 from sklearn.utils.validation import FLOAT_DTYPES, check_is_fitted
 
 
-class TDMScaler(BaseEstimator, TransformerMixin):
+class TDMScaler(TransformerMixin, BaseEstimator):
     """
     Scale features using Training Distribution Matching (TDM) algorithm
 
@@ -28,7 +28,7 @@ class TDMScaler(BaseEstimator, TransformerMixin):
         X : array-like, shape [n_samples, n_features]
         """
         X = check_array(X, copy=True, estimator=self, dtype=FLOAT_DTYPES,
-                        force_all_finite=True)
+                        ensure_all_finite=True)
 
         if not 0 <= self.q_lower <= self.q_upper <= 100:
             raise ValueError("Invalid quantile parameter values: "
@@ -57,7 +57,7 @@ class TDMScaler(BaseEstimator, TransformerMixin):
         """
         check_is_fitted(self, 'iqr_')
         X = check_array(X, copy=True, estimator=self, dtype=FLOAT_DTYPES,
-                        force_all_finite=True)
+                        ensure_all_finite=True)
 
         # TODO sparse data
         train_upper_scale = (self.max_ - self.q_upper_) / self.iqr_

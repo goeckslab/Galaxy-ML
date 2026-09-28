@@ -6,7 +6,7 @@ from sklearn.utils.validation import (
     check_array, check_is_fitted, column_or_1d)
 
 
-class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
+class BinarizeTargetClassifier(RegressorMixin, BaseEstimator):
     """
     Convert continuous target to binary labels (True and False)
     and apply a classification estimator.
@@ -51,7 +51,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         ------
         self: object
         """
-        y = check_array(y, accept_sparse=False, force_all_finite=True,
+        y = check_array(y, accept_sparse=False, ensure_all_finite=True,
                         ensure_2d=False, dtype='numeric')
         y = column_or_1d(y)
 
@@ -121,7 +121,7 @@ class BinarizeTargetClassifier(BaseEstimator, RegressorMixin):
         return self.classifier_.predict_proba(X)
 
 
-class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
+class BinarizeTargetRegressor(RegressorMixin, BaseEstimator):
     """
     Extend regression estimator to have discretize_value
 
@@ -164,7 +164,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         ------
         self: object
         """
-        y = check_array(y, accept_sparse=False, force_all_finite=True,
+        y = check_array(y, accept_sparse=False, ensure_all_finite=True,
                         ensure_2d=False, dtype='numeric')
         y = column_or_1d(y)
 
@@ -243,7 +243,7 @@ class BinarizeTargetRegressor(BaseEstimator, RegressorMixin):
         return scores > cutoff
 
 
-class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
+class BinarizeTargetTransformer(TransformerMixin, BaseEstimator):
     """
     Extend transformaer to work for binarized target.
 
@@ -284,7 +284,7 @@ class BinarizeTargetTransformer(BaseEstimator, TransformerMixin):
         ------
         self: object
         """
-        y = check_array(y, accept_sparse=False, force_all_finite=True,
+        y = check_array(y, accept_sparse=False, ensure_all_finite=True,
                         ensure_2d=False, dtype='numeric')
         y = column_or_1d(y)
 

@@ -122,11 +122,11 @@ class ModelToDict:
         else:
             raise JPicklerError(
                 "Can't reduce %r object: %r" % (type(obj).__name__, obj))
-        assert (type(rv) is tuple),\
+        assert (type(rv) is tuple), \
             "%s must return a tuple, but got %s" % (reduce, type(rv))
 
         lenth = len(rv)
-        assert (lenth in [2, 3]),\
+        assert (lenth in [2, 3]), \
             ("Reduce tuple is expected to return 2- 3 elements, "
              "but got %d elements" % lenth)
 
@@ -258,11 +258,11 @@ class ModelToDict:
     dispatch[numpy.uint16] = save_np_datatype
     dispatch[numpy.uint32] = save_np_datatype
     dispatch[numpy.uint64] = save_np_datatype
-    dispatch[numpy.float_] = save_np_datatype
+    dispatch[numpy.float64] = save_np_datatype
     dispatch[numpy.float16] = save_np_datatype
     dispatch[numpy.float32] = save_np_datatype
     dispatch[numpy.float64] = save_np_datatype
-    dispatch[numpy.complex_] = save_np_datatype
+    dispatch[numpy.complex128] = save_np_datatype
     dispatch[numpy.complex64] = save_np_datatype
     dispatch[numpy.complex128] = save_np_datatype
 
@@ -419,10 +419,7 @@ class DictToModel:
         _args = data[_ARGS][_TUPLE]
         args = tuple(self.load_all(_args))
 
-        try:
-            obj = args[0].__new__(args[0], * args)
-        except Exception:
-            obj = func(*args)
+        obj = func(*args)
 
         _state = data.get(_STATE)
         if _state:

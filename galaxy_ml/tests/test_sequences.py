@@ -8,8 +8,6 @@ from galaxy_ml.preprocessors import (
     GenomicVariantBatchGenerator, ProteinOneHotEncoder,
 )
 
-from nose.tools import nottest
-
 import numpy as np
 
 from sklearn.base import clone
@@ -232,169 +230,81 @@ def test_protein_one_hot_encoder():
     assert np.array_equal(trans, expect), trans
 
 
-@nottest
-def test_genomic_interval_batch_generator():
-    # selene case1 genome file, file not uploaded
-    ref_genome_path = '/projects/selene/manuscript/case1/data/'\
-        'GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta'
-    intervals_path = './tools/test-data/hg38_TF_intervals_2000.txt'
-    # selene case1 target bed file, file not uploaded
-    target_path = '/projects/selene/manuscript/case1/data/'\
-        'GATA1_proery_bm.bed.gz'
-    seed = 42
-    random_state = 0
+def test_genomic_interval_batch_generator(genomic_generator):
+    generator = clone(genomic_generator)
+    try:
+        assert generator.get_params() == genomic_generator.get_params()
+        generator.set_processing_attrs()
+        assert generator.features_ == ['binding']
+        assert generator.n_features_in_ == 1
+        assert generator.bin_radius_ == 4
+        assert generator.start_radius_ == generator.end_radius_ == 4
+        assert generator.surrounding_sequence_radius_ == 12
+        assert generator.target_.feature_thresholds == {'binding': 0.5}
+        np.testing.assert_array_equal(
+            generator.target_._feature_thresholds_vec, [0.5])
+        assert generator.sample_from_intervals_[0] == ('chr1', 100, 120)
+        assert generator.interval_lengths_ == list(range(20, 68, 4))
 
-    generator = GenomicIntervalBatchGenerator(
-        ref_genome_path=ref_genome_path,
-        intervals_path=intervals_path,
-        target_path=target_path,
-        seed=seed,
-        features=['Proery_BM|GATA1'],
-        random_state=random_state
-    )
-    generator1 = clone(generator)
-    got = list(generator1.get_params().keys())
-    expect = ['blacklist_regions', 'center_bin_to_predict',
-              'feature_thresholds', 'features', 'intervals_path',
-              'random_state', 'ref_genome_path', 'seed',
-              'seq_length', 'shuffle', 'target_path']
+        X = np.arange(12)[:, None]
+        indices, weights = generator.get_indices_and_probabilities(X)
+        np.testing.assert_array_equal(indices, X[:, 0])
+        lengths = np.arange(20, 68, 4)
+        np.testing.assert_allclose(weights, lengths / lengths.sum())
+        flow = generator.flow(X, batch_size=5)
+        assert len(flow) == 3
+        for batch, size in enumerate((5, 5, 2)):
+            sequences, targets = next(flow)
+            assert sequences.shape == (size, 32, 4)
+            for row, idx in enumerate(range(batch * 5, batch * 5 + size)):
+                # Independently derive the sequence at the interval midpoint.
+                start = 110 + idx * 102 - 16
+                bases = 'ACGT' if idx % 2 == 0 else 'TGCA'
+                expected = np.eye(4)[[BASE_TO_INDEX[bases[j % 4]]
+                                      for j in range(start, start + 32)]]
+                np.testing.assert_array_equal(sequences[row], expected)
+                assert targets[row, 0] == (idx % 2 == 0)
+        sequences, targets = generator.sample(X, sample_size=14)
+        assert sequences.shape == (14, 32, 4)
+        np.testing.assert_array_equal(sequences.sum(axis=2), 1)
+        np.testing.assert_array_equal(targets[:, 0], [1, 0] * 7)
 
-    assert got == expect, got
-
-    generator1.set_processing_attrs()
-
-    features_ = generator1.features_
-    n_features_in_ = generator1.n_features_in_
-    bin_radius_ = generator1.bin_radius_
-    start_radius_ = generator1.start_radius_
-    end_radius_ = generator1.end_radius_
-    surrounding_sequence_radius_ = generator1.surrounding_sequence_radius_
-    target_ = generator1.target_
-    sample_from_intervals_ = generator1.sample_from_intervals_
-    intervals_lengths_ = generator1.interval_lengths_
-
-    # test fit()
-    assert features_ == ['Proery_BM|GATA1'], features_
-    assert n_features_in_ == 1, n_features_in_
-    assert bin_radius_ == 100, bin_radius_
-    assert start_radius_ == 100, start_radius_
-    assert end_radius_ == 100, end_radius_
-    assert surrounding_sequence_radius_ == 400, surrounding_sequence_radius_
-    assert target_.__class__.__name__ == 'GenomicFeatures', \
-        target_.__class__.__name__
-    assert target_._feature_thresholds_vec == [0.5], \
-        target_._feature_thresholds_vec
-    assert target_.feature_thresholds == {'Proery_BM|GATA1': 0.5}, \
-        target_.feature_thresholds
-    assert len(sample_from_intervals_) == 1878, len(sample_from_intervals_)
-    assert sample_from_intervals_[0] == ('chr16', 19859514, 19860150), \
-        sample_from_intervals_[0]
-    assert len(intervals_lengths_) == 1878, len(intervals_lengths_)
-    assert intervals_lengths_[0] == 636, intervals_lengths_[0]
-
-    # test get_indices_and_probabilities()
-    X = np.arange(2, 10)[:, np.newaxis]
-    indices, weights = generator1.get_indices_and_probabilities(X)
-
-    assert np.array_equal(indices, np.array([2, 3, 4, 5, 6, 7, 8, 9])),\
-        indices
-    assert [round(w, 3) for w in weights] == \
-        [0.193, 0.023, 0.132, 0.049, 0.065, 0.195, 0.284, 0.058], weights
-
-    # test flow()
-    gen_flow = generator1.flow(X, batch_size=4)
-    batch_X, batch_y = next(gen_flow)
-
-    assert len(gen_flow) == 2, len(gen_flow)
-    assert batch_X.shape == (4, 1000, 4), batch_X.shape
-    assert batch_X[0][2].tolist() == [0, 0, 1, 0], batch_X[0][2]
-    assert batch_X[2][4].tolist() == [0, 1, 0, 0], batch_X[2][4]
-    assert batch_X[3][5].tolist() == [1, 0, 0, 0], batch_X[3][5]
-    assert batch_y.tolist() == [[0], [0], [1], [0]], batch_y
-
-    batch_X, batch_y = next(gen_flow)
-
-    assert batch_X.shape == (4, 1000, 4), batch_X.shape
-    assert batch_X[0][2].tolist() == [1, 0, 0, 0], batch_X[0][2]
-    assert batch_X[2][4].tolist() == [0, 0, 0, 1], batch_X[2][4]
-    assert batch_X[3][5].tolist() == [0, 0, 1, 0], batch_X[3][5]
-    assert batch_y.tolist() == [[0], [0], [0], [1]], batch_y
-
-    # test sample()
-    retrieved_seq_encodings, targets = generator1.sample(X, sample_size=10)
-
-    assert retrieved_seq_encodings.shape == (10, 1000, 4),\
-        retrieved_seq_encodings.shape
-    assert retrieved_seq_encodings[0][2].tolist() == [0, 1, 0, 0],\
-        retrieved_seq_encodings[0][2]
-    assert retrieved_seq_encodings[1][4].tolist() == [0, 0, 0, 1],\
-        retrieved_seq_encodings[1][4]
-    assert retrieved_seq_encodings[2][5].tolist() == [1, 0, 0, 0],\
-        retrieved_seq_encodings[2][5]
-    assert targets.tolist() == \
-        [[0], [1], [0], [0], [0], [0], [0], [0], [0], [1]], targets
-
-    generator1.close()
-
-    # test steps_per_epoch
-    generator2 = clone(generator)
-    generator2.set_processing_attrs()
-    gen_flow2 = generator2.flow(X, batch_size=2)
-
-    index_arr = next(gen_flow2.index_generator)
-    assert index_arr.tolist() == [3, 7], index_arr
-    generator2.close()
+        shuffled = generator.flow(X, batch_size=4, shuffle=True)
+        expected_indices = np.random.RandomState(42).choice(
+            12, size=12, replace=True, p=weights)
+        np.testing.assert_array_equal(
+            next(shuffled.index_generator), expected_indices[:4])
+    finally:
+        generator.close()
 
 
-@nottest
-def test_genomic_variant_batch_generator():
-    # selene case2 and 3 genome file, file not uploaded
-    ref_genome_path = "/projects/selene/manuscript/case3/"\
-        "1_variant_effect_prediction/data/male.hg19.fasta"
-    vcf_path = "./tools/test-data/lt0.05_igap_100.vcf"
-
+def test_genomic_variant_batch_generator(genomic_files):
     generator = GenomicVariantBatchGenerator(
-        ref_genome_path=ref_genome_path, vcf_path=vcf_path,
-        blacklist_regions='hg19', output_reference=False)
-
-    generator1 = clone(generator)
-    got = list(generator1.get_params().keys())
-    expect = ['blacklist_regions', 'output_reference',
-              'ref_genome_path', 'seq_length', 'vcf_path']
-
-    assert got == expect, got
-
-    generator1.set_processing_attrs()
-
-    reference_genome_ = generator1.reference_genome_
-    start_radius_ = generator1.start_radius_
-    end_radius_ = generator1.end_radius_
-    variants = generator1.variants
-
-    assert reference_genome_.__class__.__name__ == 'Genome'
-    assert start_radius_ == 500, start_radius_
-    assert end_radius_ == 500, end_radius_
-    assert len(variants) == 101, len(variants)
-
-    gen_flow = generator1.flow(batch_size=4)
-
-    n_batches = len(gen_flow)
-    batch_X = next(gen_flow)
-    with np.load('./tools/test-data/vcf_batch1.npz', 'r') as data:
-        expect_X = data['arr_0']
-
-    assert n_batches == 26, n_batches
-    assert np.array_equal(batch_X, expect_X), batch_X
-
-    generator2 = clone(generator)
-    generator2.set_params(output_reference=True)
-
-    generator2.set_processing_attrs()
-    gen_flow = generator2.flow(batch_size=4)
-
-    batch_X = next(gen_flow)
-    with np.load('./tools/test-data/vcf_batch2.npz', 'r') as data:
-        expect_X = data['arr_0']
-
-    generator2.close()
-    assert np.array_equal(batch_X, expect_X), batch_X
+        ref_genome_path=genomic_files['ref_genome_path'],
+        vcf_path=genomic_files['vcf_path'], blacklist_regions=None,
+        seq_length=32)
+    reference = clone(generator).set_params(output_reference=True)
+    try:
+        assert clone(generator).get_params() == generator.get_params()
+        generator.set_processing_attrs()
+        assert generator.start_radius_ == generator.end_radius_ == 16
+        assert len(generator.variants) == 4
+        flow = generator.flow(batch_size=3)
+        ref_flow = reference.flow(batch_size=3)
+        assert len(flow) == len(ref_flow) == 2
+        variants = np.concatenate([next(flow), next(flow)])
+        references = np.concatenate([next(ref_flow), next(ref_flow)])
+        assert variants.shape == references.shape == (4, 32, 4)
+        sequence = 'ACGT' * 512
+        for idx, (pos, alt) in enumerate(
+                ((101, 'G'), (202, 'T'), (301, 'C'), (301, 'T'))):
+            bases = sequence[pos - 16:pos + 16]
+            expected_ref = np.eye(4)[[BASE_TO_INDEX[b] for b in bases]]
+            expected_alt = expected_ref.copy()
+            expected_alt[15] = np.eye(4)[BASE_TO_INDEX[alt]]
+            np.testing.assert_array_equal(references[idx], expected_ref)
+            np.testing.assert_array_equal(variants[idx], expected_alt)
+        assert reference.unmatches == []
+    finally:
+        generator.close()
+        reference.close()

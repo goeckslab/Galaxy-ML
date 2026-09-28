@@ -390,11 +390,11 @@ class ModelToHDF5:
     dispatch[numpy.uint16] = save_np_datatype
     dispatch[numpy.uint32] = save_np_datatype
     dispatch[numpy.uint64] = save_np_datatype
-    dispatch[numpy.float_] = save_np_datatype
+    dispatch[numpy.float64] = save_np_datatype
     dispatch[numpy.float16] = save_np_datatype
     dispatch[numpy.float32] = save_np_datatype
     dispatch[numpy.float64] = save_np_datatype
-    dispatch[numpy.complex_] = save_np_datatype
+    dispatch[numpy.complex128] = save_np_datatype
     dispatch[numpy.complex64] = save_np_datatype
     dispatch[numpy.complex128] = save_np_datatype
 
@@ -594,10 +594,7 @@ class HDF5ToModel:
         _args = data[_ARGS]
         args = self.load_all(_args)
 
-        try:
-            obj = args[0].__new__(args[0], * args)
-        except Exception:
-            obj = func(*args)
+        obj = func(*args)
 
         _state = data.get(_STATE)
         if _state:

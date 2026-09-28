@@ -13,7 +13,7 @@ from sklearn.exceptions import FitFailedWarning
 from sklearn.model_selection._validation import _fit_and_score\
     as _sk_fit_and_score
 from sklearn.utils.metaestimators import _safe_split
-from sklearn.utils.validation import _check_fit_params, _num_samples
+from sklearn.utils.validation import _check_method_params, _num_samples
 
 
 def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
@@ -21,7 +21,8 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
                    return_parameters=False, return_n_test_samples=False,
                    return_times=False, return_estimator=False,
                    split_progress=None, candidate_progress=None,
-                   error_score=np.nan):
+                   error_score=np.nan, score_params=None, caller=None,
+                   callback_ctx=None):
     """override the sklearn.model_selection._validation._fit_and_score
 
     Parameters
@@ -92,8 +93,12 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
             The estimator failed to fit.
     """
     if estimator.__class__.__name__ != 'KerasGBatchClassifier':
-        return _sk_fit_and_score(estimator, X, y, scorer, train, test, verbose,
-                                 parameters, fit_params,
+        return _sk_fit_and_score(estimator, X, y, scorer=scorer,
+                                 train=train, test=test, verbose=verbose,
+                                 parameters=parameters, fit_params=fit_params,
+                                 score_params=score_params or {},
+                                 caller=caller,
+                                 callback_ctx=callback_ctx,
                                  return_train_score=return_train_score,
                                  return_parameters=return_parameters,
                                  return_n_test_samples=return_n_test_samples,
@@ -113,9 +118,9 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
     progress_msg = ""
     if verbose > 2:
         if split_progress is not None:
-            progress_msg = f" {split_progress[0]+1}/{split_progress[1]}"
+            progress_msg = f" {split_progress[0] + 1}/{split_progress[1]}"
         if candidate_progress and verbose > 9:
-            progress_msg += (f"; {candidate_progress[0]+1}/"
+            progress_msg += (f"; {candidate_progress[0] + 1}/"
                              f"{candidate_progress[1]}")
 
     if verbose > 1:
@@ -131,7 +136,7 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
 
     # Adjust length of sample weights
     fit_params = fit_params if fit_params is not None else {}
-    fit_params = _check_fit_params(X, fit_params, train)
+    fit_params = _check_method_params(X, fit_params, train)
 
     if parameters is not None:
         # clone after setting parameters in case any parameters
@@ -174,9 +179,9 @@ def _fit_and_score(estimator, X, y, scorer, train, test, verbose,
                           "Details: \n%s" %
                           (error_score, format_exc()),
                           FitFailedWarning)
-        result["fit_failed"] = True
+        result["fit_error"] = format_exc()
     else:
-        result["fit_failed"] = False
+        result["fit_error"] = None
 
         fit_time = time.time() - start_time
         test_scores = estimator.evaluate(X_test, y_test, scorer,

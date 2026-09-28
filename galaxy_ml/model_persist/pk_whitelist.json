@@ -1209,7 +1209,12 @@
         "numpy.mean",
         "numpy.ndarray",
         "numpy.random.__RandomState_ctor",
-        "numpy.random._pickle.__randomstate_ctor"
+        "numpy.random._pickle.__randomstate_ctor",
+        "numpy._core.multiarray._reconstruct",
+        "numpy._core.multiarray.scalar",
+        "numpy.random._mt19937.MT19937",
+        "numpy.random._pickle.__bit_generator_ctor",
+        "numpy.int32"
     ],
     "KERAS_NAMES": [
         "keras.engine.sequential.Sequential",

@@ -7,7 +7,9 @@ Email: guqiang01@gmail.com
 """
 
 import collections
+import collections.abc
 import copy
+import inspect
 import json
 import random
 import sys
@@ -26,12 +28,8 @@ from keras.models import Model, Sequential
 from keras.optimizers import (
     Adadelta, Adagrad, Adam, Adamax, Ftrl, Nadam, RMSprop, SGD,
 )
-from keras.utils import (
-    GeneratorEnqueuer, OrderedEnqueuer, Sequence, to_categorical,
-)
-from keras.utils.data_utils import iter_sequence_infinite
-from keras.utils.generic_utils import (
-    has_arg, to_list)
+from keras.utils import Sequence, to_categorical
+from keras.src.legacy.saving import legacy_h5_format as hdf5_format
 
 import numpy as np
 
@@ -39,7 +37,7 @@ import six
 
 from sklearn.base import (
     BaseEstimator, ClassifierMixin, RegressorMixin, clone, is_classifier)
-from sklearn.metrics import SCORERS
+from sklearn.metrics import get_scorer
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.multiclass import (
@@ -47,7 +45,6 @@ from sklearn.utils.multiclass import (
 from sklearn.utils.validation import check_is_fitted, check_random_state
 
 import tensorflow as tf
-from tensorflow.python.keras.saving import hdf5_format
 
 from . import utils
 from .externals.selene_sdk.utils import compute_score
@@ -60,20 +57,63 @@ __all__ = ('KerasEarlyStopping', 'KerasTensorBoard', 'KerasCSVLogger',
            'KerasGClassifier', 'KerasGRegressor', 'KerasGBatchClassifier')
 
 
+def has_arg(function, name):
+    return name in inspect.signature(function).parameters
+
+
+def to_list(value):
+    return list(value) if isinstance(value, (tuple, list)) else [value]
+
+
+def _accuracy_from_evaluation(model, *args, **kwargs):
+    """Evaluate a model and return its configured accuracy metric.
+
+    Keras 3 exposes compiled metrics under the placeholder name
+    ``compile_metrics`` in ``model.metrics_names``. Asking for a result
+    dictionary preserves the actual configured names (for example ``acc``
+    or ``accuracy``) across Keras versions.
+    """
+    kwargs['return_dict'] = True
+    outputs = model.evaluate(*args, **kwargs)
+    for name in ('acc', 'accuracy'):
+        if name in outputs:
+            return outputs[name]
+
+    raise ValueError('The model is not configured to compute accuracy. '
+                     'You should pass `metrics=["accuracy"]` to '
+                     'the `model.compile()` method.')
+
+
+def _model_from_config(model_class, config):
+    """Load current configs and the supported subset of Keras 2 configs."""
+    def migrate(value):
+        if isinstance(value, list):
+            return [migrate(item) for item in value]
+        if not isinstance(value, dict):
+            return value
+        value = {key: migrate(item) for key, item in value.items()}
+        if value.get('class_name') in ('LSTM', 'GRU', 'SimpleRNN'):
+            options = value['config']
+            if options.pop('time_major', False):
+                raise ValueError(
+                    'Keras 3 requires batch-major recurrent inputs')
+        return value
+
+    custom_objects = {'tf': tf}
+    custom_objects.update({
+        name: value for name, value in vars(keras.layers).items()
+        if isinstance(value, type)})
+    with keras.saving.custom_object_scope(custom_objects):
+        return model_class.from_config(
+            migrate(config), custom_objects=custom_objects)
+
+
 class BaseOptimizer(BaseEstimator):
     """
     Base wrapper for Keras Optimizers
     """
     def get_params(self, deep=False):
-        out = {}
-
-        for k, v in self._hyper.items():
-            if isinstance(v, tf.Variable):
-                out[k] = v.numpy().item()
-            else:
-                out[k] = v
-
-        return out
+        return self.get_config()
 
 
 class KerasSGD(SGD, BaseOptimizer):
@@ -143,7 +183,7 @@ class MetricCallback(Callback, BaseEstimator):
     def __init__(self, scorer='roc_auc'):
         self.scorer = scorer
         self.validation_data = None
-        self.model = None
+        super().__init__()
 
     def on_train_begin(self, logs={}):
         return
@@ -155,14 +195,14 @@ class MetricCallback(Callback, BaseEstimator):
         return
 
     def on_epoch_end(self, epoch, logs={}):
-        scorer = SCORERS[self.scorer]
+        scorer = get_scorer(self.scorer)
         print(self.validation_data)
         x_val, y_val, _, _ = self.validation_data
 
         pred_probas = self.model.predict(x_val)
         pred_labels = (pred_probas > 0.5).astype('int32')
-        preds = pred_labels if scorer.__class__.__name__ == \
-            '_PredictScorer' else pred_probas
+        response_method = getattr(scorer, '_response_method', 'predict')
+        preds = pred_labels if response_method == 'predict' else pred_probas
 
         # binaray
         if y_val.ndim == 1 or y_val.shape[-1] == 1:
@@ -229,7 +269,7 @@ def _update_dict(d, u):
     u: dict, contains value to update
     """
     for k, v in six.iteritems(u):
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             d[k] = _update_dict(d[k], v)
         elif k not in d:
             raise KeyError
@@ -495,7 +535,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if self.optimizer == 'sgd':
             options = dict(
                 learning_rate=self.learning_rate or 0.01,
-                momentum=self.momentum or 0,
+                momentum=self.momentum or 0.0,
                 nesterov=self.nesterov or False
             )
 
@@ -618,8 +658,16 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             if callback_type in ('None', ''):
                 continue
             elif callback_type == 'ModelCheckpoint':
+                period = params.pop('period', 1)
+                if period != 1:
+                    raise ValueError('Keras 3 checkpoints use save_freq; '
+                                     'period must be 1 for legacy configs')
+                params.setdefault('save_freq', 'epoch')
                 if not params.get('filepath', None):
-                    params['filepath'] = curr_dir.joinpath('weights.hdf5')
+                    filename = ('weights.weights.h5'
+                                if params.get('save_weights_only')
+                                else 'model.keras')
+                    params['filepath'] = curr_dir / filename
             elif callback_type == 'TensorBoard':
                 if not params.get('log_dir', None):
                     params['log_dir'] = curr_dir.joinpath('logs')
@@ -698,21 +746,18 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         else:
             self.model_class_ = Model
 
-        self.model_ = self.model_class_.from_config(
-            config,
-            custom_objects=dict(tf=tf),
-        )
+        self.model_ = _model_from_config(self.model_class_, config)
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
-            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
-            steps_per_execution=self.steps_per_execution
+            loss_weights=self.loss_weights, run_eagerly=bool(self.run_eagerly),
+            steps_per_execution=self.steps_per_execution or 1
         )
 
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
-        fit_params = self.fit_params
+        fit_params = self.fit_params.copy()
         fit_params.update(dict(epochs=self.epochs,
                                batch_size=self.batch_size,
                                callbacks=self._callbacks,
@@ -837,9 +882,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             else:
                 model_class_ = Model
 
-            model_ = model_class_.from_config(
-                config,
-                custom_objects=dict(tf=tf))
+            model_ = _model_from_config(model_class_, config)
 
             return model_.to_json()
 
@@ -858,8 +901,10 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if not hasattr(self, 'model_'):
             raise ValueError("Keras model is not fitted. No weights to save!")
 
-        self.model_.save_weights(
-            filepath, overwrite=overwrite, save_format='h5')
+        if not overwrite and Path(filepath).exists():
+            raise FileExistsError(filepath)
+        with h5py.File(filepath, 'w') as group:
+            hdf5_format.save_weights_to_hdf5_group(group, self.model_)
 
     def load_weights(self, filepath, by_name=False,
                      skip_mismatch=False, options=None):
@@ -891,14 +936,13 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         else:
             self.model_class_ = Model
 
-        self.model_ = self.model_class_.from_config(
-            config,
-            custom_objects=dict(tf=tf),
-        )
+        self.model_ = _model_from_config(self.model_class_, config)
 
-        self.model_.load_weights(filepath, by_name=by_name,
-                                 skip_mismatch=skip_mismatch,
-                                 options=options)
+        with h5py.File(filepath, 'r') as group:
+            loader = (hdf5_format.load_weights_from_hdf5_group_by_name
+                      if by_name else
+                      hdf5_format.load_weights_from_hdf5_group)
+            loader(group, self.model_, skip_mismatch=skip_mismatch)
 
     def save_model(self, file_or_group, extra_attrs=None, skip_params=None):
         """ Serialize configuration and weights to hdf5. Good for prediction.
@@ -935,7 +979,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
         if hasattr(self, 'model_'):
             weights = group.create_group('weights')
             hdf5_format.save_weights_to_hdf5_group(
-                weights, self.model_.layers)
+                weights, self.model_)
 
         if extra_attrs:
             if not extra_attrs:
@@ -954,7 +998,7 @@ class BaseKerasModel(six.with_metaclass(ABCMeta, BaseEstimator)):
             group.close()
 
 
-class KerasGClassifier(BaseKerasModel, ClassifierMixin):
+class KerasGClassifier(ClassifierMixin, BaseKerasModel):
     """
     Scikit-learn classifier API for Keras
     """
@@ -1025,15 +1069,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
         if self.loss == 'categorical_crossentropy' and len(y.shape) != 2:
             y = to_categorical(y)
 
-        outputs = self.model_.evaluate(X, y, **kwargs)
-        outputs = to_list(outputs)
-        for name, output in zip(self.model_.metrics_names, outputs):
-            if name == 'acc':
-                return output
-
-        raise ValueError('The model is not configured to compute accuracy. '
-                         'You should pass `metrics=["accuracy"]` to '
-                         'the `model.compile()` method.')
+        return _accuracy_from_evaluation(self.model_, X, y, **kwargs)
 
     def save_model(self, file_or_group, extra_attrs=['classes_'],
                    skip_params=None):
@@ -1041,7 +1077,7 @@ class KerasGClassifier(BaseKerasModel, ClassifierMixin):
                                   skip_params=skip_params)
 
 
-class KerasGRegressor(BaseKerasModel, RegressorMixin):
+class KerasGRegressor(RegressorMixin, BaseKerasModel):
     """
     Scikit-learn API wrapper for Keras regressor
     """
@@ -1212,7 +1248,7 @@ class KerasGBatchClassifier(KerasGClassifier):
             random.seed(self.seed)
             tf.random.set_seed(self.seed)
 
-        check_params(kwargs, Model.fit_generator)
+        check_params(kwargs, Model.fit)
 
         self.data_generator_ = clone(self.data_batch_generator)
         self.data_generator_.set_processing_attrs()
@@ -1262,17 +1298,15 @@ class KerasGBatchClassifier(KerasGClassifier):
         else:
             self.model_class_ = Model
 
-        self.model_ = self.model_class_.from_config(
-            config,
-            custom_objects=dict(tf=tf))
+        self.model_ = _model_from_config(self.model_class_, config)
 
         self.model_.compile(
             optimizer=self._optimizer, loss=self.loss, metrics=self.metrics,
-            loss_weights=self.loss_weights, run_eagerly=self.run_eagerly,
-            steps_per_execution=self.steps_per_execution
+            loss_weights=self.loss_weights, run_eagerly=bool(self.run_eagerly),
+            steps_per_execution=self.steps_per_execution or 1
         )
 
-        fit_params = self.fit_params
+        fit_params = self.fit_params.copy()
         fit_params.update(dict(epochs=self.epochs,
                                callbacks=self._callbacks,
                                steps_per_epoch=self.steps_per_epoch,
@@ -1300,7 +1334,7 @@ class KerasGBatchClassifier(KerasGClassifier):
                 self.data_generator_.sample(*validation_data,
                                             sample_size=val_size)
 
-        history = self.model_.fit_generator(
+        history = self.model_.fit(
             self.data_generator_.flow(X, y, batch_size=self.batch_size,
                                       sample_weight=sample_weight),
             shuffle=self.seed is None,
@@ -1326,10 +1360,9 @@ class KerasGBatchClassifier(KerasGClassifier):
 
         pred_data_generator = kwargs.pop('data_generator', None)
 
-        check_params(kwargs, Model.predict_generator)
+        check_params(kwargs, Model.predict)
 
         batch_size = kwargs.pop('batch_size', None) or self.batch_size
-        n_jobs = self.n_jobs
         steps = kwargs.pop('steps', None)
         if not steps:
             steps = self.prediction_steps
@@ -1345,11 +1378,9 @@ class KerasGBatchClassifier(KerasGClassifier):
                 else:
                     raise ValueError("Prediction asks for a data_generator, "
                                      "but none is provided!")
-            preds = self.model_.predict_generator(
+            preds = self.model_.predict(
                 pred_data_generator.flow(X, batch_size=batch_size),
                 steps=steps,
-                workers=n_jobs,
-                use_multiprocessing=False,
                 **kwargs)
 
         # X was transformed
@@ -1380,30 +1411,19 @@ class KerasGBatchClassifier(KerasGClassifier):
         if not data_generator:
             data_generator_ = self.data_generator_
 
-        check_params(kwargs, Model.predict_generator)
-        check_params(kwargs, Model.evaluate_generator)
+        check_params(kwargs, Model.predict)
+        check_params(kwargs, Model.evaluate)
 
-        n_jobs = self.n_jobs
         batch_size = self.batch_size or 32
         steps = kwargs.pop('steps', None)
         if not steps:
             steps = self.prediction_steps
 
-        outputs = self.model_.evaluate_generator(
+        return _accuracy_from_evaluation(
+            self.model_,
             data_generator_.flow(X, y=y, batch_size=batch_size),
             steps=steps,
-            n_jobs=n_jobs,
-            use_multiprocessing=False,
             **kwargs)
-
-        outputs = to_list(outputs)
-        for name, output in zip(self.model_.metrics_names, outputs):
-            if name == 'acc':
-                return output
-
-        raise ValueError('The model is not configured to compute accuracy. '
-                         'You should pass `metrics=["accuracy"]` to '
-                         'the `model.compile()` method.')
 
     def evaluate(self, X_test, y_test=None, scorers=None, error_score='raise',
                  steps=None, batch_size=None):
@@ -1438,10 +1458,13 @@ class KerasGBatchClassifier(KerasGClassifier):
             pred_labels = (pred_probas > 0.5).astype('int32')
             targets = y_true.astype('int32')
 
+        if hasattr(scorers, "_scorers"):
+            scorers = scorers._scorers
         if not isinstance(scorers, dict):
             try:
-                preds = pred_labels if scorers.__class__.__name__ == \
-                    '_PredictScorer' else pred_probas
+                preds = (pred_labels
+                         if scorers._response_method == 'predict'
+                         else pred_probas)
                 score_func = scorers._score_func \
                     if t_type == 'binary' \
                     else compute_score
@@ -1456,8 +1479,9 @@ class KerasGBatchClassifier(KerasGClassifier):
             scores = {}
             try:
                 for name, scorer in scorers.items():
-                    preds = pred_labels if scorer.__class__.__name__\
-                        == '_PredictScorer' else pred_probas
+                    preds = (
+                        pred_labels if scorer._response_method == 'predict'
+                        else pred_probas)
                     score_func = scorer._score_func \
                         if t_type == 'binary' \
                         else compute_score
@@ -1483,96 +1507,29 @@ def _predict_generator(model, generator, steps=None,
     """Override keras predict_generator to output true labels together
     with prediction results
     """
-    # TODO: support prediction callbacks
-    model.make_predict_function()
-
-    steps_done = 0
-    all_preds = []
-    all_y = []
-
-    use_sequence_api = isinstance(generator, Sequence)
-
-    if not use_sequence_api and use_multiprocessing and workers > 1:
-        warnings.warn(
-            UserWarning('Using a generator with `use_multiprocessing=True`'
-                        ' and multiple workers may duplicate your data.'
-                        ' Please consider using the `keras.utils.Sequence'
-                        ' class.'))
     if steps is None:
-        if use_sequence_api:
-            steps = len(generator)
-        else:
-            raise ValueError('`steps=None` is only valid for a generator'
-                             ' based on the `keras.utils.Sequence` class.'
-                             ' Please specify `steps` or use the'
-                             ' `keras.utils.Sequence` class.')
-    enqueuer = None
-
-    try:
-        if workers > 0:
-            if use_sequence_api:
-                enqueuer = OrderedEnqueuer(
-                    generator,
-                    use_multiprocessing=use_multiprocessing)
-            else:
-                enqueuer = GeneratorEnqueuer(
-                    generator,
-                    use_multiprocessing=use_multiprocessing)
-            enqueuer.start(workers=workers, max_queue_size=max_queue_size)
-            output_generator = enqueuer.get()
-        else:
-            if use_sequence_api:
-                output_generator = iter_sequence_infinite(generator)
-            else:
-                output_generator = generator
-
-        while steps_done < steps:
-            generator_output = next(output_generator)
-            if isinstance(generator_output, tuple):
-                # Compatibility with the generators
-                # used for training.
-                if len(generator_output) == 2:
-                    x, y = generator_output
-                elif len(generator_output) == 3:
-                    x, y, _ = generator_output
-                else:
-                    raise ValueError(
-                        "Output of generator should be a tuple "
-                        "`(x, y, sample_weight)` or `(x, y)`. Found: "
-                        + str(generator_output)
-                    )
-            else:
-                # Assumes a generator that only
-                # yields inputs (not targets and sample weights).
-                x = generator_output
-
-            outs = model.predict_on_batch(x)
-            outs = to_list(outs)
-
-            if not all_preds:
-                for out in outs:
-                    all_preds.append([])
-                    all_y.append([])
-
-            for i, out in enumerate(outs):
-                all_preds[i].append(out)
-                all_y[i].append(y)
-
-            steps_done += 1
-    finally:
-        if enqueuer is not None:
-            enqueuer.stop()
-
-    if len(all_preds) == 1:
-        if steps_done == 1:
-            return all_preds[0][0], all_y[0][0]
-        else:
-            return np.concatenate(all_preds[0]), np.concatenate(all_y[0])
-    if steps_done == 1:
-        return [out[0] for out in all_preds], [label[0] for label in all_y]
-    else:
-        return ([np.concatenate(out) for out in all_preds],
-                [np.concatenate(label) for label in all_y])
+        if not isinstance(generator, Sequence):
+            raise ValueError("Specify steps for an iterator without a length")
+        steps = len(generator)
+    if steps < 1:
+        raise ValueError("steps must be positive")
+    if workers > 1 or use_multiprocessing:
+        warnings.warn("Paired prediction runs in order on a single worker.")
+    predictions, labels = [], []
+    iterator = iter(generator)
+    for step in range(steps):
+        batch = (generator[step % len(generator)]
+                 if isinstance(generator, Sequence) else next(iterator))
+        if not isinstance(batch, tuple) or len(batch) not in (2, 3):
+            raise ValueError("Expected (inputs, targets[, sample_weight])")
+        x, y = batch[:2]
+        predictions.append(to_list(model.predict_on_batch(x)))
+        labels.append(y)
+    outputs = [np.concatenate(parts) for parts in zip(*predictions)]
+    targets = np.concatenate(labels)
+    if len(outputs) == 1:
+        return outputs[0], targets
+    return outputs, [targets for _ in outputs]
 
 
 def load_model(file_or_group):
@@ -1609,11 +1566,9 @@ def load_model(file_or_group):
         else:
             obj.model_class_ = Model
 
-        obj.model_ = obj.model_class_.from_config(
-            config,
-            custom_objects=dict(tf=tf))
+        obj.model_ = _model_from_config(obj.model_class_, config)
 
-        hdf5_format.load_weights_from_hdf5_group(weights, obj.model_.layers)
+        hdf5_format.load_weights_from_hdf5_group(weights, obj.model_)
 
     attributes = group.get('attributes')
     if attributes:

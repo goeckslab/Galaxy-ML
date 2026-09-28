@@ -21,13 +21,16 @@ import pandas as pd
 
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics._scorer import r2_scorer
+from sklearn.metrics import get_scorer
+
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
+
+r2_scorer = get_scorer("r2")
 
 warnings.simplefilter('ignore')
 

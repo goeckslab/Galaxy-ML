@@ -1,28 +1,23 @@
-pyfaidx
-pytabix
-cython>=0.29.11
-scipy>=1.3.1
-numpy>=1.21, <1.23
-joblib>=1.0
-asteval>=0.9.14
-pandas>=1.0, <1.3
-scikit-learn>=1.1, <1.2
-xgboost>=1.6, < 1.8
-mlxtend>=0.21, <0.22
-skrebate>=0.60, <0.70
-imbalanced-learn>=0.9, <0.10
-keras>=2.10, <2.11
-tensorflow>=2.10, <2.11
-plotly>=4.10.0, <5.0
-#psutil>=5.6.5
-#requests>=2.22.0
-matplotlib>=3.1.1
-scikit-optimize>=0.9
-h5py>=3.6, <3.8
-six<=1.15.0
-bleach>=3.3.0
-
-
-# conda packages needed for tools. 
-#pydot>=1.4.1
-#graphviz>=2.40.1
+# Latest stable releases checked against PyPI on 2026-09-21.
+pyfaidx==0.9.0.4
+pytabix==0.1
+scipy==1.18.1
+numpy==2.4.6
+joblib==1.6.0
+asteval==1.0.10
+pandas==3.0.6
+scikit-learn==1.9.1
+xgboost==3.4.1
+mlxtend==0.25.0
+skrebate==0.8.4
+imbalanced-learn==0.14.2
+keras==3.15.1
+Keras-Preprocessing==1.1.2
+tensorflow==2.21.0
+plotly==7.1.0
+matplotlib==3.11.2
+scikit-optimize==0.10.2
+# TensorFlow 2.21 requires h5py <3.15; use the newest compatible release.
+h5py==3.14.0
+six==1.17.0
+bleach==6.4.0

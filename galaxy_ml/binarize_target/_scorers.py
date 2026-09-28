@@ -1,10 +1,32 @@
 import numpy as np
 
 from sklearn import metrics
-from sklearn.metrics._scorer import _BaseScorer
 from sklearn.utils.multiclass import type_of_target
 
 from ..utils import get_main_estimator
+
+
+class _BaseScorer:
+    """Callable scorer for transformed targets using estimator predictions."""
+
+    def __init__(self, score_func, sign, kwargs):
+        self._score_func = score_func
+        self._sign = sign
+        self._kwargs = kwargs
+
+    def __call__(self, estimator, X, y, sample_weight=None):
+        return self._score(
+            lambda est, method, data: getattr(est, method)(data),
+            estimator, X, y, sample_weight=sample_weight)
+
+    def _check_pos_label(self, pos_label, classes):
+        if pos_label not in classes:
+            raise ValueError(f"Unknown positive class: {pos_label}")
+
+    def _select_proba_binary(self, probabilities, classes):
+        pos_label = self._kwargs.get("pos_label", classes[-1])
+        self._check_pos_label(pos_label, classes)
+        return probabilities[:, list(classes).index(pos_label)]
 
 
 class _BinarizeTargetThresholdScorer(_BaseScorer):
@@ -136,13 +158,13 @@ for name, metric in [('precision', metrics.precision_score),
 
 # for regressor scorer
 BINARIZE_SCORERS['explained_variance'] = \
-    metrics.SCORERS['explained_variance']
-BINARIZE_SCORERS['r2'] = metrics.SCORERS['r2']
+    metrics.get_scorer('explained_variance')
+BINARIZE_SCORERS['r2'] = metrics.get_scorer('r2')
 BINARIZE_SCORERS['neg_median_absolute_error'] = \
-    metrics.SCORERS['neg_median_absolute_error']
+    metrics.get_scorer('neg_median_absolute_error')
 BINARIZE_SCORERS['neg_mean_absolute_error'] = \
-    metrics.SCORERS['neg_mean_absolute_error']
+    metrics.get_scorer('neg_mean_absolute_error')
 BINARIZE_SCORERS['neg_mean_squared_error'] = \
-    metrics.SCORERS['neg_mean_squared_error']
+    metrics.get_scorer('neg_mean_squared_error')
 BINARIZE_SCORERS['neg_mean_squared_log_error'] = \
-    metrics.SCORERS['neg_mean_squared_log_error']
+    metrics.get_scorer('neg_mean_squared_log_error')

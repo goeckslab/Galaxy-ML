@@ -22,10 +22,10 @@ import pytest
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import SCORERS
+from sklearn.metrics import get_scorer
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection._validation import _fit_and_score
+from galaxy_ml.model_validations import _fit_and_score
 from sklearn.utils._mocking import MockDataFrame
 from sklearn.utils._testing import assert_array_equal
 from sklearn.utils._testing import ignore_warnings
@@ -332,7 +332,7 @@ def test_fit_and_score():
     y = np.arange(10)
     estimator = RandomForestRegressor(random_state=42, n_estimators=10)
 
-    scorer = SCORERS['r2']
+    scorer = get_scorer('r2')
     train, test = next(KFold(n_splits=5).split(X, y))
 
     parameters = {}
@@ -363,7 +363,7 @@ def test_fit_and_score_keras_model():
                                  epochs=30, seed=42,
                                  verbose=0)
 
-    scorer = SCORERS['accuracy']
+    scorer = get_scorer('accuracy')
     train, test = next(KFold(n_splits=5).split(X, y))
     assert np.array_equal(test, np.arange(154)), test
 
@@ -389,7 +389,7 @@ def test_fit_and_score_keras_model_callbacks():
                                  epochs=500, seed=42,
                                  verbose=0)
 
-    scorer = SCORERS['accuracy']
+    scorer = get_scorer('accuracy')
     train, test = next(KFold(n_splits=5).split(X, y))
 
     new_params = {
@@ -420,7 +420,7 @@ def test_fit_and_score_keras_model_in_gridsearchcv():
     X = df.iloc[:, 0:8].values.astype(float)
     y = df.iloc[:, 8].values
 
-    scorer = SCORERS['balanced_accuracy']
+    scorer = get_scorer('balanced_accuracy')
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=123)
 
     new_params = {

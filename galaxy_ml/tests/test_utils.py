@@ -37,7 +37,7 @@ def test_get_scoring():
     inputs = {
         "primary_scoring": "r2",
         "secondary_scoring":
-            "spearman_correlation,max_error,explained_variance"
+            "spearman_correlation,neg_max_error,explained_variance"
     }
 
     scoring = get_scoring(inputs)
@@ -55,7 +55,7 @@ def test_get_scoring():
     }
 
     scoring = get_scoring(inputs)
-    assert type(scoring).__name__ == '_PredictScorer', scoring
+    assert callable(scoring)
 
 
 def test_get_scoring_list():
@@ -70,7 +70,7 @@ def test_get_scoring_list():
     inputs = {
         "primary_scoring": "r2",
         "secondary_scoring":
-            ['spearman_correlation', 'max_error', 'explained_variance']
+            ['spearman_correlation', 'neg_max_error', 'explained_variance']
     }
 
     scoring = get_scoring(inputs)
@@ -88,4 +88,4 @@ def test_get_scoring_list():
     }
 
     scoring = get_scoring(inputs)
-    assert type(scoring).__name__ == '_PredictScorer', scoring
+    assert callable(scoring)

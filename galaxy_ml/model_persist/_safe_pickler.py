@@ -96,10 +96,18 @@ class _SafePickler(pickle.Unpickler, object):
             raise pickle.UnpicklingError("Global '%s' is forbidden"
                                          % fullname)
 
-        __import__(module, level=0)
-        new_global = getattr(sys.modules[module], name)
+        try:
+            __import__(module, level=0)
+            new_global = getattr(sys.modules[module], name)
+        except (ImportError, AttributeError) as exc:
+            raise pickle.UnpicklingError(
+                f"Model dependency '{fullname}' is unavailable; retrain "
+                "the model with the current dependency versions.") from exc
 
-        assert new_global.__module__ == module
+        canonical = new_global.__module__ + '.' + name
+        if new_global.__module__ != module and canonical not in self.whitelist:
+            raise pickle.UnpicklingError(
+                f"Global alias '{canonical}' is forbidden")
         return new_global
 
 

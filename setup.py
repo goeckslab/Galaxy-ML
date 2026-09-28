@@ -1,33 +1,20 @@
-import subprocess
-from distutils.core import setup
 from os.path import dirname, join, realpath
+from runpy import run_path
 
-from setuptools import find_packages
-
-try:
-    import Cython
-except ImportError:
-    subprocess.run("pip install Cython", shell=True, check=True)
-
-try:
-    import numpy as np
-except ImportError:
-    subprocess.run("pip install numpy>=1.16.2",
-                   shell=True, check=True)
-    import numpy as np
+import numpy as np
+from setuptools import find_packages, setup
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 from Cython.Distutils.extension import Extension
 
-import galaxy_ml
-
-
-VERSION = galaxy_ml.__version__
 PROJECT_ROOT = dirname(realpath(__file__))
+VERSION = run_path(join(PROJECT_ROOT, 'galaxy_ml', '__init__.py'))[
+    '__version__']
 
 with open(join(PROJECT_ROOT, 'requirements.txt'), 'r') as f:
-    install_reqs = f.read().splitlines()
+    install_reqs = [line.strip() for line in f
+                    if line.strip() and not line.startswith('#')]
 
 genome_module = Extension(
     "galaxy_ml.externals.selene_sdk.sequences._sequence",
@@ -80,15 +67,14 @@ setup(
     },
     include_package_data=True,
     install_requires=install_reqs,
+    python_requires='>=3.12,<3.13',
     extras_require={'docs': ['mkdocs']},
     platforms='any',
     ext_modules=cythonize(ext_modules),
     cmdclass=cmdclass,
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.12',
         'License :: OSI Approved :: MIT License',
         'Operating System :: Unix',
         'Operating System :: MacOS',

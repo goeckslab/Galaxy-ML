@@ -1,0 +1,6 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0", "Cython==3.3.0", "numpy==2.5.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["galaxy_ml/tests"]

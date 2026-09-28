@@ -6,6 +6,9 @@ galaxy_ml/tests/*.pyc
 # Notebook
 *.ipynb
 
+# HTML report
+galaxy_ml/*.html
+
 #
 .DS_Store
 
@@ -18,3 +21,11 @@ galaxy_ml/externals/selene_sdk
 galaxy_ml/tools/test-data/*.fai
 galaxy_ml/*.html
 galaxy_ml/*.png
+
+# Packaging output
+*.egg-info/
+dist/
+
+# Local Galaxy tool-test environment and dependency resolver
+.venv-tool-tests/
+.planemo-local/

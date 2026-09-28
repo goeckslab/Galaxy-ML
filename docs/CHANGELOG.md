@@ -1,3 +1,15 @@
+### Version 0.11.0 (unreleased)
+
+- Target Python 3.12 across package metadata, CI, Docker and Galaxy tools.
+- Update the compatible dependency stack to TensorFlow/Keras 2.12,
+  scikit-learn 1.2, NumPy 1.23 and pandas 1.5.
+- Use isolated setuptools builds and pytest; remove setup-time pip invocations.
+- Build the Docker image from the local source checkout.
+- Pin skrebate 0.62 explicitly to preserve TuRF (upstream yanked this release
+  for version naming only).
+- Galaxy tool installation requires publishing the matching 0.11.0 Conda
+  package and container image before release.
+
 ### Version 0.10.0
 
 #### Changes

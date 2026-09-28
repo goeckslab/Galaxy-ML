@@ -63,7 +63,7 @@ class IntervalsToArrayIterator(FastaToArrayIterator):
         )
 
         for i in range(n_samples):
-            seq_idx = int(self.X[index_array[i]])
+            seq_idx = int(self.X[index_array[i], 0])
             rval = generator.apply_transform(seq_idx, shuffle=self.shuffle)
             # bad sample, sample next
             while rval is None:

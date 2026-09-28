@@ -1,11 +1,10 @@
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-ENV VERSION=v0.10.0
 RUN apt-get update && \
-    apt-get install -y gcc git libz-dev unzip wget && \
-    DEBIAN_FRONTEND="noninteractive" apt-get install -y graphviz
+    apt-get install -y --no-install-recommends gcc zlib1g-dev graphviz && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install 'git+https://github.com/goeckslab/Galaxy-ML.git'@$VERSION pydot && \
-    pip cache purge
-
-RUN apt-get purge -y gcc libz-dev && apt-get -y autoremove && apt-get clean
+WORKDIR /opt/galaxy-ml
+COPY . .
+RUN python -m pip install --no-cache-dir . pydot && \
+    apt-get purge -y gcc zlib1g-dev && apt-get -y autoremove && apt-get clean

@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from ..externals import selene_sdk
 
 
-class GenomeOneHotEncoder(BaseEstimator, TransformerMixin):
+class GenomeOneHotEncoder(TransformerMixin, BaseEstimator):
     """Convert Genomic sequences to one-hot encoded 2d array
 
     Paramaters
