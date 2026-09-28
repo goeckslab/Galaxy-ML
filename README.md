@@ -121,6 +121,9 @@ Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation
 
 ### Running the tests
 
+GitHub Actions runs Python lint and API tests on pushes and pull requests.
+Galaxy tool lint and tests run separately for changed tools.
+
 Before running the tests, run the following commands:
 
 ```
