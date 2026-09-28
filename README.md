@@ -91,7 +91,7 @@ planemo test --dependency_resolvers_config_file ../../.planemo-local/dependency_
 ```
 
 The generated resolver points both the Python and Galaxy-ML requirements to
-this local environment. CircleCI uses the same setup for tool tests.
+this local environment.
 
 APIs for models, preprocessors and utils implemented in Galaxy-ML can be installed separately.
 
