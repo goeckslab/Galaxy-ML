@@ -120,7 +120,7 @@ python -m pip install -e .
 
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
-Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation and Trusted Publishing setup.
+Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation with Trusted Publishing.
 
 ### Running the tests
 
