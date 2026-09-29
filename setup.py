@@ -45,10 +45,13 @@ of Galalxy tools, Galaxy-ML provides scalabe, reproducible and
 transparent machine learning computations.
 
 This library and tools are hosted at
-https://github.com/geockslab/Galaxy-ML.
+https://github.com/goeckslab/Galaxy-ML.
 
 The documentation can be found at
 https://goeckslab.github.io/Galaxy-ML/
+
+For installation using mamba, conda, or pip, see the
+[installation guide](https://github.com/goeckslab/Galaxy-ML#installation).
 
 """
 
