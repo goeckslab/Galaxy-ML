@@ -74,31 +74,34 @@ This source version targets Python 3.12. Dependency versions are pinned in
 `requirements.txt`.
 Previously saved models may need to be retrained with the updated stack.
 
-The Galaxy tool definitions target the unreleased 0.11.0 package and container;
-publish those artifacts before deploying the tools. The local Dockerfile builds
-from this checkout.
-
-For local Galaxy tool tests of the unreleased source, use a Python 3.12
-environment built from this checkout instead of resolving `Galaxy-ML=0.11.0`
-from Conda. From the repository root, with Planemo installed:
-
-```sh
-python3.12 -m venv .venv-tool-tests
-.venv-tool-tests/bin/python -m pip install -e .
-.venv-tool-tests/bin/python scripts/configure_tool_test_dependencies.py
-cd galaxy_ml/tools
-planemo test --dependency_resolvers_config_file ../../.planemo-local/dependency_resolvers.xml .
-```
-
-The generated resolver points both the Python and Galaxy-ML requirements to
-this local environment.
+The Galaxy tool definitions target the 0.11.0 package and container. The local
+Dockerfile builds from this checkout.
 
 APIs for models, preprocessors and utils implemented in Galaxy-ML can be installed separately.
 
-##### Installing using anaconda (recommended)
+##### Installing with mamba or conda (recommended)
+
+The Bioconda build of Galaxy-ML 0.11.0 is available for Linux x86_64.
+With mamba installed, create and activate a new environment:
+
+```sh
+mamba create -n galaxy-ml \
+    --override-channels \
+    -c conda-forge \
+    -c bioconda \
+    --strict-channel-priority \
+    galaxy-ml=0.11.0
+mamba activate galaxy-ml
 ```
-conda install -c bioconda -c conda-forge Galaxy-ML
-```
+
+For conda, replace `mamba` with `conda` in both commands.
+
+Bioconda relies on dependencies from `conda-forge`, which must have higher
+priority than `bioconda`. `--override-channels` uses only the channels listed
+above, while `--strict-channel-priority` enforces their order. Specifying only
+`-c bioconda` without a configured `conda-forge` channel can cause missing
+dependency errors, such as an unavailable `asteval` package. See the
+[Bioconda channel setup guide](https://bioconda.github.io/#with-conda).
 
 ##### Installing using pip
 ```
@@ -117,7 +120,7 @@ python -m pip install -e .
 
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
-Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation and Trusted Publishing setup.
+Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation with Trusted Publishing.
 
 ### Running the tests
 
