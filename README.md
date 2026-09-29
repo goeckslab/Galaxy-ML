@@ -91,7 +91,7 @@ planemo test --dependency_resolvers_config_file ../../.planemo-local/dependency_
 ```
 
 The generated resolver points both the Python and Galaxy-ML requirements to
-this local environment. CircleCI uses the same setup for tool tests.
+this local environment.
 
 APIs for models, preprocessors and utils implemented in Galaxy-ML can be installed separately.
 
@@ -117,7 +117,12 @@ python -m pip install -e .
 
 To install Galaxy-ML tools in Galaxy, please refer to https://galaxyproject.org/admin/tools/add-tool-from-toolshed-tutorial/.
 
+Maintainers: see [Publishing to PyPI](docs/publishing.md) for release automation and Trusted Publishing setup.
+
 ### Running the tests
+
+GitHub Actions runs Python lint and API tests on pushes and pull requests.
+Galaxy tool lint and tests run separately for changed tools.
 
 Before running the tests, run the following commands:
 
